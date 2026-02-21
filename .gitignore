@@ -1,0 +1,5 @@
+logs
+dump.txt
+dump_files.sh
+.env
+public/uploads/*
