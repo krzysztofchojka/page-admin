@@ -9,18 +9,41 @@ class PublicController {
     public function show($slug = null) {
         Session::init();
         $db = Database::getInstance();
-        
         $settingsRows = $db->query("SELECT * FROM pa_settings")->fetchAll();
         $settings = [];
         foreach($settingsRows as $r) {
             $settings[$r['setting_key']] = $r['setting_value'];
         }
 
-        // --- GATE 1 & 2: LOCKDOWN i REGISTRATION pozostają bez zmian ---
-        if (($settings['lockdown_enabled'] ?? 0) == 1) { /* ... Twój kod ... */ }
-        if (($settings['require_registration'] ?? 0) == 1) { /* ... Twój kod ... */ }
+        // --- GATE 1: LOCKDOWN (Hasło globalne) ---
+        if (($settings['lockdown_enabled'] ?? 0) == 1) {
+            // Jeśli przesłano formularz z hasłem
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['site_pass'])) {
+                if ($_POST['site_pass'] === ($settings['lockdown_password'] ?? '')) {
+                    Session::set('site_unlocked', true);
+                    // Przekieruj, aby uniknąć komunikatu o ponownym przesłaniu formularza przy odświeżaniu
+                    header("Location: " . $_SERVER['REQUEST_URI']);
+                    exit;
+                }
+            }
 
-        // --- GATE 3: RENDER PAGE (NAPRAWIONE) ---
+            // Jeśli sesja nie ma flagi odblokowania, pokaż widok blokady i zatrzymaj skrypt
+            if (!Session::get('site_unlocked')) {
+                require_once __DIR__ . '/../Views/public/lockdown.php';
+                exit;
+            }
+        }
+
+        // --- GATE 2: REQUIRE REGISTRATION (Wymóg logowania) ---
+        if (($settings['require_registration'] ?? 0) == 1) {
+            if (!Session::isLoggedIn()) {
+                Session::setFlash('Zaloguj się, aby uzyskać dostęp do zawartości.', 'error');
+                header('Location: /login');
+                exit;
+            }
+        }
+
+        // --- GATE 3: RENDER PAGE ---
         $page = null;
         $id = $_GET['id'] ?? null;
 
