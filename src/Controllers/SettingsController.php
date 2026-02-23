@@ -40,4 +40,40 @@ class SettingsController {
         header('Location: /admin/settings?success=1');
         exit;
     }
+
+    public function backup() {
+        Session::init();
+        if (!Session::isLoggedIn()) die("Odmowa dostępu");
+
+        $db = Database::getInstance()->getConnection();
+        
+        // Tabele do zrzutu
+        $tables = ['pa_users', 'pa_data', 'pa_forms', 'pa_submissions', 'pa_galleries', 'pa_settings', 'pa_templates', 'pa_menu'];
+        $sqlDump = "-- Automatyczny Backup CMS \n-- Wygenerowano: " . date('Y-m-d H:i:s') . "\n\n";
+
+        foreach ($tables as $table) {
+            try {
+                $rows = $db->query("SELECT * FROM $table")->fetchAll(\PDO::FETCH_ASSOC);
+                if (count($rows) == 0) continue;
+                
+                foreach ($rows as $row) {
+                    $keys = array_keys($row);
+                    $values = array_map(function($v) use ($db) {
+                        return $v === null ? 'NULL' : $db->quote($v);
+                    }, array_values($row));
+                    
+                    $sqlDump .= "INSERT INTO `$table` (`" . implode("`, `", $keys) . "`) VALUES (" . implode(", ", $values) . ");\n";
+                }
+                $sqlDump .= "\n";
+            } catch (\Exception $e) {
+                // Tabela może nie istnieć, idziemy dalej
+            }
+        }
+
+        // Nagłówki wymuszające pobieranie pliku
+        header('Content-Type: application/sql');
+        header('Content-Disposition: attachment; filename="cms_backup_'.date('Y-m-d_H-i').'.sql"');
+        echo $sqlDump;
+        exit;
+    }
 }

@@ -86,7 +86,10 @@ class FormController {
             ];
         }
 
+        ob_start();
         require_once __DIR__ . '/../Views/admin/forms/submissions.php';
+        $content = ob_get_clean();
+        require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
     public function deleteSubmission() {

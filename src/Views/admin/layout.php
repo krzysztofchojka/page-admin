@@ -53,6 +53,9 @@ function isActive($path, $current) {
             <a href="/admin/settings" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/settings', $currentPath) ?>">
                 <span>⚙️</span> <span class="menu-text">Ustawienia</span>
             </a>
+            <a href="/admin/help" class="block px-4 py-3 hover:bg-gray-800 text-green-400 transition flex items-center gap-3 mt-4 border-t border-gray-800">
+                <span>💡</span> <span class="menu-text font-bold">Pomoc</span>
+            </a>
         </nav>
         <div class="p-4 border-t border-gray-800 text-sm">
             <div class="menu-text mb-2 text-gray-400">User: <b><?= htmlspecialchars(\CMS\Core\Session::get('user_name')) ?></b></div>

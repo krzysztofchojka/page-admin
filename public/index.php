@@ -59,6 +59,12 @@ $router->post('/submit-form', [CMS\Controllers\FormController::class, 'submit'])
 $router->get('/admin/forms/submissions/delete', [CMS\Controllers\FormController::class, 'deleteSubmission']);
 $router->get('/admin/templates/delete', [CMS\Controllers\TemplateController::class, 'delete']);
 
+// Ustawienia & Backup
+$router->get('/admin/settings/backup', [CMS\Controllers\SettingsController::class, 'backup']);
+
+// Pomoc
+$router->get('/admin/help', [CMS\Controllers\HelpController::class, 'index']);
+
 $router->get('/admin/forms/submissions', [CMS\Controllers\FormController::class, 'submissions']);
 $router->get('/admin/forms/download', [CMS\Controllers\FormController::class, 'downloadFile']);
 

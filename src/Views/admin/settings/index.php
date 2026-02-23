@@ -132,7 +132,17 @@
     <textarea name="custom_head" class="w-full border p-2 rounded text-sm font-mono h-32" placeholder="<script>...</script>"><?= htmlspecialchars($settings['custom_head'] ?? '') ?></textarea>
 </div>
 
-            <button class="bg-blue-600 text-white px-6 py-2 rounded font-bold w-full mt-4">Save Settings</button>
+<h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Kopia Zapasowa (Backup)</h3>
+    <div class="mb-8 bg-green-50 p-4 border border-green-200 rounded flex justify-between items-center">
+        <div>
+            <p class="font-bold text-green-800">Pobierz kopię zapasową bazy danych</p>
+            <p class="text-xs text-green-600 mt-1">Wyeksportuje układ stron, szablony, ustawienia i zgłoszenia do pliku .sql</p>
+        </div>
+        <a href="/admin/settings/backup" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow text-sm">Pobierz plik SQL</a>
+    </div>
+
+    <button class="bg-blue-600 text-white px-6 py-2 rounded font-bold w-full mt-4 shadow hover:bg-blue-700 transition">Save Settings</button>
+
         </form>
     </div>
 </body>
