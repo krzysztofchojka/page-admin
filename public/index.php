@@ -46,6 +46,7 @@ $router->post('/change-password', [CMS\Controllers\AuthController::class, 'chang
 
 $router->get('/admin/pages', [CMS\Controllers\PageController::class, 'index']);       // List pages
 $router->get('/admin/pages/create', [CMS\Controllers\PageController::class, 'create']); // Create new
+$router->post('/admin/pages/create', [CMS\Controllers\PageController::class, 'store']);
 $router->get('/admin/pages/edit', [CMS\Controllers\PageController::class, 'edit']);     // Edit specific page
 $router->post('/admin/pages/save', [CMS\Controllers\PageController::class, 'save']);    // AJAX Save
 $router->get('/admin/pages/delete', [CMS\Controllers\PageController::class, 'delete']); // Delete
@@ -56,6 +57,7 @@ $router->get('/admin/forms/builder', [CMS\Controllers\FormController::class, 'bu
 $router->post('/admin/forms/save', [CMS\Controllers\FormController::class, 'save']);
 $router->post('/submit-form', [CMS\Controllers\FormController::class, 'submit']); // Public submission
 $router->get('/admin/forms/submissions/delete', [CMS\Controllers\FormController::class, 'deleteSubmission']);
+$router->get('/admin/templates/delete', [CMS\Controllers\TemplateController::class, 'delete']);
 
 $router->get('/admin/forms/submissions', [CMS\Controllers\FormController::class, 'submissions']);
 $router->get('/admin/forms/download', [CMS\Controllers\FormController::class, 'downloadFile']);
@@ -92,6 +94,11 @@ $router->get('/register', [CMS\Controllers\AuthController::class, 'registerForm'
 $router->post('/register', [CMS\Controllers\AuthController::class, 'register']);
 
 $router->get('/admin/media/downloadZip', [CMS\Controllers\MediaController::class, 'downloadZip']);
+
+$router->get('/admin/templates', [CMS\Controllers\TemplateController::class, 'index']);
+$router->get('/admin/templates/create', [CMS\Controllers\TemplateController::class, 'create']);
+$router->get('/admin/templates/edit', [CMS\Controllers\TemplateController::class, 'edit']);
+$router->post('/admin/templates/save', [CMS\Controllers\TemplateController::class, 'save']);
 
 $router->setNotFoundHandler([CMS\Controllers\PublicController::class, 'show']);
 

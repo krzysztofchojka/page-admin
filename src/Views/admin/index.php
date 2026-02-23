@@ -30,6 +30,9 @@
             <a href="/admin/galleries" class="block px-4 py-3 hover:bg-gray-800 transition flex items-center gap-3">
                 <span>🖼️</span> <span class="menu-text">Galerie</span>
             </a>
+            <a href="/admin/templates" class="block px-4 py-3 hover:bg-gray-800 transition flex items-center gap-3">
+                <span>📐</span> <span class="menu-text">Szablony</span>
+            </a>
             <a href="/admin/media" class="block px-4 py-3 hover:bg-gray-800 transition flex items-center gap-3">
                 <span>📂</span> <span class="menu-text">Pliki (Media)</span>
             </a>

@@ -25,11 +25,26 @@ class PageController {
 
     public function create() {
         $db = Database::getInstance();
+        // Pobieramy szablony do wyboru
+        $templates = $db->query("SELECT id, title FROM pa_templates ORDER BY title ASC")->fetchAll();
+        
+        ob_start();
+        require_once __DIR__ . '/../Views/admin/pages/create.php';
+        $content = ob_get_clean();
+        require_once __DIR__ . '/../Views/admin/layout.php';
+    }
+
+    public function store() {
+        $db = Database::getInstance();
         $user = Session::get('user_name');
         
-        // Create a blank page
-        $db->query("INSERT INTO pa_data (title, field_type, contents, editor, create_date, edit_date) VALUES (:title, 'page', '[]', :editor, NOW(), NOW())", [
-            'title' => 'New Page',
+        $title = $_POST['title'] ?? 'Nowa strona';
+        $templateId = !empty($_POST['template_id']) ? (int)$_POST['template_id'] : null;
+
+        $db->query("INSERT INTO pa_data (title, field_type, contents, template_id, editor, create_date, edit_date) 
+                    VALUES (:title, 'page', '[]', :tid, :editor, NOW(), NOW())", [
+            'title' => $title,
+            'tid' => $templateId,
             'editor' => $user
         ]);
         
@@ -51,27 +66,35 @@ class PageController {
         $forms = $db->query("SELECT id, title FROM pa_forms ORDER BY id DESC")->fetchAll();
         $galleries = $db->query("SELECT id, title FROM pa_galleries ORDER BY id DESC")->fetchAll();
 
+        $templates = $db->query("SELECT id, title FROM pa_templates ORDER BY title ASC")->fetchAll();
+
         require_once __DIR__ . '/../Views/admin/pages/edit.php';
     }
 
     public function save() {
-        // Receives JSON from the frontend
+        // Odbieramy JSON z frontendu
         $data = json_decode(file_get_contents('php://input'), true);
-        
+    
         if (!isset($data['id']) || !isset($data['content'])) {
             http_response_code(400);
             echo json_encode(['status' => 'error', 'message' => 'Invalid Data']);
             return;
         }
-
+    
         $db = Database::getInstance();
-        $db->query("UPDATE pa_data SET title = :title, slug = :slug, contents = :content, edit_date = NOW() WHERE id = :id", [
-            'title' => $data['title'],
-            'slug' => $data['slug'], // Save slug
+        
+        // Pobieramy template_id, jeśli istnieje (rzutujemy na int lub null)
+        $templateId = !empty($data['template_id']) ? (int)$data['template_id'] : null;
+    
+        // Aktualizujemy rekord w bazie (dodano kolumnę template_id)
+        $db->query("UPDATE pa_data SET title = :title, slug = :slug, contents = :content, template_id = :tid, edit_date = NOW() WHERE id = :id", [
+            'title'   => $data['title'],
+            'slug'    => $data['slug'],
             'content' => json_encode($data['content']),
-            'id' => $data['id']
+            'tid'     => $templateId,
+            'id'      => $data['id']
         ]);
-
+    
         echo json_encode(['status' => 'success']);
     }
 

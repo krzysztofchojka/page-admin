@@ -38,6 +38,9 @@ function isActive($path, $current) {
             <a href="/admin/galleries" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/galleries', $currentPath) ?>">
                 <span>🖼️</span> <span class="menu-text">Galerie</span>
             </a>
+            <a href="/admin/templates" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/templates', $currentPath) ?>">
+                <span>📐</span> <span class="menu-text">Szablony</span>
+            </a>
             <a href="/admin/media" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/media', $currentPath) ?>">
                 <span>📂</span> <span class="menu-text">Pliki (Media)</span>
             </a>
