@@ -13,6 +13,15 @@ spl_autoload_register(function ($class) {
     if (file_exists($file)) require $file;
 });
 
+//Ładowanie zmiennych środowiskowych do globalnej tablicy $_ENV
+$envPath = __DIR__ . '/../.env';
+if (file_exists($envPath)) {
+    $env = parse_ini_file($envPath);
+    foreach ($env as $key => $value) {
+        $_ENV[$key] = $value;
+    }
+}
+
 // 2. Initialize Router
 use CMS\Core\Router;
 use CMS\Controllers\HomeController;

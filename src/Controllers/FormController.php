@@ -162,74 +162,26 @@ header('Content-Disposition: attachment; filename="' . $origName . '"');
 
     // --- PUBLIC: SUBMISSION ---
     public function submit() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') die("Method not allowed");
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            die("Method not allowed");
+        }
     
+        \CMS\Core\Session::init();
+        $userId = \CMS\Core\Session::get('user_id') ?: null;
+    
+        // Zbieranie danych wejściowych
         $formId = $_POST['form_id'];
         $submissionId = $_POST['submission_id'] ?? null;
         $formData = $_POST['data'] ?? [];
         $files = $_FILES['files'] ?? [];
-        
-        \CMS\Core\Session::init();
-        $userId = \CMS\Core\Session::get('user_id') ?: null;
     
-        $vault = new \CMS\Core\Vault();
-        $encryptedData = $vault->encrypt(json_encode($formData));
+        // Przekazanie trudnej pracy do Serwisu
+        $service = new \CMS\Services\FormSubmissionService();
+        $service->handleSubmission($formId, $submissionId, $formData, $files, $userId);
     
-        $db = \CMS\Core\Database::getInstance();
-        $savedFiles = [];
-    
-        // Jeśli to edycja, pobierzmy stare pliki, żeby ich nie wykasować z bazy
-        if ($submissionId && $userId) {
-            $oldSub = $db->query("SELECT files_json FROM pa_submissions WHERE id = :id AND user_id = :uid", ['id' => $submissionId, 'uid' => $userId])->fetch();
-            if ($oldSub && $oldSub['files_json']) {
-                $savedFiles = json_decode($oldSub['files_json'], true) ?? [];
-            }
-        }
-    
-        // Przetwarzanie nowo wgranych plików (dla wszystkich pól typu file)
-        if (!empty($files['name']) && is_array($files['name'])) {
-            $uploadDir = __DIR__ . '/../../public/uploads/secure/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-    
-            foreach ($files['name'] as $fieldKey => $filename) {
-                if ($files['error'][$fieldKey] === UPLOAD_ERR_OK) {
-                    $tmpName = $files['tmp_name'][$fieldKey];
-                    $content = file_get_contents($tmpName);
-                    $encryptedContent = $vault->encrypt($content);
-                    $safeName = bin2hex(random_bytes(16)) . '.enc';
-                    file_put_contents($uploadDir . $safeName, $encryptedContent);
-                    
-                    // Dodajemy/nadpisujemy plik dla konkretnego pola
-                    $savedFiles[$fieldKey] = [
-                        'original_name' => $filename,
-                        'storage_name' => $safeName
-                    ];
-                }
-            }
-        }
-    
-        if ($submissionId && $userId) {
-            // EDYCJA - Dodano aktualizację kolumny files_json!
-            $db->query("UPDATE pa_submissions SET data_json = :d, files_json = :f, user_ip = :ip WHERE id = :id AND user_id = :uid", [
-                'd' => $encryptedData,
-                'f' => json_encode($savedFiles),
-                'ip' => $_SERVER['REMOTE_ADDR'],
-                'id' => $submissionId,
-                'uid' => $userId
-            ]);
-        } else {
-            // NOWE ZGŁOSZENIE
-            $db->query("INSERT INTO pa_submissions (form_id, user_id, user_ip, data_json, files_json) VALUES (:fid, :uid, :ip, :d, :f)", [
-                'fid' => $formId,
-                'uid' => $userId,
-                'ip' => $_SERVER['REMOTE_ADDR'],
-                'd' => $encryptedData,
-                'f' => json_encode($savedFiles)
-            ]);
-        }
-    
+        // Przekierowanie użytkownika po sukcesie
         $redirect = $_SERVER['HTTP_REFERER'] ?? '/';
-        $redirect = strtok($redirect, '?'); 
+        $redirect = strtok($redirect, '?');
         header("Location: " . $redirect . "?submitted=" . $formId);
         exit;
     }
