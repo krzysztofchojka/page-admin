@@ -1,6 +1,5 @@
 <?php
 namespace CMS\Controllers;
-
 use CMS\Core\Database;
 use CMS\Core\Session;
 
@@ -12,13 +11,11 @@ class SettingsController {
         
         $db = Database::getInstance();
         $rows = $db->query("SELECT * FROM pa_settings")->fetchAll();
-        
         $settings = [];
         foreach($rows as $r) $settings[$r['setting_key']] = $r['setting_value'];
-
-        // Pobieramy strony do dropdownu stopki
+        
         $pages = $db->query("SELECT id, title FROM pa_data WHERE field_type = 'page' ORDER BY title ASC")->fetchAll();
-
+        
         ob_start();
         require_once __DIR__ . '/../Views/admin/settings/index.php';
         $content = ob_get_clean();
@@ -27,53 +24,102 @@ class SettingsController {
 
     public function save() {
         $db = Database::getInstance();
-        
         foreach ($_POST as $key => $value) {
-            // Fix: Use REPLACE INTO to avoid parameter reuse issues
-            // This acts as "Insert or Update" automatically
             $db->query("REPLACE INTO pa_settings (setting_key, setting_value) VALUES (:key, :val)", [
-                'key' => $key, 
-                'val' => $value
+                'key' => $key, 'val' => $value
             ]);
         }
-        
         header('Location: /admin/settings?success=1');
         exit;
     }
 
+    // --- ULEPSZONY BACKUP (Dynamiczny) ---
     public function backup() {
         Session::init();
         if (!Session::isLoggedIn()) die("Odmowa dostępu");
 
         $db = Database::getInstance()->getConnection();
         
-        // Tabele do zrzutu
-        $tables = ['pa_users', 'pa_data', 'pa_forms', 'pa_submissions', 'pa_galleries', 'pa_settings', 'pa_templates', 'pa_menu'];
-        $sqlDump = "-- Automatyczny Backup CMS \n-- Wygenerowano: " . date('Y-m-d H:i:s') . "\n\n";
-
-        foreach ($tables as $table) {
-            try {
-                $rows = $db->query("SELECT * FROM $table")->fetchAll(\PDO::FETCH_ASSOC);
-                if (count($rows) == 0) continue;
-                
-                foreach ($rows as $row) {
-                    $keys = array_keys($row);
-                    $values = array_map(function($v) use ($db) {
-                        return $v === null ? 'NULL' : $db->quote($v);
-                    }, array_values($row));
-                    
-                    $sqlDump .= "INSERT INTO `$table` (`" . implode("`, `", $keys) . "`) VALUES (" . implode(", ", $values) . ");\n";
-                }
-                $sqlDump .= "\n";
-            } catch (\Exception $e) {
-                // Tabela może nie istnieć, idziemy dalej
-            }
+        // 1. Pobierz listę WSZYSTKICH tabel w bazie (automatycznie wykrywa nowe)
+        $tables = [];
+        $query = $db->query('SHOW TABLES');
+        while($row = $query->fetch(\PDO::FETCH_NUM)) {
+            $tables[] = $row[0];
         }
 
-        // Nagłówki wymuszające pobieranie pliku
+        $sqlDump = "-- CMS Auto Backup\n-- Data: " . date('Y-m-d H:i:s') . "\n";
+        $sqlDump .= "SET FOREIGN_KEY_CHECKS=0;\n\n"; // Wyłączamy sprawdzanie kluczy na czas importu
+
+        foreach ($tables as $table) {
+            // A. Zrzut struktury (DROP + CREATE)
+            $row = $db->query("SHOW CREATE TABLE `$table`")->fetch(\PDO::FETCH_NUM);
+            $sqlDump .= "DROP TABLE IF EXISTS `$table`;\n";
+            $sqlDump .= $row[1] . ";\n\n";
+
+            // B. Zrzut danych (INSERT)
+            $rows = $db->query("SELECT * FROM `$table`")->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($rows as $row) {
+                $keys = array_keys($row);
+                $values = array_map(function($v) use ($db) {
+                    if ($v === null) return "NULL";
+                    return $db->quote($v);
+                }, array_values($row));
+                
+                $sqlDump .= "INSERT INTO `$table` (`" . implode("`, `", $keys) . "`) VALUES (" . implode(", ", $values) . ");\n";
+            }
+            $sqlDump .= "\n";
+        }
+        
+        $sqlDump .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
         header('Content-Type: application/sql');
         header('Content-Disposition: attachment; filename="cms_backup_'.date('Y-m-d_H-i').'.sql"');
         echo $sqlDump;
+        exit;
+    }
+
+    public function restore() {
+        Session::init();
+        if (!Session::isLoggedIn()) die("Odmowa dostępu");
+
+        // 1. Sprawdź czy plik w ogóle dotarł
+        if (empty($_FILES['backup_file']['tmp_name']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
+            $errCode = $_FILES['backup_file']['error'] ?? 'Nieznany';
+            Session::setFlash("Błąd uploadu pliku! Kod błędu: $errCode (Sprawdź upload_max_filesize w php.ini)", 'error');
+            header('Location: /admin/settings');
+            exit;
+        }
+
+        $fileContent = file_get_contents($_FILES['backup_file']['tmp_name']);
+        if (!$fileContent) {
+            Session::setFlash('Plik jest pusty lub nie można go odczytać.', 'error');
+            header('Location: /admin/settings');
+            exit;
+        }
+
+        $db = Database::getInstance()->getConnection();
+
+        try {
+            $db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $db->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
+
+            // Wyłączamy sprawdzanie kluczy obcych
+            $db->exec("SET FOREIGN_KEY_CHECKS = 0");
+            
+            // Wykonujemy cały wsad SQL bez instrukcji beginTransaction() i commit(), 
+            // ponieważ DROP TABLE i tak wymusza auto-commit w MySQL.
+            $db->exec($fileContent);
+            
+            // Włączamy sprawdzanie z powrotem
+            $db->exec("SET FOREIGN_KEY_CHECKS = 1");
+
+            Session::setFlash('Sukces! Baza danych została pomyślnie przywrócona.', 'success');
+        } catch (\Exception $e) {
+            // Rejestrujemy dokładny błąd SQL, z pominięciem rollBack()
+            Session::setFlash('Błąd SQL podczas przywracania: ' . $e->getMessage(), 'error');
+        }
+
+        header('Location: /admin/settings');
         exit;
     }
 }

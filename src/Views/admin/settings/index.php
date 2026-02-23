@@ -7,11 +7,15 @@
 </head>
 <body class="bg-gray-100 p-10">
     <div class="max-w-2xl mx-auto bg-white p-8 rounded shadow">
-        <a href="/admin">Back</a>
-        <h1 class="text-2xl font-bold mb-6">Site Identity & Settings</h1>
+        <a href="/admin" class="text-gray-500 hover:text-black mb-4 inline-block font-bold">← Wróć do Dashboardu</a>
+        <h1 class="text-2xl font-bold mb-6">Ustawienia Systemu i Bezpieczeństwo</h1>
         
+        <?php $flash = \CMS\Core\Session::getFlash(); if ($flash): ?>
+            <div class="<?= $flash['type'] === 'error' ? 'bg-red-100 text-red-800 border-red-300' : 'bg-green-100 text-green-800 border-green-300' ?> border p-4 rounded-lg mb-6 font-bold shadow-sm">
+                <?= htmlspecialchars($flash['msg']) ?>
+            </div>
+        <?php endif; ?>
         <form action="/admin/settings/save" method="POST">
-            
             <h3 class="font-bold text-gray-500 uppercase text-xs mb-4 border-b pb-2">Identity</h3>
             <div class="mb-4">
                 <label class="block font-bold">Site Title</label>
@@ -127,23 +131,39 @@
 </div>
 
 <h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Zaawansowane</h3>
-<div class="mb-4">
-    <label class="block font-bold text-sm">Custom Head (Skrypty, Pixele, Google Analytics)</label>
-    <textarea name="custom_head" class="w-full border p-2 rounded text-sm font-mono h-32" placeholder="<script>...</script>"><?= htmlspecialchars($settings['custom_head'] ?? '') ?></textarea>
-</div>
-
-<h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Kopia Zapasowa (Backup)</h3>
-    <div class="mb-8 bg-green-50 p-4 border border-green-200 rounded flex justify-between items-center">
-        <div>
-            <p class="font-bold text-green-800">Pobierz kopię zapasową bazy danych</p>
-            <p class="text-xs text-green-600 mt-1">Wyeksportuje układ stron, szablony, ustawienia i zgłoszenia do pliku .sql</p>
+        <div class="mb-4">
+            <label class="block font-bold text-sm">Custom Head (Skrypty, Pixele, Google Analytics)</label>
+            <textarea name="custom_head" class="w-full border p-2 rounded text-sm font-mono h-32" placeholder="<script>...</script>"><?= htmlspecialchars($settings['custom_head'] ?? '') ?></textarea>
         </div>
-        <a href="/admin/settings/backup" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow text-sm">Pobierz plik SQL</a>
-    </div>
 
-    <button class="bg-blue-600 text-white px-6 py-2 rounded font-bold w-full mt-4 shadow hover:bg-blue-700 transition">Save Settings</button>
+        <div class="border-t pt-6 mt-6 mb-8">
+            <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold w-full shadow-lg hover:bg-blue-700 transition text-lg">Zapisz Główne Ustawienia</button>
+        </div>
+    </form> <h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Bezpieczeństwo Danych</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-green-50 p-5 border border-green-200 rounded-xl">
+            <h4 class="font-bold text-green-800 text-lg mb-2">📥 Pobierz Kopię (Backup)</h4>
+            <p class="text-xs text-green-700 mb-4">
+                Pobiera pełny zrzut bazy danych (wszystkie tabele, ustawienia, strony). Skrypt automatycznie wykrywa nowe tabele.
+            </p>
+            <a href="/admin/settings/backup" class="block w-full text-center bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded shadow transition">
+                Pobierz plik .SQL
+            </a>
+        </div>
 
-        </form>
+        <div class="bg-red-50 p-5 border border-red-200 rounded-xl">
+            <h4 class="font-bold text-red-800 text-lg mb-2">♻️ Przywróć Bazę</h4>
+            <p class="text-xs text-red-700 mb-4">
+                <strong class="uppercase">Uwaga:</strong> Ta operacja nadpisze obecną bazę danych! Używaj ostrożnie.
+            </p>
+            <form action="/admin/settings/restore" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2" onsubmit="return confirm('Czy na pewno chcesz nadpisać bazę danych? Tej operacji nie można cofnąć!');">
+                <input type="file" name="backup_file" accept=".sql" required class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 border border-red-200 rounded cursor-pointer bg-white">
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow transition text-sm">
+                    Wgraj i Przywróć
+                </button>
+            </form>
+        </div>
     </div>
+</div>
 </body>
 </html>

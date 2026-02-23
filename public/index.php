@@ -82,6 +82,7 @@ $router->post('/admin/galleries/save', [CMS\Controllers\GalleryController::class
 
 // Settings
 $router->get('/admin/settings', [CMS\Controllers\SettingsController::class, 'index']);
+$router->post('/admin/settings/restore', [CMS\Controllers\SettingsController::class, 'restore']);
 $router->post('/admin/settings/save', [CMS\Controllers\SettingsController::class, 'save']);
 
 // Media Manager
