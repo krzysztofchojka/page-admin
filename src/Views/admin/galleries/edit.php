@@ -2,89 +2,208 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Edit Gallery</title>
+    <title>Edycja Galerii</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
-<body class="bg-gray-100 p-10">
-    <div class="max-w-6xl mx-auto bg-white p-8 rounded shadow">
-        
-        <div class="flex justify-between mb-6">
-            <h1 class="text-2xl font-bold">Edit Gallery</h1>
-            <a href="/admin/galleries" class="text-gray-500">Back</a>
-        </div>
+<body class="bg-gray-100 flex h-screen overflow-hidden">
 
-        <div class="flex gap-4 mb-6">
-            <input type="text" id="title" value="<?= htmlspecialchars($gallery['title']) ?>" class="border p-2 rounded w-1/2" placeholder="Gallery Title">
-            <select id="type" class="border p-2 rounded w-1/4">
-                <option value="grid" <?= $gallery['type']=='grid'?'selected':'' ?>>Grid Layout</option>
-                <option value="slider" <?= $gallery['type']=='slider'?'selected':'' ?>>Slider/Swipe</option>
-            </select>
-            <button onclick="document.getElementById('fileInput').click()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold w-1/4">+ Add Images</button>
+    <div class="w-80 bg-white border-r shadow-lg flex flex-col shrink-0 z-40 overflow-y-auto">
+        <div class="p-4 bg-gray-50 border-b font-bold text-gray-700 uppercase tracking-wide text-sm flex justify-between items-center">
+            <span>Konfiguracja</span>
+            <span class="text-xl">⚙️</span>
+        </div>
+        
+        <div class="p-5 space-y-5">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Tytuł Galerii</label>
+                <input type="text" id="title" value="<?= htmlspecialchars($gallery['title']) ?>" class="w-full border border-gray-300 p-2.5 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Pre-konfiguracja (Typ)</label>
+                <select id="type" class="w-full border border-gray-300 p-2.5 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" onchange="toggleSettings()">
+                    <option value="grid" <?= $gallery['type']=='grid'?'selected':'' ?>>Siatka Grid (Styl Facebook)</option>
+                    <option value="swiper_default" <?= $gallery['type']=='swiper_default'?'selected':'' ?>>Swiper: Domyślny Slider</option>
+                    <option value="swiper_coverflow" <?= $gallery['type']=='swiper_coverflow'?'selected':'' ?>>Swiper: 3D Coverflow</option>
+                    <option value="swiper_fade" <?= $gallery['type']=='swiper_fade'?'selected':'' ?>>Swiper: Przenikanie (Fade)</option>
+                    <option value="swiper_cards" <?= $gallery['type']=='swiper_cards'?'selected':'' ?>>Swiper: Karty (Cards)</option>
+                </select>
+            </div>
+
+            <div id="swiper-settings" class="space-y-4 border-t pt-4 hidden">
+                <h4 class="font-bold text-gray-500 uppercase text-xs">Opcje Swiper JS</h4>
+                
+                <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                    <input type="checkbox" id="set_loop" class="w-4 h-4 text-blue-600 rounded">
+                    Zapetlaj slajdy (Loop)
+                </label>
+                
+                <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                    <input type="checkbox" id="set_nav" class="w-4 h-4 text-blue-600 rounded">
+                    Strzałki nawigacji
+                </label>
+                
+                <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                    <input type="checkbox" id="set_pag" class="w-4 h-4 text-blue-600 rounded">
+                    Kropki paginacji
+                </label>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Autoplay (ms, 0 = wyłączone)</label>
+                    <input type="number" id="set_autoplay" value="3500" class="w-full border border-gray-300 p-2 rounded text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+        <div class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
+            <div>
+                <a href="/admin/galleries" class="text-gray-500 hover:text-black font-bold mr-4">← Wróć</a>
+                <span class="text-xl font-bold text-gray-800">Zdjęcia w galerii</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openMediaPicker()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-200 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
+                    📂 Wybierz z Media
+                </button>
+                <button onclick="document.getElementById('fileInput').click()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
+                    ☁️ Wgraj Nowe
+                </button>
+                <button id="btn-save" onclick="saveGallery()" class="ml-4 bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-lg shadow font-bold transition">
+                    💾 Zapisz Galerie
+                </button>
+            </div>
             <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
         </div>
 
-        <div id="image-grid" class="grid grid-cols-4 gap-4">
-            </div>
-
-        <button onclick="saveGallery()" class="mt-8 bg-green-600 text-white px-6 py-3 rounded font-bold w-full">Save Gallery</button>
+        <div class="flex-1 overflow-y-auto p-8 relative">
+            <div id="image-grid" class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 content-start min-h-[400px] border-2 border-dashed border-gray-300 rounded-xl p-6 bg-gray-50/50">
+                </div>
+        </div>
     </div>
 
-    <script>
-        const galleryId = <?= $gallery['id'] ?>;
-        const savedImages = <?= $gallery['images_json'] ?: '[]' ?>;
-        const grid = document.getElementById('image-grid');
+<script>
+    const galleryId = <?= $gallery['id'] ?>;
+    const savedImages = <?= $gallery['images_json'] ?: '[]' ?>;
+    const savedSettings = <?= $gallery['settings'] ?: '{}' ?>;
+    const grid = document.getElementById('image-grid');
 
-        // Init
-        Sortable.create(grid, { animation: 150 });
-        savedImages.forEach(url => renderImage(url));
+    // Inicjalizacja Sortable
+    Sortable.create(grid, { animation: 150, ghostClass: 'opacity-50' });
+    savedImages.forEach(url => renderImage(url));
 
-        // Upload Logic
-        document.getElementById('fileInput').addEventListener('change', function() {
-            const formData = new FormData();
-            for (let i = 0; i < this.files.length; i++) {
-                formData.append('file', this.files[i]); // We reuse the single-file endpoint, ideally update controller to handle array
-                // For simplicity, we loop fetch requests here (simple solution)
-                uploadOne(this.files[i]);
+    // Wczytanie ustawień
+    if(savedSettings.loop) document.getElementById('set_loop').checked = true;
+    if(savedSettings.nav) document.getElementById('set_nav').checked = true;
+    if(savedSettings.pag) document.getElementById('set_pag').checked = true;
+    if(savedSettings.autoplay !== undefined) document.getElementById('set_autoplay').value = savedSettings.autoplay;
+
+    function toggleSettings() {
+        const type = document.getElementById('type').value;
+        const panel = document.getElementById('swiper-settings');
+        if (type.startsWith('swiper_')) {
+            panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
+        }
+    }
+    toggleSettings(); // Wywołanie na start
+
+    // --- INTEGRACJA Z MEDIA PICKEREM ---
+    function openMediaPicker() {
+        // Tworzymy tymczasowy input
+        const tempInput = document.createElement('input');
+        tempInput.type = 'hidden';
+        document.body.appendChild(tempInput);
+        
+        // Podłączamy go pod logikę z layout.php
+        window.activeMediaInput = tempInput;
+        document.getElementById('globalMediaModal').classList.remove('hidden');
+        document.getElementById('globalMediaFrame').src = '/admin/media?picker=1';
+        
+        // Nasłuchujemy eventu 'change', który wywoła layout.php po wyborze pliku
+        tempInput.addEventListener('change', function() {
+            if(this.value) {
+                renderImage(this.value);
             }
+            this.remove(); // Sprzątamy
         });
+    }
 
-        function uploadOne(file) {
-            const formData = new FormData();
-            formData.append('file', file);
+    // --- STANDARDOWY UPLOAD ---
+    document.getElementById('fileInput').addEventListener('change', function() {
+        for (let i = 0; i < this.files.length; i++) {
+            uploadOne(this.files[i]);
+        }
+    });
+
+    function uploadOne(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        fetch('/admin/media/upload', {
+            method: 'POST', body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.url) renderImage(data.url);
+        });
+    }
+
+    function renderImage(url) {
+        const div = document.createElement('div');
+        div.className = "relative group aspect-square bg-gray-200 rounded-xl overflow-hidden cursor-move shadow-sm border border-gray-200";
+        div.innerHTML = `
+            <img src="${url}" class="w-full h-full object-cover">
+            <button onclick="this.closest('div').remove()" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition shadow font-bold text-sm">✕</button>
+            <input type="hidden" class="img-url" value="${url}">
+        `;
+        grid.appendChild(div);
+    }
+
+    function saveGallery() {
+        const btn = document.getElementById('btn-save');
+        const originalText = btn.innerHTML;
+        
+        // Zabezpieczenie przed wielokrotnym kliknięciem
+        btn.innerHTML = '⏳ Zapisywanie...';
+        btn.disabled = true;
+        btn.classList.add('opacity-75');
+
+        const images = [];
+        grid.querySelectorAll('.img-url').forEach(input => images.push(input.value));
+        
+        const settings = {
+            loop: document.getElementById('set_loop').checked,
+            nav: document.getElementById('set_nav').checked,
+            pag: document.getElementById('set_pag').checked,
+            autoplay: parseInt(document.getElementById('set_autoplay').value) || 0
+        };
+
+        fetch('/admin/galleries/save', {
+            method: 'POST',
+            body: JSON.stringify({
+                id: galleryId,
+                title: document.getElementById('title').value,
+                type: document.getElementById('type').value,
+                settings: settings,
+                images: images
+            })
+        }).then(() => {
+            // Efekt sukcesu
+            btn.innerHTML = '✅ Zapisano!';
+            btn.classList.remove('bg-green-600', 'hover:bg-green-700', 'opacity-75');
+            btn.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
             
-            fetch('/admin/media/upload', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if(data.url) renderImage(data.url);
-            });
-        }
-
-        function renderImage(url) {
-            const div = document.createElement('div');
-            div.className = "relative group aspect-square bg-gray-100 rounded overflow-hidden cursor-move";
-            div.innerHTML = `
-                <img src="${url}" class="w-full h-full object-cover">
-                <button onclick="this.closest('div').remove()" class="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition">✕</button>
-                <input type="hidden" class="img-url" value="${url}">
-            `;
-            grid.appendChild(div);
-        }
-
-        function saveGallery() {
-            const images = [];
-            grid.querySelectorAll('.img-url').forEach(input => images.push(input.value));
-
-            fetch('/admin/galleries/save', {
-                method: 'POST',
-                body: JSON.stringify({
-                    id: galleryId,
-                    title: document.getElementById('title').value,
-                    type: document.getElementById('type').value,
-                    images: images
-                })
-            }).then(() => alert('Gallery Saved!'));
-        }
-    </script>
+            // Powrót do normy po 2 sekundach
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                btn.disabled = false;
+            }, 2000);
+        });
+    }
+</script>
 </body>
 </html>

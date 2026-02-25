@@ -2,42 +2,36 @@
 namespace CMS\Helpers;
 
 class BlockRenderer {
+    
+    // Zapobiega wielokrotnemu pobieraniu skryptów Swiper i GLightbox na jednej stronie
+    private static $galleryAssetsLoaded = false;
+
     public static function render($blocks, $db) {
         if (empty($blocks)) return;
-        
+
         foreach ($blocks as $block) {
             // Wyciąganie globalnych ustawień bloku (ID HTML, Klasy CSS, Style Inline)
             $set = $block['settings'] ?? [];
             $idAttr = !empty($set['id']) ? ' id="'.htmlspecialchars($set['id']).'"' : '';
             $clsAttr = !empty($set['css']) ? ' ' . htmlspecialchars($set['css']) : '';
             $styleAttr = !empty($set['style']) ? ' style="'.htmlspecialchars($set['style']).'"' : '';
-    
+
             // Otwieramy uniwersalny wrapper dla bloku
             echo "<div{$idAttr} class=\"block-wrapper mb-4{$clsAttr}\"{$styleAttr}>";
-    
+
             // 1. COLUMNS 2
             if ($block['type'] === 'columns_2') {
                 echo '<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">';
-                echo '<div>';
-                if(!empty($block['children']['left'])) self::render($block['children']['left'], $db);
-                echo '</div>';
-                echo '<div>';
-                if(!empty($block['children']['right'])) self::render($block['children']['right'], $db);
-                echo '</div>';
+                echo '<div>'; if(!empty($block['children']['left'])) self::render($block['children']['left'], $db); echo '</div>';
+                echo '<div>'; if(!empty($block['children']['right'])) self::render($block['children']['right'], $db); echo '</div>';
                 echo '</div>';
             }
             // 2. COLUMNS 3
             elseif ($block['type'] === 'columns_3') {
                 echo '<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">';
-                echo '<div>';
-                if(!empty($block['children']['left'])) self::render($block['children']['left'], $db);
-                echo '</div>';
-                echo '<div>';
-                if(!empty($block['children']['center'])) self::render($block['children']['center'], $db);
-                echo '</div>';
-                echo '<div>';
-                if(!empty($block['children']['right'])) self::render($block['children']['right'], $db);
-                echo '</div>';
+                echo '<div>'; if(!empty($block['children']['left'])) self::render($block['children']['left'], $db); echo '</div>';
+                echo '<div>'; if(!empty($block['children']['center'])) self::render($block['children']['center'], $db); echo '</div>';
+                echo '<div>'; if(!empty($block['children']['right'])) self::render($block['children']['right'], $db); echo '</div>';
                 echo '</div>';
             }
             // 3. TEXT
@@ -50,7 +44,7 @@ class BlockRenderer {
                     echo '<div class="mb-6"><img src="' . htmlspecialchars($block['content']) . '" class="w-full rounded-xl shadow-lg"></div>';
                 }
             }
-            // 5. WIDEO (NOWE)
+            // 5. WIDEO
             elseif ($block['type'] === 'video') {
                 $url = $block['content'] ?? '';
                 if ($url) {
@@ -68,33 +62,36 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
-            // 6. PRZYCISK (NOWE)
+            // 6. PRZYCISK
             elseif ($block['type'] === 'button') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $label = $data['label'] ?? 'Kliknij tutaj';
                 $url = $data['url'] ?? '#';
                 $style = $data['style'] ?? 'primary';
+                
                 $btnClass = 'inline-block px-8 py-3 rounded-lg font-bold transition shadow hover:shadow-lg text-center ';
                 if ($style === 'primary') {
                     $btnClass .= 'bg-primary text-white hover:opacity-90';
                 } else {
                     $btnClass .= 'border-2 border-primary text-primary hover:bg-primary hover:text-white';
                 }
+                
                 echo '<div class="mb-8">';
                 echo '<a href="'.htmlspecialchars($url).'" class="'.$btnClass.'">'.htmlspecialchars($label).'</a>';
                 echo '</div>';
             }
-            // 7. SEPARATOR (NOWE)
+            // 7. SEPARATOR
             elseif ($block['type'] === 'divider') {
                 $data = is_array($block['content']) ? $block['content'] : [];
-                $height = $data['height'] ?? '8'; // e.g., '4', '8', '16', '24'
+                $height = $data['height'] ?? '8'; 
                 echo '<hr class="border-t border-gray-200 my-'.htmlspecialchars($height).' w-full">';
             }
-            // 8. CYTAT (NOWE)
+            // 8. CYTAT
             elseif ($block['type'] === 'quote') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $text = $data['text'] ?? '';
                 $author = $data['author'] ?? '';
+                
                 echo '<blockquote class="border-l-4 border-yellow-500 bg-yellow-50 p-6 rounded-r-xl mb-8 shadow-sm">';
                 echo '<p class="text-xl md:text-2xl italic font-serif text-gray-800 mb-4 leading-relaxed">"'.nl2br(htmlspecialchars($text)).'"</p>';
                 if (!empty($author)) {
@@ -102,7 +99,7 @@ class BlockRenderer {
                 }
                 echo '</blockquote>';
             }
-            // 9. AKORDEON (NOWE)
+            // 9. AKORDEON
             elseif ($block['type'] === 'accordion') {
                 $title = $block['content']['title'] ?? 'Kliknij, aby rozwinąć';
                 echo '<details class="group mb-4 bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer overflow-hidden transition-all">';
@@ -117,7 +114,6 @@ class BlockRenderer {
                 echo '</div>';
                 echo '</details>';
             }
-            
             // 10. FORMULARZ
             elseif ($block['type'] === 'form') {
                 $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $block['content']])->fetch();
@@ -127,27 +123,27 @@ class BlockRenderer {
                     
                     echo '<div class="bg-gray-50 border border-gray-200 p-6 md:p-8 rounded-xl mb-8 shadow-sm" id="form-container-'.$form['id'].'">';
                     echo '<h3 class="text-2xl font-bold mb-6 text-gray-800">' . htmlspecialchars($form['title']) . '</h3>';
-    
+
                     if (!empty($formSettings['reqLogin']) && !$userId) {
                         echo '<div class="bg-yellow-100 p-5 rounded-lg text-yellow-800 border border-yellow-300">Zaloguj się, aby wyświetlić i wypełnić ten formularz. <br><a href="/login" class="font-bold underline text-yellow-900 mt-2 inline-block">Przejdź do logowania</a></div></div>';
                         continue;
                     }
-    
+
                     $isSubmittedNow = isset($_GET['submitted']) && $_GET['submitted'] == $form['id'];
                     $isEditing = isset($_GET['edit']) && $_GET['edit'] == $form['id'];
+                    
                     $existingSubmission = null;
-    
                     if ($userId) {
                         $existingSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1", [$form['id'], $userId])->fetch();
                     }
-    
+
                     $showThankYou = false;
                     if ($userId) {
                         if ($existingSubmission && ($isSubmittedNow || (!empty($formSettings['fillOnce']) && !$isEditing))) $showThankYou = true;
                     } else {
                         if ($isSubmittedNow) $showThankYou = true;
                     }
-    
+
                     if ($showThankYou) {
                         echo '<div class="bg-green-100 border border-green-400 text-green-800 px-5 py-5 rounded-lg mb-4 shadow-sm"><span class="text-3xl mb-3 block">🎉</span> <strong class="text-lg">Dziękujemy!</strong><br> Twój formularz został poprawnie zapisany na serwerze.</div>';
                         echo '<div class="flex flex-wrap gap-4 mt-6">';
@@ -156,28 +152,30 @@ class BlockRenderer {
                         echo '</div>';
                     } else {
                         $prefill = [];
-                        $existingFiles = []; // Tego brakowało - tablica plików!
+                        $existingFiles = [];
                         $vault = new \CMS\Core\Vault();
-                        
                         if ($isEditing && $existingSubmission) {
                             $prefill = json_decode($vault->decrypt($existingSubmission['data_json']), true) ?? [];
                             $existingFiles = json_decode($existingSubmission['files_json'] ?? '{}', true) ?? [];
                         }
-                        
+
                         $subs = $db->query("SELECT data_json FROM pa_submissions WHERE form_id = :id", ['id' => $form['id']])->fetchAll();
                         $optionCounts = [];
                         foreach ($subs as $s) {
                             $d = json_decode($vault->decrypt($s['data_json']), true) ?? [];
                             foreach ($d as $fk => $fv) {
-                                if (is_array($fv)) { foreach ($fv as $v) $optionCounts[$fk][$v] = ($optionCounts[$fk][$v] ?? 0) + 1; }
-                                else { $optionCounts[$fk][$fv] = ($optionCounts[$fk][$fv] ?? 0) + 1; }
+                                if (is_array($fv)) {
+                                    foreach ($fv as $v) $optionCounts[$fk][$v] = ($optionCounts[$fk][$v] ?? 0) + 1;
+                                } else {
+                                    $optionCounts[$fk][$fv] = ($optionCounts[$fk][$fv] ?? 0) + 1;
+                                }
                             }
                         }
-    
+
                         echo '<form action="/submit-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-6">';
                         echo '<input type="hidden" name="form_id" value="'.$form['id'].'">';
                         if ($isEditing && $existingSubmission) echo '<input type="hidden" name="submission_id" value="'.$existingSubmission['id'].'">';
-    
+
                         $fields = json_decode($form['form_json'], true) ?? [];
                         foreach ($fields as $field) {
                             $type = $field['type'] ?? 'text';
@@ -188,29 +186,26 @@ class BlockRenderer {
                                 echo "<div class='{$widthClass} prose max-w-none text-sm'>" . ($field['html'] ?? '') . "</div>";
                                 continue;
                             }
-    
+
                             $widthClass = ($field['width']??'full') === 'full' ? 'md:col-span-3' : (($field['width']??'full')==='half'?'md:col-span-2':'md:col-span-1');
                             $fieldId = $field['custom_id'] ?? $field['id'] ?? md5($field['label']);
                             $val = $prefill[$fieldId] ?? '';
                             
-                            // Parametry wymagalności
                             $req = !empty($field['required']);
                             $reqAttr = $req ? 'required' : '';
                             $reqStar = $req ? '<span class="text-red-500 ml-1" title="Pole wymagane">*</span>' : '';
-                            
+
                             echo "<div class='$widthClass'><label class='block text-sm font-bold text-gray-700 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
                             
                             if($type == 'file') {
-                                // Jeśli edytujemy i plik istnieje, zdejmujemy wymagalność nałożoną z panelu
                                 $fileReqAttr = ($req && !isset($existingFiles[$fieldId])) ? 'required' : '';
-                                
                                 if ($isEditing && isset($existingFiles[$fieldId])) {
                                     $f = $existingFiles[$fieldId];
                                     $origName = urlencode($f['original_name'] ?? 'plik');
                                     echo "<div class='mb-3 text-sm text-gray-700 bg-white border border-gray-200 p-3 rounded shadow-sm flex flex-col gap-2'>
                                             <div class='flex items-center gap-2'>
-                                                <span class='text-xl'>📎</span> 
-                                                <span class='font-medium'>Wgrany plik:</span> 
+                                                <span class='text-xl'>📎</span>
+                                                <span class='font-medium'>Wgrany plik:</span>
                                                 <a href='/admin/forms/download?file={$f['storage_name']}&orig={$origName}' class='text-blue-600 hover:text-blue-800 hover:underline font-bold truncate block' target='_blank'>".htmlspecialchars($f['original_name'])."</a>
                                             </div>
                                             <div class='mt-1 pt-2 border-t border-gray-100'>
@@ -231,16 +226,21 @@ class BlockRenderer {
                                     $parts = explode('|limit:', $opt);
                                     $options[] = ['label' => trim($parts[0]), 'limit' => isset($parts[1]) ? (int)trim($parts[1]) : 0];
                                 }
-                                
+
                                 if ($type === 'select') {
                                     echo "<select id='{$fieldId}' name='data[{$fieldId}]' class='w-full border p-2.5 rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none' {$reqAttr}><option value=''>-- Wybierz --</option>";
                                     foreach ($options as $o) {
                                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                                        $disabled = ''; $limitText = '';
+                                        $disabled = '';
+                                        $limitText = '';
                                         if ($o['limit'] > 0) {
                                             $left = $o['limit'] - $currentCount;
-                                            if ($left <= 0 && $val !== $o['label']) { $disabled = 'disabled'; $limitText = " (Brak miejsc)"; }
-                                            else { $limitText = " (Zostało: {$left})"; }
+                                            if ($left <= 0 && $val !== $o['label']) {
+                                                $disabled = 'disabled';
+                                                $limitText = " (Brak miejsc)";
+                                            } else {
+                                                $limitText = " (Zostało: {$left})";
+                                            }
                                         }
                                         $selected = ($val === $o['label']) ? 'selected' : '';
                                         echo "<option value='".htmlspecialchars($o['label'])."' $selected $disabled>".htmlspecialchars($o['label']) . $limitText."</option>";
@@ -250,11 +250,16 @@ class BlockRenderer {
                                     echo "<div class='flex flex-col gap-2' id='{$fieldId}'>";
                                     foreach ($options as $idx => $o) {
                                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                                        $disabled = ''; $limitText = '';
+                                        $disabled = '';
+                                        $limitText = '';
                                         if ($o['limit'] > 0) {
                                             $left = $o['limit'] - $currentCount;
-                                            if ($left <= 0 && $val !== $o['label']) { $disabled = 'disabled'; $limitText = " <span class='text-xs text-red-500'>(Brak miejsc)</span>"; }
-                                            else { $limitText = " <span class='text-xs text-gray-500'>(Zostało: {$left})</span>"; }
+                                            if ($left <= 0 && $val !== $o['label']) {
+                                                $disabled = 'disabled';
+                                                $limitText = " <span class='text-xs text-red-500'>(Brak miejsc)</span>";
+                                            } else {
+                                                $limitText = " <span class='text-xs text-gray-500'>(Zostało: {$left})</span>";
+                                            }
                                         }
                                         $checked = ($val === $o['label']) ? 'checked' : '';
                                         $optId = $fieldId . '_' . $idx;
@@ -266,11 +271,16 @@ class BlockRenderer {
                                     echo "<div class='flex flex-col gap-2' id='{$fieldId}'>";
                                     foreach ($options as $idx => $o) {
                                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                                        $disabled = ''; $limitText = '';
+                                        $disabled = '';
+                                        $limitText = '';
                                         if ($o['limit'] > 0) {
                                             $left = $o['limit'] - $currentCount;
-                                            if ($left <= 0 && !in_array($o['label'], $valArray)) { $disabled = 'disabled'; $limitText = " <span class='text-xs text-red-500'>(Brak miejsc)</span>"; }
-                                            else { $limitText = " <span class='text-xs text-gray-500'>(Zostało: {$left})</span>"; }
+                                            if ($left <= 0 && !in_array($o['label'], $valArray)) {
+                                                $disabled = 'disabled';
+                                                $limitText = " <span class='text-xs text-red-500'>(Brak miejsc)</span>";
+                                            } else {
+                                                $limitText = " <span class='text-xs text-gray-500'>(Zostało: {$left})</span>";
+                                            }
                                         }
                                         $checked = in_array($o['label'], $valArray) ? 'checked' : '';
                                         $optId = $fieldId . '_' . $idx;
@@ -285,7 +295,7 @@ class BlockRenderer {
                             }
                             echo "</div>";
                         }
-    
+                        
                         $btnText = $isEditing ? 'Zaktualizuj dane' : 'Wyślij';
                         echo '<div class="md:col-span-3 mt-4"><button class="w-full bg-primary hover:opacity-90 text-white font-bold py-3.5 rounded-lg transition shadow-md">'.$btnText.'</button>';
                         if ($isEditing) echo '<div class="text-center mt-3"><a href="?" class="text-sm font-bold text-gray-500 hover:text-gray-800">Anuluj edycję</a></div>';
@@ -294,7 +304,6 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
-            
             // 11. LINKED IMAGE
             elseif ($block['type'] === 'linked_image') {
                 $img = $block['content']['url'] ?? '';
@@ -303,12 +312,13 @@ class BlockRenderer {
                     echo '<div class="mb-8"><a href="'.htmlspecialchars($link).'"><img src="'.htmlspecialchars($img).'" class="w-full rounded-xl shadow-md hover:opacity-90 transition transform hover:scale-[1.01]"></a></div>';
                 }
             }
-            // 12. CAROUSEL
+            // 12. CAROUSEL (Taby)
             elseif ($block['type'] === 'carousel') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $tabs = $data['tabs'] ?? [];
                 $arrows = $data['arrows'] ?? false;
                 $cid = 'c_' . (!empty($set['id']) ? htmlspecialchars($set['id']) : substr(md5(json_encode($tabs)), 0, 8));
+
                 if (!empty($tabs)) {
                     echo '<div class="mb-10 carousel-wrapper" id="'.$cid.'">';
                     echo '<div class="flex flex-wrap gap-3 justify-center mb-8 items-center">';
@@ -321,6 +331,7 @@ class BlockRenderer {
                         $tId = !empty($tSet['id']) ? ' id="'.htmlspecialchars($tSet['id']).'"' : '';
                         $tCls = !empty($tSet['css']) ? ' ' . htmlspecialchars($tSet['css']) : '';
                         $tStyle = !empty($tSet['style']) ? ' style="'.htmlspecialchars($tSet['style']).'"' : '';
+                        
                         echo '<button'.$tId.' onclick="showCarouselTab(\''.$cid.'\', '.$idx.')" data-index="'.$idx.'" class="c-btn-'.$cid.' flex flex-col items-center justify-center p-4 rounded-xl w-32 md:w-40 text-white shadow-lg transition-all duration-300 transform '.$activeClass.$tCls.'"'.$tStyle.'>';
                         if (strpos($tab['icon'], 'http') === 0 || strpos($tab['icon'], '/') === 0) {
                             echo '<img src="'.htmlspecialchars($tab['icon']).'" class="h-8 w-8 mb-2 invert">';
@@ -334,6 +345,7 @@ class BlockRenderer {
                         echo '<button onclick="moveCarousel(\''.$cid.'\', 1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow">&gt;</button>';
                     }
                     echo '</div>';
+
                     echo '<div class="bg-white p-6 md:p-10 rounded-xl shadow border-t-4 border-blue-900 relative">';
                     foreach ($tabs as $idx => $tab) {
                         $display = $idx === 0 ? 'block' : 'hidden';
@@ -349,20 +361,173 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
-            // 13. GALLERY
+            // 13. GALLERY (Nowoczesny standard: GLightbox + Facebook-style Grid + Swiper JS)
+            // 13. GALLERY (Nowoczesny standard: GLightbox + Facebook-style Grid + Swiper JS)
             elseif ($block['type'] === 'gallery') {
                 $gal = $db->query("SELECT * FROM pa_galleries WHERE id = :id", ['id' => $block['content']])->fetch();
                 if ($gal) {
                     $imgs = json_decode($gal['images_json'], true);
-                    echo '<div class="mb-8"><h3 class="text-xl font-bold mb-4">'.htmlspecialchars($gal['title']).'</h3>';
+                    $settings = json_decode($gal['settings'] ?? '{}', true);
+                    if (empty($imgs)) continue;
+
+                    echo '<div class="mb-10">';
+                    echo '<h3 class="text-2xl font-bold mb-6 text-gray-800">'.htmlspecialchars($gal['title']).'</h3>';
+
+                    if (!self::$galleryAssetsLoaded) {
+                        echo '';
+                        echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>';
+                        echo '<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>';
+                        echo '';
+                        echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css"/>';
+                        echo '<script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>';
+                        echo '<script>document.addEventListener("DOMContentLoaded", function() { if(typeof GLightbox !== "undefined") { GLightbox({ selector: ".glightbox" }); } });</script>';
+                        self::$galleryAssetsLoaded = true;
+                    }
+
                     if ($gal['type'] === 'grid') {
-                        echo '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">';
-                        foreach($imgs as $img) echo "<img src='$img' class='w-full h-40 object-cover rounded-lg shadow-sm hover:scale-105 transition duration-300'>";
+                        // Kafelkowa siatka stylizowana na Facebooka
+                        $maxVisible = 5;
+                        $total = count($imgs);
+                        echo '<div class="grid grid-cols-6 gap-2 md:gap-3 rounded-xl overflow-hidden shadow-sm">';
+                        foreach ($imgs as $index => $img) {
+                            if ($index >= $maxVisible) {
+                                echo "<a href='$img' class='glightbox hidden' data-gallery='gallery-{$gal['id']}'></a>";
+                                continue;
+                            }
+                            $classes = 'block relative overflow-hidden group bg-gray-100';
+                            if ($total === 1) $classes .= ' col-span-6 aspect-video';
+                            elseif ($total === 2) $classes .= ' col-span-3 aspect-[4/3] md:aspect-video';
+                            elseif ($total === 3) $classes .= ($index === 0) ? ' col-span-6 aspect-video md:aspect-[21/9]' : ' col-span-3 aspect-square md:aspect-[4/3]';
+                            elseif ($total === 4) $classes .= ($index === 0) ? ' col-span-6 aspect-video md:aspect-[21/9]' : ' col-span-2 aspect-square';
+                            else $classes .= ($index < 2) ? ' col-span-3 aspect-square md:aspect-[4/3]' : ' col-span-2 aspect-square';
+
+                            echo "<a href='$img' class='glightbox $classes' data-gallery='gallery-{$gal['id']}'>";
+                            echo "<img src='$img' class='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'>";
+                            if ($index === 4 && $total > 5) {
+                                $more = $total - 5;
+                                echo "<div class='absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-3xl md:text-5xl backdrop-blur-sm transition-colors group-hover:bg-black/50'>+{$more}</div>";
+                            }
+                            echo "</a>";
+                        }
                         echo '</div>';
+                        
                     } else {
-                        echo '<div class="flex overflow-x-auto gap-4 pb-4 snap-x">';
-                        foreach($imgs as $img) echo "<img src='$img' class='snap-center w-72 h-48 object-cover rounded-lg shadow-sm flex-shrink-0 hover:opacity-90 transition'>";
-                        echo '</div>';
+                        // Dynamiczna konfiguracja Swiper JS na podstawie ustawień
+                        $swiperId = 'gallery_swiper_' . $gal['id'] . '_' . md5(uniqid());
+                        
+                        $isLoop = !empty($settings['loop']) ? 'true' : 'false';
+                        $showNav = !empty($settings['nav']);
+                        $showPag = !empty($settings['pag']);
+                        $autoplay = (!empty($settings['autoplay']) && $settings['autoplay'] > 0) ? "{ delay: {$settings['autoplay']}, disableOnInteraction: false }" : 'false';
+
+                        $effect = 'slide'; // Domyslnie
+                        $extraConfig = '';
+                        $containerClasses = 'rounded-xl shadow-sm relative'; // bez overflow-hidden dla wsparcia 3D
+                        $slideClasses = 'relative bg-gray-100 group rounded-xl overflow-hidden';
+
+                        if ($gal['type'] === 'swiper_coverflow') {
+                            $effect = 'coverflow';
+                            $extraConfig = "coverflowEffect: { rotate: 50, stretch: 0, depth: 100, modifier: 1, slideShadows: true },";
+                            $containerClasses .= ' !p-4 !-m-4 !overflow-visible'; // coverflow musi wychodzić poza ramki
+                            $slideClasses .= ' aspect-[4/3] md:aspect-[16/9]';
+                        } elseif ($gal['type'] === 'swiper_fade') {
+                            $effect = 'fade';
+                            $extraConfig = "fadeEffect: { crossFade: true },";
+                            $containerClasses .= ' overflow-hidden';
+                            $slideClasses .= ' aspect-[4/3] md:aspect-[16/9]';
+                        } elseif ($gal['type'] === 'swiper_cards') {
+                            $effect = 'cards';
+                            $extraConfig = "cardsEffect: { slideShadows: true }, grabCursor: true,";
+                            // max-w-sm naprawia proporcje kart, a overflow-visible pozwala na renderowanie stosu
+                            $containerClasses .= ' !overflow-visible max-w-sm mx-auto mt-8 mb-12'; 
+                            $slideClasses .= ' aspect-[3/4] shadow-lg';
+                        } else {
+                            $containerClasses .= ' overflow-hidden';
+                            $slideClasses .= ' aspect-[4/3] md:aspect-[16/9]';
+                        }
+
+                        echo '<div class="swiper '.$swiperId.' '.$containerClasses.'">';
+        echo '<div class="swiper-wrapper">';
+        foreach ($imgs as $img) {
+            // Dodano w-full h-full, aby zapobiec zapadaniu się slajdów w Safari
+            echo '<div class="swiper-slide w-full h-full">';
+            echo "<a href='$img' class='glightbox block {$slideClasses}' data-gallery='gallery-{$gal['id']}'>";
+            // Dodano draggable='false' oraz select-none, by systemowy drag&drop nie psuł przesuwania galerii!
+            echo "<img src='$img' draggable='false' class='w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 select-none'>";
+            echo "</a>";
+            echo '</div>';
+        }
+        echo '</div>';
+
+        // Bezpieczne, unikalne ID/Klasy dla nawigacji
+        $navNext = 'next_' . $swiperId;
+        $navPrev = 'prev_' . $swiperId;
+        $pagEl = 'pag_' . $swiperId;
+
+        if ($showPag) echo '<div class="swiper-pagination '.$pagEl.' !bottom-0"></div>';
+        if ($showNav) {
+            // Zmieniono z-10 na z-50, aby strzałki były zawsze nad efektem 3D Cards
+            echo '<button type="button" aria-label="Poprzedni slajd" class="'.$navPrev.' absolute top-1/2 left-4 z-50 -translate-y-1/2 cursor-pointer text-white w-10 h-10 bg-black/30 rounded-full shadow-lg border border-white/20 flex items-center justify-center hover:bg-black/60 transition backdrop-blur-sm focus:outline-none"><span class="text-xl font-bold leading-none">&lt;</span></button>';
+            echo '<button type="button" aria-label="Następny slajd" class="'.$navNext.' absolute top-1/2 right-4 z-50 -translate-y-1/2 cursor-pointer text-white w-10 h-10 bg-black/30 rounded-full shadow-lg border border-white/20 flex items-center justify-center hover:bg-black/60 transition backdrop-blur-sm focus:outline-none"><span class="text-xl font-bold leading-none">&gt;</span></button>';
+        }
+        echo '</div>';
+
+        // Ustalenie odpowiednich parametrów responsywności
+        $jsBreakpoints = "";
+        $jsSlidesPerView = "1";
+        $imgCount = count($imgs); // Liczymy zdjęcia
+
+        if ($effect === 'slide') {
+            $jsBreakpoints = "breakpoints: { 640: { slidesPerView: 1, spaceBetween: 16 }, 768: { slidesPerView: 2, spaceBetween: 20 }, 1024: { slidesPerView: 3, spaceBetween: 24 } }";
+        } elseif ($effect === 'coverflow') {
+            $jsSlidesPerView = "'auto'";
+            $jsBreakpoints = "breakpoints: { 640: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } }";
+        } else {
+            // Karty i Przenikanie MUSZĄ mieć dokładnie 1 slajd, bez responsywnych breakpointów
+            $jsSlidesPerView = "1";
+            $jsBreakpoints = "";
+        }
+
+        // AUTO-NAPRAWA LOOP: Swiper 11 zawiesza się, jeśli użyjemy zapętlania przy zbyt małej liczbie zdjęć (szczególnie dla Cards)
+        if ($imgCount <= 1) $isLoop = 'false';
+        if ($effect === 'cards' && $imgCount < 4) $isLoop = 'false';
+        if ($effect === 'fade' && $imgCount < 2) $isLoop = 'false';
+
+        // Odstępy psują efekty absolutne (Cards/Fade) - wyzerujmy je dla tych trybów
+        $jsSpaceBetween = in_array($effect, ['fade', 'cards']) ? '0' : '12';
+
+        // Wstrzyknięcie czystego JS
+        echo "<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            new Swiper('.$swiperId', {
+                effect: '{$effect}',
+                {$extraConfig}
+                loop: {$isLoop},
+                autoplay: {$autoplay},
+                observer: true,
+                observeParents: true,
+                ".($showPag ? "pagination: { el: '.{$pagEl}', clickable: true, dynamicBullets: true }," : "")."
+                ".($showNav ? "navigation: { nextEl: '.{$navNext}', prevEl: '.{$navPrev}' }," : "")."
+                slidesPerView: {$jsSlidesPerView},
+                spaceBetween: {$jsSpaceBetween},
+                {$jsBreakpoints}
+                on: {
+                    init: function () {
+                        const swiperInstance = this;
+                        // Natychmiastowe przeliczenie w pierwszej dostępnej klatce renderowania
+                        requestAnimationFrame(() => {
+                            swiperInstance.update();
+                        });
+                        // Zapasowe odświeżenie (po 150ms), na wypadek gdyby przeglądarka 
+                        // potrzebowała chwili na wczytanie fizycznych wymiarów obrazków
+                        setTimeout(() => {
+                            swiperInstance.update();
+                        }, 150);
+                    }
+                }
+            });
+        });
+        </script>";
                     }
                     echo '</div>';
                 }
@@ -379,6 +544,7 @@ class BlockRenderer {
                         $cId = !empty($cSet['id']) ? ' id="'.htmlspecialchars($cSet['id']).'"' : '';
                         $cCls = !empty($cSet['css']) ? ' ' . htmlspecialchars($cSet['css']) : '';
                         $cStyle = !empty($cSet['style']) ? ' style="'.htmlspecialchars($cSet['style']).'"' : '';
+                        
                         echo '<a href="'.$link.'"'.$cId.' class="block bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100 group flex flex-col h-full'.$cCls.'"'.$cStyle.'>';
                         echo '<div class="h-48 w-full overflow-hidden bg-gray-100">';
                         if (!empty($card['img'])) {
@@ -402,6 +568,7 @@ class BlockRenderer {
                 $bg = $data['bg'] ?? '';
                 $title = $data['title'] ?? '';
                 $subtitle = $data['subtitle'] ?? '';
+                
                 echo '<div class="relative w-screen h-64 md:h-[500px] bg-cover bg-center mb-10" style="margin-left: calc(-50vw + 50%); background-image: url(\''.htmlspecialchars($bg).'\');">';
                 if (!empty($title)) {
                     echo ' <div class="absolute bottom-8 left-0 w-11/12 md:w-2/3 bg-white/90 p-6 md:pl-16 backdrop-blur-sm shadow-xl rounded-r-2xl">';
@@ -409,6 +576,7 @@ class BlockRenderer {
                     echo ' </div>';
                 }
                 echo '</div>';
+                
                 if (!empty($subtitle)) {
                     echo '<div class="text-gray-800 font-medium mb-10 text-lg md:text-xl max-w-4xl border-l-4 border-orange-500 pl-5 leading-relaxed">'.nl2br(htmlspecialchars($subtitle)).'</div>';
                 }
@@ -425,16 +593,17 @@ class BlockRenderer {
                 $zoom = $data['zoom'] ?? '13';
                 $tooltip = htmlspecialchars($data['tooltip'] ?? '');
                 $mapId = 'map_' . uniqid();
+                
                 echo '<div class="mb-8 w-full h-[400px] rounded-xl shadow-lg border border-gray-200 z-10" id="'.$mapId.'"></div>';
                 echo "<script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            var map = L.map('{$mapId}').setView([{$lat}, {$lng}], {$zoom});
-                            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                                attribution: '&copy; OpenStreetMap contributors'
-                            }).addTo(map);
-                            L.marker([{$lat}, {$lng}]).addTo(map).bindPopup('{$tooltip}').openPopup();
-                        });
-                      </script>";
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var map = L.map('{$mapId}').setView([{$lat}, {$lng}], {$zoom});
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                            attribution: '&copy; OpenStreetMap contributors'
+                        }).addTo(map);
+                        L.marker([{$lat}, {$lng}]).addTo(map).bindPopup('{$tooltip}').openPopup();
+                    });
+                </script>";
             }
             // 18. ODLICZANIE
             elseif ($block['type'] === 'countdown') {
@@ -442,6 +611,7 @@ class BlockRenderer {
                 $targetDate = $data['date'] ?? '';
                 $title = htmlspecialchars($data['title'] ?? '');
                 $cdId = 'cd_' . uniqid();
+                
                 if ($targetDate) {
                     echo '<div class="mb-8 bg-gray-900 text-white p-8 rounded-2xl shadow-xl text-center">';
                     echo '<h3 class="text-xl md:text-2xl font-bold mb-6 text-gray-300">'.$title.'</h3>';
@@ -455,23 +625,20 @@ class BlockRenderer {
                     echo '<div><span class="seconds block">00</span><span class="text-xs uppercase text-gray-400 font-normal">Sekund</span></div>';
                     echo '</div></div>';
                     echo "<script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                var target = new Date('{$targetDate}').getTime();
-                                var el = document.getElementById('{$cdId}');
-                                var interval = setInterval(function() {
-                                    var now = new Date().getTime();
-                                    var distance = target - now;
-                                    if (distance < 0) {
-                                        clearInterval(interval);
-                                        return;
-                                    }
-                                    el.querySelector('.days').innerText = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
-                                    el.querySelector('.hours').innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-                                    el.querySelector('.minutes').innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                                    el.querySelector('.seconds').innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                                }, 1000);
-                            });
-                          </script>";
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var target = new Date('{$targetDate}').getTime();
+                            var el = document.getElementById('{$cdId}');
+                            var interval = setInterval(function() {
+                                var now = new Date().getTime();
+                                var distance = target - now;
+                                if (distance < 0) { clearInterval(interval); return; }
+                                el.querySelector('.days').innerText = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+                                el.querySelector('.hours').innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+                                el.querySelector('.minutes').innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                                el.querySelector('.seconds').innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                            }, 1000);
+                        });
+                    </script>";
                 }
             }
             // 19. TABELA
@@ -503,7 +670,6 @@ class BlockRenderer {
             // 20. PRZELOT
             elseif ($block['type'] === 'flight') {
                 echo '<div class="flight-container mb-8">';
-                // Obsługa starszych wpisów (string) oraz nowych hybrydowych (array)
                 if (is_array($block['content']) && isset($block['content']['html'])) {
                     echo $block['content']['html'];
                 } else {
@@ -511,7 +677,7 @@ class BlockRenderer {
                 }
                 echo '</div>';
             }
-    
+
             // Zamknięcie uniwersalnego wrappera
             echo "</div>";
         }
