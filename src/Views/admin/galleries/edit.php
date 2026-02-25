@@ -83,6 +83,18 @@
         </div>
     </div>
 
+    <div id="globalMediaModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[100] flex justify-center items-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[80vh] flex flex-col overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b bg-gray-50">
+            <h3 class="font-bold text-lg">Wybierz plik</h3>
+            <button onclick="closeGlobalMediaPicker()" class="text-red-500 font-bold text-xl">&times;</button>
+        </div>
+        <div class="flex-1">
+            <iframe id="globalMediaFrame" class="w-full h-full border-0"></iframe>
+        </div>
+    </div>
+</div>
+
 <script>
     const galleryId = <?= $gallery['id'] ?>;
     const savedImages = <?= $gallery['images_json'] ?: '[]' ?>;
@@ -111,25 +123,34 @@
     toggleSettings(); // Wywołanie na start
 
     // --- INTEGRACJA Z MEDIA PICKEREM ---
-    function openMediaPicker() {
-        // Tworzymy tymczasowy input
-        const tempInput = document.createElement('input');
-        tempInput.type = 'hidden';
-        document.body.appendChild(tempInput);
-        
-        // Podłączamy go pod logikę z layout.php
-        window.activeMediaInput = tempInput;
-        document.getElementById('globalMediaModal').classList.remove('hidden');
-        document.getElementById('globalMediaFrame').src = '/admin/media?picker=1';
-        
-        // Nasłuchujemy eventu 'change', który wywoła layout.php po wyborze pliku
-        tempInput.addEventListener('change', function() {
-            if(this.value) {
-                renderImage(this.value);
-            }
-            this.remove(); // Sprzątamy
-        });
+ // --- INTEGRACJA Z MEDIA PICKEREM ---
+function openMediaPicker() {
+    window.activeMediaInput = true; // Wystarczy ustawić zwykłą flagę
+    document.getElementById('globalMediaModal').classList.remove('hidden');
+    document.getElementById('globalMediaFrame').src = '/admin/media?picker=1';
+}
+
+function closeGlobalMediaPicker() {
+    document.getElementById('globalMediaModal').classList.add('hidden');
+    document.getElementById('globalMediaFrame').src = '';
+    window.activeMediaInput = null;
+}
+
+window.addEventListener('message', function(e) {
+    if (!e.data || !window.activeMediaInput) return;
+
+    // Odbiór pojedynczego pliku (podwójne kliknięcie)
+    if (e.data.type === 'media_selected') {
+        renderImage(e.data.url);
+        closeGlobalMediaPicker();
     }
+
+    // Odbiór wielu plików naraz (użycie nowego przycisku)
+    if (e.data.type === 'media_selected_multiple') {
+        e.data.urls.forEach(url => renderImage(url)); // Pętla renderująca wszystkie wybrane zdjęcia!
+        closeGlobalMediaPicker();
+    }
+});
 
     // --- STANDARDOWY UPLOAD ---
     document.getElementById('fileInput').addEventListener('change', function() {

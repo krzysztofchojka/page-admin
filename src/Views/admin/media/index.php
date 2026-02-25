@@ -61,10 +61,16 @@ $jsCurrentPath = htmlspecialchars($currentPath, ENT_QUOTES, 'UTF-8');
         </div>
 
         <div class="flex items-center gap-3">
-            <div id="bulk-actions" class="hidden items-center gap-2 mr-4 border-r pr-4 border-gray-200">
-                <span class="text-xs font-bold text-gray-500"><span id="sel-count">0</span> zaznaczonych</span>
-                <button onclick="downloadSelected()" class="bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 px-3 py-1.5 rounded-md text-sm font-bold transition" title="Pobierz">⬇️ Pobierz</button>
-            </div>
+        <div id="bulk-actions" class="hidden items-center gap-2 mr-4 border-r pr-4 border-gray-200">
+            <span class="text-xs font-bold text-gray-500"><span id="sel-count">0</span> zaznaczonych</span>
+            <button onclick="downloadSelected()" class="bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 px-3 py-1.5 rounded-md text-sm font-bold transition" title="Pobierz">⬇️ Pobierz</button>
+            
+            <?php if (isset($_GET['picker'])): ?>
+            <button onclick="sendMultipleToPicker()" class="bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-md text-sm font-bold transition shadow-sm ml-2">
+                ✅ Zatwierdź wybrane
+            </button>
+            <?php endif; ?>
+        </div>
 
             <form method="GET" class="relative">
                 <input type="hidden" name="path" value="<?= htmlspecialchars($currentPath) ?>">
@@ -245,5 +251,15 @@ $jsCurrentPath = htmlspecialchars($currentPath, ENT_QUOTES, 'UTF-8');
 </form>
 
 <script src="<?= \CMS\Helpers\Asset::url('/assets/js/admin/media-manager.js') ?>"></script>
+<script>
+function sendMultipleToPicker() {
+    const checkedBoxes = document.querySelectorAll('.file-checkbox:checked');
+    const urls = Array.from(checkedBoxes).map(cb => cb.dataset.url);
+    
+    if (urls.length > 0) {
+        window.parent.postMessage({ type: 'media_selected_multiple', urls: urls }, '*');
+    }
+}
+</script>
 </body>
 </html>

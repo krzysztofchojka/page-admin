@@ -93,10 +93,15 @@ function isActive($path, $current) {
 
         // Nasłuchiwanie wyboru z iFrame
         window.addEventListener('message', function(e) {
-            if (e.data && e.data.type === 'media_selected' && activeMediaInput) {
-                activeMediaInput.value = e.data.url;
-                // Wyzwala zdarzenie change, żeby inne skrypty (np. Page Builder) wiedziały o zmianie
-                activeMediaInput.dispatchEvent(new Event('change', { bubbles: true })); 
+            if (!e.data || !activeMediaInput) return;
+            
+            let url = null;
+            if (e.data.type === 'media_selected') url = e.data.url;
+            if (e.data.type === 'media_selected_multiple') url = e.data.urls[0]; // Bierzemy pierwsze z zaznaczonych
+
+            if (url) {
+                activeMediaInput.value = url;
+                activeMediaInput.dispatchEvent(new Event('change', { bubbles: true }));
                 closeGlobalMediaPicker();
             }
         });
