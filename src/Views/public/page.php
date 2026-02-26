@@ -7,13 +7,40 @@ ob_start();
 require __DIR__ . '/partials/navbar.php';
 $navigatorHtml = ob_get_clean();
 
-// ZBUDUJ CUSTOMOWE MENU (tylko linki)
-$menuItems = \CMS\Core\Database::getInstance()->query("SELECT * FROM pa_menu ORDER BY sort_order ASC")->fetchAll();
+
+// ZBUDUJ CUSTOMOWE MENU (z obsługą tagu dropdown) {{menu}}
+$rawMenu = \CMS\Core\Database::getInstance()->query("SELECT * FROM pa_menu ORDER BY sort_order ASC")->fetchAll();
+$menuTree = [];
+$menuById = [];
+foreach ($rawMenu as $item) {
+    $item['children'] = [];
+    $menuById[$item['id']] = $item;
+}
+foreach ($menuById as $id => &$item) {
+    if (!empty($item['parent_id']) && isset($menuById[$item['parent_id']])) {
+        $menuById[$item['parent_id']]['children'][] = &$item;
+    } else {
+        $menuTree[] = &$item;
+    }
+}
+
 $menuHtml = '';
-foreach ($menuItems as $item) {
-    $menuHtml .= '<a href="'.htmlspecialchars($item['url']).'" class="menu-item-link">'.htmlspecialchars($item['label']).'</a>';
+foreach ($menuTree as $item) {
+    if (!empty($item['children'])) {
+        $menuHtml .= '<div class="group relative inline-block menu-item-dropdown">';
+        $menuHtml .= '  <a href="'.htmlspecialchars($item['url']).'" class="menu-item-link inline-flex items-center gap-1 transition">'.htmlspecialchars($item['label']).' <span class="text-[10px]">▼</span></a>';
+        $menuHtml .= '  <div class="absolute left-0 top-full mt-0 hidden group-hover:flex flex-col bg-white text-gray-800 min-w-[220px] shadow-xl rounded-b-lg border border-gray-200 z-[202] overflow-hidden">';
+        foreach ($item['children'] as $child) {
+            $menuHtml .= '    <a href="'.htmlspecialchars($child['url']).'" class="block px-5 py-3 hover:bg-gray-100 transition border-b border-gray-50 last:border-0">'.htmlspecialchars($child['label']).'</a>';
+        }
+        $menuHtml .= '  </div>';
+        $menuHtml .= '</div>';
+    } else {
+        $menuHtml .= '<a href="'.htmlspecialchars($item['url']).'" class="menu-item-link inline-block transition">'.htmlspecialchars($item['label']).'</a>';
+    }
 }
 ?>
+
 <main class="w-full flex-1">
     <?php
     $db = \CMS\Core\Database::getInstance();
@@ -57,13 +84,13 @@ foreach ($menuItems as $item) {
         $tpl = $db->query("SELECT html_content FROM pa_templates WHERE id = ?", [$page['template_id']])->fetch();
         if ($tpl) {
             $html = $tpl['html_content'];
-            
+
             // Podmiana specjalnych znaczników
             $html = str_replace('{{global_footer}}', $globalFooterHtml, $html);
             $html = str_replace('{{navigator}}', $navigatorHtml, $html);
             $html = str_replace('{{admin_navigator}}', $adminNavHtml, $html);
             $html = str_replace('{{menu}}', $menuHtml, $html);
-            
+
             // Nowe znaczniki danych
             $html = str_replace('{{site_title}}', htmlspecialchars($settings['site_title'] ?? ''), $html);
             $html = str_replace('{{site_logo}}', htmlspecialchars($settings['site_logo'] ?? ''), $html);
@@ -78,13 +105,13 @@ foreach ($menuItems as $item) {
                 $zoneId = $matches[1];
                 $blocksForZone = $pageContents[$zoneId] ?? [];
                 
-                // Fallback dla starych stron: Jeśli mamy płaską tablicę, wrzućmy ją do 'main'
+                // Fallback dla starych stron
                 if (empty($blocksForZone) && array_keys($pageContents) === range(0, count($pageContents) - 1) && count($pageContents) > 0) {
                     if ($zoneId === 'editor' || $zoneId === 'main') {
                         $blocksForZone = $pageContents;
                     }
                 }
-                
+
                 ob_start();
                 \CMS\Helpers\BlockRenderer::render($blocksForZone, $db);
                 return ob_get_clean();
@@ -96,19 +123,17 @@ foreach ($menuItems as $item) {
         }
     } else {
         // --- TRYB KLASYCZNY (Bez Szablonu) ---
-        echo $adminNavHtml; 
-        echo $navigatorHtml; 
+        echo $adminNavHtml;
+        echo $navigatorHtml;
         
         echo '<div class="max-w-6xl w-full mx-auto p-6 md:p-12">';
         $blocksToRender = $pageContents['editor'] ?? (isset($pageContents[0]) ? $pageContents : []);
         \CMS\Helpers\BlockRenderer::render($blocksToRender, $db);
         echo '</div>';
-        
+
         echo $globalFooterHtml;
     }
     ?>
 </main>
 
-<?php
-require __DIR__ . '/partials/footer.php';
-?>
+<?php require __DIR__ . '/partials/footer.php'; ?>
