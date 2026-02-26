@@ -1,89 +1,125 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>User Management</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 p-10">
+<div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Zarządzanie Użytkownikami</h1>
+        <a href="/admin" class="text-gray-600 hover:text-black">← Wróć do Dashboardu</a>
+    </div>
 
-    <div class="max-w-5xl mx-auto">
-        <div class="flex justify-between items-center mb-10">
-            <h1 class="text-3xl font-bold text-gray-800">User Management</h1>
-            <a href="/admin" class="text-gray-600 hover:text-black">← Back to Dashboard</a>
+    <?php $flash = \CMS\Core\Session::getFlash(); if ($flash): ?>
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6 font-bold shadow-sm">
+            <?= htmlspecialchars($flash['msg']) ?>
+        </div>
+    <?php endif; ?>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div class="md:col-span-1">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-lg font-bold mb-4 text-gray-800">Nowy Administrator</h2>
+                <form action="/admin/users/create" method="POST">
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold mb-2 text-gray-500 uppercase">Login / Email</label>
+                        <input type="text" name="username" required class="w-full border border-gray-300 p-2.5 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold mb-2 text-gray-500 uppercase">Hasło</label>
+                        <input type="password" name="password" required class="w-full border border-gray-300 p-2.5 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded shadow transition">
+                        Utwórz Admina
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            
-            <div class="md:col-span-1">
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-xl font-bold mb-4">Add New Admin</h2>
-                    <form action="/admin/users/create" method="POST">
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-2 text-gray-700">Username</label>
-                            <input type="text" name="username" required class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500" placeholder="jdoe">
-                        </div>
-                        <div class="mb-6">
-                            <label class="block text-sm font-bold mb-2 text-gray-700">Password</label>
-                            <input type="password" name="password" required class="w-full border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500" placeholder="********">
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">
-                            Create User
-                        </button>
-                    </form>
+        <div class="md:col-span-3">
+            <div class="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
+                
+                <div class="flex border-b border-gray-200 bg-gray-50">
+                    <button onclick="switchTab('users')" id="btn-users" class="flex-1 py-4 font-bold text-blue-600 border-b-2 border-blue-600 bg-white transition">
+                        Zwykli Użytkownicy (<?= count($regularUsers) ?>)
+                    </button>
+                    <button onclick="switchTab('admins')" id="btn-admins" class="flex-1 py-4 font-bold text-gray-500 hover:text-blue-600 transition border-b-2 border-transparent">
+                        Administratorzy (<?= count($admins) ?>)
+                    </button>
                 </div>
-            </div>
 
-            <div class="md:col-span-2">
-                <div class="bg-white shadow rounded-lg overflow-hidden">
-                    <table class="min-w-full leading-normal">
-                        <thead>
+                <div id="tab-users" class="block">
+                    <table class="min-w-full leading-normal text-left">
+                        <thead class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase">
                             <tr>
-                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
-                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Username</th>
-                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created</th>
-                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                                <th class="px-5 py-3">ID</th>
+                                <th class="px-5 py-3">Email / Login</th>
+                                <th class="px-5 py-3">Data rejestracji</th>
+                                <th class="px-5 py-3">Akcje</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <?php foreach ($users as $user): ?>
-                            <tr>
-                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <?= $user['id'] ?>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php foreach ($regularUsers as $user): ?>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-5 py-4 text-sm text-gray-500"><?= $user['id'] ?></td>
+                                <td class="px-5 py-4 text-sm font-bold text-gray-800"><?= htmlspecialchars($user['uname']) ?></td>
+                                <td class="px-5 py-4 text-sm text-gray-500"><?= $user['reg_date'] ?></td>
+                                <td class="px-5 py-4 text-sm">
+                                    <a href="/admin/users/edit?id=<?= $user['id'] ?>" class="text-blue-600 hover:text-blue-900 font-bold mr-3">Edytuj</a>
+                                    <a href="/admin/users/delete?id=<?= $user['id'] ?>" class="text-red-500 hover:text-red-700 font-bold" onclick="return confirm('Usunąć tego użytkownika?');">Usuń</a>
                                 </td>
-                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm font-bold text-gray-800">
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($regularUsers)): ?>
+                                <tr><td colspan="4" class="p-6 text-center text-gray-500">Brak użytkowników.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tab-admins" class="hidden">
+                    <table class="min-w-full leading-normal text-left">
+                        <thead class="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase">
+                            <tr>
+                                <th class="px-5 py-3">ID</th>
+                                <th class="px-5 py-3">Email / Login</th>
+                                <th class="px-5 py-3">Data rejestracji</th>
+                                <th class="px-5 py-3">Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <?php foreach ($admins as $user): ?>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-5 py-4 text-sm text-gray-500"><?= $user['id'] ?></td>
+                                <td class="px-5 py-4 text-sm font-bold text-gray-800">
                                     <?= htmlspecialchars($user['uname']) ?>
                                     <?php if($user['id'] == $_SESSION['user_id']): ?>
-                                        <span class="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">You</span>
+                                        <span class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full uppercase">To Ty</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-gray-500">
-                                    <?= $user['reg_date'] ?>
-                                </td>
-                                <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                                    <?php if($user['id'] != $_SESSION['user_id']): // Prevent deleting self ?>
-                                        <a href="/admin/users/delete?id=<?= $user['id'] ?>" 
-                                           class="text-red-600 hover:text-red-900 font-bold text-xs uppercase"
-                                           onclick="return confirm('Are you sure you want to delete this user?');">
-                                            Delete
-                                        </a>
+                                <td class="px-5 py-4 text-sm text-gray-500"><?= $user['reg_date'] ?></td>
+                                <td class="px-5 py-4 text-sm">
+                                    <a href="/admin/users/edit?id=<?= $user['id'] ?>" class="text-blue-600 hover:text-blue-900 font-bold mr-3">Edytuj</a>
+                                    <?php if($user['id'] != $_SESSION['user_id']): ?>
+                                        <a href="/admin/users/delete?id=<?= $user['id'] ?>" class="text-red-500 hover:text-red-700 font-bold" onclick="return confirm('Usunąć administratora?');">Usuń</a>
                                     <?php else: ?>
-                                        <span class="text-gray-400 text-xs uppercase cursor-not-allowed">Locked</span>
+                                        <span class="text-gray-300">Usuń</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-                    
-                    <?php if (empty($users)): ?>
-                        <div class="p-6 text-center text-gray-500">No users found.</div>
-                    <?php endif; ?>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
+</div>
 
-</body>
-</html>
+<script>
+function switchTab(tabName) {
+    document.getElementById('tab-users').classList.add('hidden');
+    document.getElementById('tab-admins').classList.add('hidden');
+    
+    document.getElementById('btn-users').className = 'flex-1 py-4 font-bold text-gray-500 hover:text-blue-600 transition border-b-2 border-transparent bg-gray-50';
+    document.getElementById('btn-admins').className = 'flex-1 py-4 font-bold text-gray-500 hover:text-blue-600 transition border-b-2 border-transparent bg-gray-50';
+    
+    document.getElementById('tab-' + tabName).classList.remove('hidden');
+    document.getElementById('btn-' + tabName).className = 'flex-1 py-4 font-bold text-blue-600 border-b-2 border-blue-600 bg-white transition';
+}
+</script>

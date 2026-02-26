@@ -20,16 +20,20 @@
         <?php endif; ?>
 
         <form action="/change-password" method="POST">
-            <div class="mb-4">
+        <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2">New Password</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                       name="pass1" type="password" required>
+                <div class="relative">
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 pr-10 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="change_pass1" name="pass1" type="password" required>
+                    <button type="button" onclick="toggleVisibility('change_pass1')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                </div>
             </div>
             
             <div class="mb-6">
                 <label class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                       name="pass2" type="password" required>
+                <div class="relative">
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 pr-10 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="change_pass2" name="pass2" type="password" required>
+                    <button type="button" onclick="toggleVisibility('change_pass2')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                </div>
             </div>
             
             <button class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full" type="submit">
@@ -37,6 +41,11 @@
             </button>
         </form>
     </div>
-
+    <script>
+    function toggleVisibility(id) {
+        const input = document.getElementById(id);
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+    </script>
 </body>
 </html>

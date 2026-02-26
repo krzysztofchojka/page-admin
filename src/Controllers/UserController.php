@@ -1,16 +1,21 @@
 <?php
 namespace CMS\Controllers;
+
 use CMS\Core\Database;
+use CMS\Core\Session;
 
 class UserController {
     public function index() {
-        $users = Database::getInstance()->query("SELECT * FROM pa_users")->fetchAll();
+        $db = Database::getInstance();
+        $admins = $db->query("SELECT * FROM pa_users WHERE admin = 1 ORDER BY id DESC")->fetchAll();
+        $regularUsers = $db->query("SELECT * FROM pa_users WHERE admin = 0 ORDER BY id DESC")->fetchAll();
+        
         ob_start();
         require_once __DIR__ . '/../Views/admin/users/index.php';
         $content = ob_get_clean();
         require_once __DIR__ . '/../Views/admin/layout.php';
     }
-    
+
     public function create() {
         $u = $_POST['username'];
         $p = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -18,9 +23,48 @@ class UserController {
         header('Location: /admin/users');
     }
 
+    public function edit() {
+        $id = $_GET['id'] ?? 0;
+        $user = Database::getInstance()->query("SELECT * FROM pa_users WHERE id = ?", [$id])->fetch();
+        
+        if (!$user) {
+            header('Location: /admin/users');
+            exit;
+        }
+
+        ob_start();
+        require_once __DIR__ . '/../Views/admin/users/edit.php';
+        $content = ob_get_clean();
+        require_once __DIR__ . '/../Views/admin/layout.php';
+    }
+
+    public function update() {
+        $id = $_POST['id'];
+        $email = $_POST['email']; // używamy email jako głównego loginu (uname)
+        $pass = $_POST['password'] ?? '';
+        $forceChange = isset($_POST['force_change']) ? 1 : 0;
+        $isAdmin = isset($_POST['is_admin']) ? 1 : 0;
+
+        $db = Database::getInstance();
+
+        if (!empty($pass)) {
+            $hash = password_hash($pass, PASSWORD_DEFAULT);
+            $db->query("UPDATE pa_users SET email = ?, uname = ?, pass = ?, admin = ?, pass_expired = ? WHERE id = ?", 
+                [$email, $email, $hash, $isAdmin, $forceChange, $id]);
+        } else {
+            $db->query("UPDATE pa_users SET email = ?, uname = ?, admin = ?, pass_expired = ? WHERE id = ?", 
+                [$email, $email, $isAdmin, $forceChange, $id]);
+        }
+
+        Session::init();
+        Session::setFlash('Użytkownik został zaktualizowany.', 'success');
+        header('Location: /admin/users');
+    }
+
     public function delete() {
+        Session::init();
         $id = $_GET['id'];
-        if ($id != $_SESSION['user_id']) { // Don't delete self
+        if ($id != Session::get('user_id')) { // Zapobiega usunięciu samego siebie
             Database::getInstance()->query("DELETE FROM pa_users WHERE id = ?", [$id]);
         }
         header('Location: /admin/users');

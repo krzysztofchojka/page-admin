@@ -96,17 +96,34 @@ $router->post('/admin/media/move', [CMS\Controllers\MediaController::class, 'mov
 $router->get('/admin/users', [CMS\Controllers\UserController::class, 'index']);
 $router->post('/admin/users/create', [CMS\Controllers\UserController::class, 'create']);
 $router->get('/admin/users/delete', [CMS\Controllers\UserController::class, 'delete']);
+// NOWE TRASY DO EDYCJI:
+$router->get('/admin/users/edit', [CMS\Controllers\UserController::class, 'edit']);
+$router->post('/admin/users/update', [CMS\Controllers\UserController::class, 'update']);
 
 $router->get('/register', [CMS\Controllers\AuthController::class, 'registerForm']);
 $router->post('/register', [CMS\Controllers\AuthController::class, 'register']);
-
 $router->get('/admin/media/downloadZip', [CMS\Controllers\MediaController::class, 'downloadZip']);
-
 $router->get('/admin/templates', [CMS\Controllers\TemplateController::class, 'index']);
 $router->get('/admin/templates/create', [CMS\Controllers\TemplateController::class, 'create']);
 $router->get('/admin/templates/edit', [CMS\Controllers\TemplateController::class, 'edit']);
 $router->post('/admin/templates/save', [CMS\Controllers\TemplateController::class, 'save']);
 
 $router->setNotFoundHandler([CMS\Controllers\PublicController::class, 'show']);
+
+// --- GLOBALNA BLOKADA DOSTĘPU DO CMS DLA ZWYKŁYCH UŻYTKOWNIKÓW ---
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if (strpos($uri, '/admin') === 0) {
+    \CMS\Core\Session::init();
+    if (!\CMS\Core\Session::isLoggedIn()) {
+        header('Location: /login');
+        exit;
+    }
+    // Jeśli jest zalogowany, ale nie jest adminem -> wyrzuć na stronę główną
+    if (\CMS\Core\Session::get('is_admin') != 1) {
+        header('Location: /');
+        exit;
+    }
+}
+// ---------------------------------------------------------------
 
 $router->resolve();

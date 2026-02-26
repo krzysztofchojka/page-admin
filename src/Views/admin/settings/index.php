@@ -40,20 +40,64 @@
                 <p class="text-xs text-red-600 mt-1">If enabled, visitors must enter the password below to see ANY content.</p>
                 
                 <label class="block font-bold mt-4">Global Access Password</label>
-                <input type="text" name="lockdown_password" value="<?= $settings['lockdown_password'] ?? '' ?>" class="w-full border p-2 rounded">
+<div class="relative">
+    <input type="password" id="input_lockdown" name="lockdown_password" value="<?= $settings['lockdown_password'] ?? '' ?>" class="w-full border p-2 rounded pr-10">
+    <button type="button" onclick="toggleVisibility('input_lockdown')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+</div>
             </div>
 
             <div class="mb-4 bg-orange-50 p-4 rounded border border-orange-100 mt-4">
-                <label class="flex items-center gap-2 font-bold text-orange-800">
-                    <input type="hidden" name="require_registration" value="0">
-                    <input type="checkbox" name="require_registration" value="1" <?= ($settings['require_registration']??0) == 1 ? 'checked' : '' ?>>
-                    Require User Registration
-                </label>
-                <p class="text-xs text-orange-600 mt-1">
-                    If enabled, visitors must create an account (or login) to view content.
-                    <br><strong>Logic:</strong> If Lockdown is ON, they enter password first, THEN register.
-                </p>
+    <label class="flex items-center gap-2 font-bold text-orange-800 mb-2">
+        <input type="hidden" name="require_registration" value="0">
+        <input type="checkbox" name="require_registration" value="1" <?= ($settings['require_registration']??0) == 1 ? 'checked' : '' ?>>
+        Require User Registration
+    </label>
+    <p class="text-xs text-orange-600 mb-4">
+        If enabled, visitors must create an account (or login) to view content. <br>
+        <strong>Logic:</strong> If Lockdown is ON, they enter password first, THEN register.
+    </p>
+
+    <div class="pt-4 border-t border-orange-200">
+        <label class="block font-bold mb-1 text-sm text-gray-800">Tryb Rejestracji</label>
+        <select name="reg_mode" id="reg_mode" class="w-full border p-2 rounded text-sm bg-white" onchange="toggleRegFields()">
+            <option value="disabled" <?= ($settings['reg_mode']??'disabled') == 'disabled' ? 'selected' : '' ?>>1. Zablokuj rejestrację</option>
+            <option value="open" <?= ($settings['reg_mode']??'') == 'open' ? 'selected' : '' ?>>2. Wyświetlaj formularz rejestracyjny</option>
+            <option value="secret" <?= ($settings['reg_mode']??'') == 'secret' ? 'selected' : '' ?>>3. Ukryta rejestracja (odblokowana po tajnych danych)</option>
+        </select>
+    </div>
+
+    <div id="secret_reg_fields" class="mt-4 bg-white p-4 rounded border border-orange-200 shadow-sm" style="display: <?= ($settings['reg_mode']??'') == 'secret' ? 'block' : 'none' ?>;">
+        <p class="text-xs text-gray-500 mb-3">Zdefiniuj dane, które wpisane w <b>standardowym oknie logowania</b> przekierują do ukrytego formularza rejestracji.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block font-bold text-sm text-gray-700">Tajny Login</label>
+                <input type="text" name="reg_secret_login" value="<?= htmlspecialchars($settings['reg_secret_login'] ?? '') ?>" class="w-full border p-2 rounded text-sm" placeholder="np. nazwawyjazdu">
             </div>
+            <div>
+            <label class="block font-bold text-sm text-gray-700">Tajne Hasło</label>
+<div class="relative">
+    <input type="password" id="input_secret" name="reg_secret_pass" value="<?= htmlspecialchars($settings['reg_secret_pass'] ?? '') ?>" class="w-full border p-2 rounded text-sm pr-10" placeholder="np. haslo123!">
+    <button type="button" onclick="toggleVisibility('input_secret')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleRegFields() {
+    const mode = document.getElementById('reg_mode').value;
+    document.getElementById('secret_reg_fields').style.display = mode === 'secret' ? 'block' : 'none';
+}
+function toggleVisibility(id) {
+    const input = document.getElementById(id);
+    if (input.type === 'password') {
+        input.type = 'text';
+    } else {
+        input.type = 'password';
+    }
+}
+</script>
 
             <h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Globalna Stopka (Footer)</h3>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -125,8 +169,11 @@
         <input type="text" name="smtp_user" value="<?= htmlspecialchars($settings['smtp_user'] ?? '') ?>" class="w-full border p-2 rounded text-sm">
     </div>
     <div>
-        <label class="block font-bold text-sm">Hasło</label>
-        <input type="password" name="smtp_pass" value="<?= htmlspecialchars($settings['smtp_pass'] ?? '') ?>" class="w-full border p-2 rounded text-sm">
+    <label class="block font-bold text-sm">Hasło</label>
+<div class="relative">
+    <input type="password" id="input_smtp" name="smtp_pass" value="<?= htmlspecialchars($settings['smtp_pass'] ?? '') ?>" class="w-full border p-2 rounded text-sm pr-10">
+    <button type="button" onclick="toggleVisibility('input_smtp')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+</div>
     </div>
 </div>
 
