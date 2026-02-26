@@ -21,6 +21,21 @@
         .drag-handle-nav { cursor: grab; }
         .drag-handle-nav:active { cursor: grabbing; }
         #navigator-tree li div{ padding:0 3px;}
+        /* To wymusi czarny kolor dla każdego elementu wewnątrz bloku edytora, 
+   niezależnie od tego, co mówi szablon */
+.block-item, 
+.block-item *, 
+.ql-editor, 
+.ql-editor * {
+    color: #1a1a1a !important;
+}
+
+/* Naprawa koloru ikon i małych napisów technicznych w edytorze, 
+   które mogły zniknąć */
+.block-item span, 
+.block-item label {
+    color: inherit !important;
+}
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
