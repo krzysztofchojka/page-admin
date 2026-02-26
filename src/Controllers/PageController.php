@@ -53,70 +53,63 @@ class PageController {
         exit;
     }
 
-    public function edit() {
+    public function edit()
+    {
         $id = $_GET['id'] ?? null;
         if (!$id) die("ID Missing");
 
         $db = Database::getInstance();
         $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $id])->fetch();
-
         if (!$page) die("Page not found");
 
-        // *** NEW: Fetch Lists for Dropdowns ***
         $forms = $db->query("SELECT id, title FROM pa_forms ORDER BY id DESC")->fetchAll();
         $galleries = $db->query("SELECT id, title FROM pa_galleries ORDER BY id DESC")->fetchAll();
-
         $templates = $db->query("SELECT id, title FROM pa_templates ORDER BY title ASC")->fetchAll();
 
-        // Pobranie nazwy szablonu
-$templateName = '';
-if (!empty($page['template_id'])) {
-    $tpl = $db->query("SELECT title FROM pa_templates WHERE id = :id", ['id' => $page['template_id']])->fetch();
-    $templateName = $tpl['title'] ?? '';
-}
+        $templateName = '';
+        if (!empty($page['template_id'])) {
+            $tpl = $db->query("SELECT title FROM pa_templates WHERE id = :id", ['id' => $page['template_id']])->fetch();
+            $templateName = $tpl['title'] ?? '';
+        }
 
-// Pobranie aktualnej roli strony z ustawień
-$roleRows = $db->query("SELECT setting_key FROM pa_settings WHERE setting_value = :id AND setting_key IN ('footer_page_id', 'login_page_id', 'register_page_id', 'change_password_page_id', 'lockdown_page_id')", ['id' => $id])->fetchAll();
-$currentRole = count($roleRows) > 0 ? $roleRows[0]['setting_key'] : 'standard';
+        // Dodano 'home_page_id' do listy wyszukiwanych ról
+        $roleRows = $db->query("SELECT setting_key FROM pa_settings WHERE setting_value = :id AND setting_key IN ('home_page_id', 'footer_page_id', 'login_page_id', 'register_page_id', 'change_password_page_id', 'lockdown_page_id')", ['id' => $id])->fetchAll();
+        $currentRole = count($roleRows) > 0 ? $roleRows[0]['setting_key'] : 'standard';
 
         require_once __DIR__ . '/../Views/admin/pages/edit.php';
     }
 
-    public function save() {
-        // Odbieramy JSON z frontendu
+    public function save()
+    {
         $data = json_decode(file_get_contents('php://input'), true);
-    
         if (!isset($data['id']) || !isset($data['content'])) {
             http_response_code(400);
             echo json_encode(['status' => 'error', 'message' => 'Invalid Data']);
             return;
         }
-    
+
         $db = Database::getInstance();
-        
-        // Pobieramy template_id, jeśli istnieje (rzutujemy na int lub null)
         $templateId = !empty($data['template_id']) ? (int)$data['template_id'] : null;
-    
-        // Zapisz główną zawartość
-$db->query("UPDATE pa_data SET title = :title, slug = :slug, contents = :content, template_id = :tid, edit_date = NOW() WHERE id = :id", [
-    'title' => $data['title'],
-    'slug' => $data['slug'],
-    'content' => json_encode($data['content']),
-    'tid' => !empty($data['template_id']) ? (int)$data['template_id'] : null,
-    'id' => $data['id']
-]);
 
-// Zarządzanie rolą strony w pa_settings
-$db->query("DELETE FROM pa_settings WHERE setting_value = :id AND setting_key IN ('footer_page_id', 'login_page_id', 'register_page_id', 'change_password_page_id', 'lockdown_page_id')", ['id' => $data['id']]);
+        $db->query("UPDATE pa_data SET title = :title, slug = :slug, contents = :content, template_id = :tid, edit_date = NOW() WHERE id = :id", [
+            'title' => $data['title'],
+            'slug' => $data['slug'],
+            'content' => json_encode($data['content']),
+            'tid' => !empty($data['template_id']) ? (int)$data['template_id'] : null,
+            'id' => $data['id']
+        ]);
 
-if (!empty($data['page_role']) && $data['page_role'] !== 'standard') {
-    $db->query("REPLACE INTO pa_settings (setting_key, setting_value) VALUES (:key, :val)", [
-        'key' => $data['page_role'],
-        'val' => $data['id']
-    ]);
-}
+        // Dodano 'home_page_id' do listy usuwanych ról przed zapisem nowej
+        $db->query("DELETE FROM pa_settings WHERE setting_value = :id AND setting_key IN ('home_page_id', 'footer_page_id', 'login_page_id', 'register_page_id', 'change_password_page_id', 'lockdown_page_id')", ['id' => $data['id']]);
 
-echo json_encode(['status' => 'success']);
+        if (!empty($data['page_role']) && $data['page_role'] !== 'standard') {
+            $db->query("REPLACE INTO pa_settings (setting_key, setting_value) VALUES (:key, :val)", [
+                'key' => $data['page_role'],
+                'val' => $data['id']
+            ]);
+        }
+
+        echo json_encode(['status' => 'success']);
     }
 
     public function delete() {

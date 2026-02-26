@@ -42,6 +42,7 @@
     
     <select id="pageRole" class="text-sm border border-gray-300 rounded-lg px-3 py-2 text-gray-700 font-bold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
         <option value="standard" <?= $currentRole == 'standard' ? 'selected' : '' ?>>📄 Zwykła strona</option>
+        <option value="home_page_id" <?= $currentRole == 'home_page_id' ? 'selected' : '' ?>>🏠 Strona Główna</option>
         <option value="footer_page_id" <?= $currentRole == 'footer_page_id' ? 'selected' : '' ?>>🦶 Globalna Stopka</option>
         <option value="login_page_id" <?= $currentRole == 'login_page_id' ? 'selected' : '' ?>>🔐 Logowanie</option>
         <option value="register_page_id" <?= $currentRole == 'register_page_id' ? 'selected' : '' ?>>📝 Rejestracja</option>

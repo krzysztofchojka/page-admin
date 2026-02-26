@@ -10,23 +10,27 @@
     </div>
 
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden my-6">
-        <?php 
-            // Pobranie ustawień przypisanych stron
-            $footerSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'footer_page_id'")->fetch();
-            $footerPageId = $footerSetting ? $footerSetting['setting_value'] : null;
+        <?php
+        // Pobranie ustawień przypisanych stron
+        $homeSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'home_page_id'")->fetch();
+        $homePageId = $homeSetting ? $homeSetting['setting_value'] : 1; // 1 jako domyślna awaryjna
 
-            $loginSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'login_page_id'")->fetch();
-            $loginPageId = $loginSetting ? $loginSetting['setting_value'] : null;
+        $footerSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'footer_page_id'")->fetch();
+        $footerPageId = $footerSetting ? $footerSetting['setting_value'] : null;
 
-            $registerSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'register_page_id'")->fetch();
-            $registerPageId = $registerSetting ? $registerSetting['setting_value'] : null;
+        $loginSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'login_page_id'")->fetch();
+        $loginPageId = $loginSetting ? $loginSetting['setting_value'] : null;
 
-            $pwdSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'change_password_page_id'")->fetch();
-            $changePwdPageId = $pwdSetting ? $pwdSetting['setting_value'] : null;
+        $registerSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'register_page_id'")->fetch();
+        $registerPageId = $registerSetting ? $registerSetting['setting_value'] : null;
 
-            $ldSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'lockdown_page_id'")->fetch();
-            $lockdownPageId = $ldSetting ? $ldSetting['setting_value'] : null;
+        $pwdSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'change_password_page_id'")->fetch();
+        $changePwdPageId = $pwdSetting ? $pwdSetting['setting_value'] : null;
+
+        $ldSetting = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'lockdown_page_id'")->fetch();
+        $lockdownPageId = $ldSetting ? $ldSetting['setting_value'] : null;
         ?>
+
         <table class="min-w-full leading-normal">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -43,30 +47,33 @@
                     <td class="px-6 py-4 text-sm text-gray-500"><?= $page['id'] ?></td>
                     <td class="px-6 py-4 text-sm font-bold text-gray-800">
                         <?= htmlspecialchars($page['title']) ?>
+                        
                         <?php if (!empty($page['template_id'])): ?>
                             <span class="ml-2 text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">Szablon</span>
                         <?php endif; ?>
                     </td>
-                    
                     <td class="px-6 py-4 text-sm text-gray-500">
-    <?php if ($page['id'] == $footerPageId): ?>
-        <span class="text-[10px] bg-cyan-100 text-cyan-800 border border-cyan-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Globalna Stopka</span>
-    <?php elseif ($page['id'] == $loginPageId): ?>
-        <span class="text-[10px] bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Logowanie</span>
-        <?php elseif ($page['id'] == $changePwdPageId): ?>
-        <span class="text-[10px] bg-yellow-100 text-yellow-800 border border-yellow-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Zmiana Hasła</span>
-    <?php elseif ($page['id'] == $lockdownPageId): ?>
-        <span class="text-[10px] bg-gray-800 text-gray-200 border border-gray-600 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Lockdown</span>
-    <?php elseif ($page['id'] == $registerPageId): ?>
-        <span class="text-[10px] bg-orange-100 text-orange-800 border border-orange-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Rejestracja</span>
-    <?php else: ?>
-        <?php $url = !empty($page['slug']) ? '/' . ltrim($page['slug'], '/') : '/page?id=' . $page['id']; ?>
-        <a href="<?= htmlspecialchars($url) ?>" target="_blank" class="text-blue-500 hover:text-blue-700 hover:underline inline-flex items-center gap-1" title="Otwórz w nowej karcie">
-            <?= htmlspecialchars($url) ?> <span class="text-xs">↗</span>
-        </a>
-    <?php endif; ?>
-</td>
-
+                        <?php if ($page['id'] == $homePageId): ?>
+                            <a href="/" target="_blank" class="hover:text-green-700 hover:underline" title="Otwórz w nowej karcie">
+                                <span class="text-[10px] bg-green-100 text-green-800 border border-green-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Strona Główna (/)</span>
+                            </a>
+                        <?php elseif ($page['id'] == $footerPageId): ?>
+                            <span class="text-[10px] bg-cyan-100 text-cyan-800 border border-cyan-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Globalna Stopka</span>
+                        <?php elseif ($page['id'] == $loginPageId): ?>
+                            <span class="text-[10px] bg-cyan-100 text-cyan-800 border border-cyan-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Logowanie</span>
+                        <?php elseif ($page['id'] == $changePwdPageId): ?>
+                            <span class="text-[10px] bg-cyan-100 text-cyan-800 border border-cyan-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Zmiana Hasła</span>
+                        <?php elseif ($page['id'] == $lockdownPageId): ?>
+                            <span class="text-[10px] bg-cyan-100 text-cyan-800 border border-cyan-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Lockdown</span>
+                        <?php elseif ($page['id'] == $registerPageId): ?>
+                            <span class="text-[10px] bg-cyan-100 text-cyan-800 border border-cyan-200 px-2 py-0.5 rounded-full uppercase font-bold shadow-sm">Rejestracja</span>
+                        <?php else: ?>
+                            <?php $url = !empty($page['slug']) ? '/' . ltrim($page['slug'], '/') : '/page?id=' . $page['id']; ?>
+                            <a href="<?= htmlspecialchars($url) ?>" target="_blank" class="text-blue-500 hover:text-blue-700 hover:underline inline-flex items-center gap-1" title="Otwórz w nowej karcie">
+                                <?= htmlspecialchars($url) ?> <span class="text-xs">↗</span>
+                            </a>
+                        <?php endif; ?>
+                    </td>
                     <td class="px-6 py-4 text-sm text-gray-500"><?= $page['edit_date'] ?></td>
                     <td class="px-6 py-4 text-sm">
                         <a href="/admin/pages/edit?id=<?= $page['id'] ?>" class="text-blue-600 hover:text-blue-900 font-bold mr-3">Edytuj</a>

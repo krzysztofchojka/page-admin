@@ -56,9 +56,11 @@ class PublicController {
         if ($id) {
             $page = $db->query("SELECT * FROM pa_data WHERE id = :id AND field_type = 'page'", ['id' => $id])->fetch();
         } else {
-            // Priorytet 2: Wyszukiwanie po przyjaznym URL (Slug) lub ładowanie strony głównej (id=1)
+            // Priorytet 2: Wyszukiwanie po przyjaznym URL (Slug) lub ładowanie strony głównej (z ustawień lub id=1)
             if ($slug === '/' || $slug === null || $slug === '') {
-                $page = $db->query("SELECT * FROM pa_data WHERE id = 1")->fetch();
+                // Pobieramy ID strony głównej z ustawień. Jeśli nie istnieje, awaryjnie ładujemy stronę o ID 1
+                $homePageId = $settings['home_page_id'] ?? 1;
+                $page = $db->query("SELECT * FROM pa_data WHERE id = :id AND field_type = 'page'", ['id' => $homePageId])->fetch();
             } else {
                 $cleanSlug = ltrim($slug, '/');
                 $page = $db->query("SELECT * FROM pa_data WHERE slug = :slug AND field_type = 'page'", ['slug' => $cleanSlug])->fetch();
