@@ -3,8 +3,8 @@ const savedContent = window.CMS_CONFIG.savedContent;
 const availableForms = window.CMS_CONFIG.availableForms;
 const availableGalleries = window.CMS_CONFIG.availableGalleries;
 
-const blockIcons = { text: 'T', image: '🖼', video: '▶️', button: '🔘', divider: '➖', quote: '❝', columns_2: '◫', columns_3: '☰', banner: '🏔', image_cards: '🗂', carousel: '🎠', accordion: '⇕', map: '📍', countdown: '⏳', table: '🗄️', flight: '✈️', form: '📝', gallery: '📷', raw_html: '</>' };
-const blockNames = { text: 'Tekst', image: 'Obrazek', video: 'Wideo', button: 'Przycisk', divider: 'Odstęp', quote: 'Cytat', columns_2: '2 Kolumny', columns_3: '3 Kolumny', banner: 'Baner', image_cards: 'Siatka Kart', carousel: 'Karuzela', accordion: 'Akordeon', map: 'Mapa', countdown: 'Odliczanie', table: 'Tabela', flight: 'Loty', form: 'Formularz', gallery: 'Galeria', raw_html: 'HTML' };
+const blockIcons = { text: 'T', image: '🖼', video: '▶️', button: '🔘', divider: '➖', quote: '❝', columns_2: '◫', columns_3: '☰', banner: '🏔', image_cards: '🗂', carousel: '🎠', accordion: '⇕', map: '📍', countdown: '⏳', table: '🗄️', flight: '✈️', form: '📝', gallery: '📷', raw_html: '</>', system_login: '🔐', system_register: '📝', system_change_password: '🔑', system_lockdown: '🚧' };
+const blockNames = { text: 'Tekst', image: 'Obrazek', video: 'Wideo', button: 'Przycisk', divider: 'Odstęp', quote: 'Cytat', columns_2: '2 Kolumny', columns_3: '3 Kolumny', banner: 'Baner', image_cards: 'Siatka Kart', carousel: 'Karuzela', accordion: 'Akordeon', map: 'Mapa', countdown: 'Odliczanie', table: 'Tabela', flight: 'Loty', form: 'Formularz', gallery: 'Galeria', raw_html: 'HTML', system_login: 'Logowanie', system_register: 'Rejestracja', system_change_password: 'Zmień Hasło', system_lockdown: 'Lockdown' };
 
 const quillRegistry = {};
 let navSortables = [];
@@ -608,6 +608,51 @@ function renderBlock(type, content = '', blockSettings = null) {
             initSortable(div.querySelector('.tab-content'));
         }, 0);
     }
+    else if (type === 'system_login') {
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">🔐 System: Logowanie</span></div>
+        <div class="bg-gray-50 border-2 border-dashed border-gray-300 p-8 rounded-xl max-w-sm mx-auto my-4 text-center pointer-events-none">
+            <div class="text-4xl mb-3">🔐</div>
+            <h4 class="font-bold text-gray-700 text-lg">Moduł Logowania</h4>
+            <p class="text-xs text-gray-500 mt-2 leading-relaxed">W tym miejscu na gotowej stronie wyrenderuje się kompletny formularz logowania do systemu.</p>
+            <div class="mt-4 bg-white border border-gray-200 rounded p-4 opacity-50 shadow-sm">
+                <div class="h-8 bg-gray-100 rounded mb-2 w-full"></div>
+                <div class="h-8 bg-gray-100 rounded mb-4 w-full"></div>
+                <div class="h-10 bg-blue-500 rounded w-full"></div>
+            </div>
+        </div>`;
+    }
+    else if (type === 'system_register') {
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">📝 System: Rejestracja</span></div>
+        <div class="bg-gray-50 border-2 border-dashed border-gray-300 p-8 rounded-xl max-w-sm mx-auto my-4 text-center pointer-events-none">
+            <div class="text-4xl mb-3">📝</div>
+            <h4 class="font-bold text-gray-700 text-lg">Moduł Rejestracji</h4>
+            <p class="text-xs text-gray-500 mt-2 leading-relaxed">Tutaj wyświetli się formularz zakładania nowego konta dla odwiedzających.</p>
+            <div class="mt-4 bg-white border border-gray-200 rounded p-4 opacity-50 shadow-sm">
+                <div class="h-8 bg-gray-100 rounded mb-2 w-full"></div>
+                <div class="h-8 bg-gray-100 rounded mb-2 w-full"></div>
+                <div class="h-8 bg-gray-100 rounded mb-4 w-full"></div>
+                <div class="h-10 bg-green-500 rounded w-full"></div>
+            </div>
+        </div>`;
+    }
+    else if (type === 'system_change_password') {
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">🔑 System: Zmiana Hasła</span></div>
+        <div class="bg-gray-50 border-2 border-dashed border-gray-300 p-8 rounded-xl max-w-sm mx-auto my-4 text-center pointer-events-none">
+            <div class="text-4xl mb-3">🔑</div><h4 class="font-bold text-gray-700 text-lg">Moduł Zmiany Hasła</h4>
+            <div class="mt-4 bg-white border border-gray-200 rounded p-4 opacity-50 shadow-sm"><div class="h-8 bg-gray-100 rounded mb-2 w-full"></div><div class="h-8 bg-gray-100 rounded mb-4 w-full"></div><div class="h-10 bg-yellow-500 rounded w-full"></div></div>
+        </div>`;
+    }
+    else if (type === 'system_lockdown') {
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">🚧 System: Lockdown</span></div>
+        <div class="bg-gray-50 border-2 border-dashed border-gray-300 p-8 rounded-xl max-w-sm mx-auto my-4 text-center pointer-events-none">
+            <div class="text-4xl mb-3">🚧</div><h4 class="font-bold text-gray-700 text-lg">Moduł Lockdown (Hasło Ogólne)</h4>
+            <div class="mt-4 bg-white border border-gray-200 rounded p-4 opacity-50 shadow-sm"><div class="h-8 bg-gray-100 rounded mb-4 w-full"></div><div class="h-10 bg-gray-800 rounded w-full"></div></div>
+        </div>`;
+    }
     else {
         innerHTML = `<div class="p-4 bg-gray-200 text-center">Brak definicji bloku: ${type}</div>`;
     }
@@ -827,7 +872,8 @@ function savePage() {
             title: document.getElementById('pageTitle').value,
             slug: document.getElementById('pageSlug').value,
             content: dataToSave,
-            template_id: templateId // <--- DODANO template_id
+            template_id: templateId,
+            page_role: document.getElementById('pageRole').value // <--- Pobieranie wybranej roli
         })
     })
     .then(res => res.json())

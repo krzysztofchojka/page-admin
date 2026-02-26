@@ -123,6 +123,34 @@ function toggleVisibility(id) {
     </div>
 </div>
 
+<!--h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Strony Systemowe (Logowanie / Rejestracja)</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div class="bg-gray-50 p-4 border rounded">
+        <label class="block font-bold text-sm mb-2">Własna strona Logowania</label>
+        <select name="login_page_id" class="w-full border p-2 rounded text-sm">
+            <option value="">-- Domyślny, prosty widok --</option>
+            <?php foreach ($pages as $p): ?>
+                <option value="<?= $p['id'] ?>" <?= ($settings['login_page_id']??'') == $p['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($p['title']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="text-xs text-gray-500 mt-1">Stwórz stronę zawierającą blok "System: Logowanie".</p>
+    </div>
+    <div class="bg-gray-50 p-4 border rounded">
+        <label class="block font-bold text-sm mb-2">Własna strona Rejestracji</label>
+        <select name="register_page_id" class="w-full border p-2 rounded text-sm">
+            <option value="">-- Domyślny, prosty widok --</option>
+            <?php foreach ($pages as $p): ?>
+                <option value="<?= $p['id'] ?>" <?= ($settings['register_page_id']??'') == $p['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($p['title']) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="text-xs text-gray-500 mt-1">Stwórz stronę zawierającą blok "System: Rejestracja".</p>
+    </div>
+</div-->
+
             <h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Session Policy</h3>
             <div class="mb-4">
                 <label class="block font-bold">Session Lifetime (Days)</label>

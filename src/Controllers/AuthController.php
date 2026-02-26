@@ -17,15 +17,38 @@ class AuthController {
         return $settings;
     }
 
-    public function loginForm() {
-        Session::init();
-        if (Session::isLoggedIn()) {
-            header('Location: /admin');
-            exit;
-        }
-        $settings = $this->getSettings(); // Przekazujemy ustawienia do widoku
-        require_once __DIR__ . '/../Views/auth/login.php';
+    // Przykład modyfikacji metody loginForm()
+public function loginForm() {
+    Session::init();
+    if (Session::isLoggedIn()) {
+        header('Location: /admin');
+        exit;
     }
+    $settings = $this->getSettings();
+
+    // SPRAWDZENIE CUSTOMOWEJ STRONY
+    if (!empty($settings['login_page_id'])) {
+        $db = \CMS\Core\Database::getInstance();
+        $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $settings['login_page_id']])->fetch();
+        
+        if ($page) {
+            $blocks = json_decode($page['contents'], true) ?? [];
+            // Załadowanie globalnej stopki
+            $footerBlocks = null;
+            if (($settings['hide_footer'] ?? 0) != 1 && !empty($settings['footer_page_id'])) {
+                $footerPage = $db->query("SELECT contents FROM pa_data WHERE id = :id", ['id' => $settings['footer_page_id']])->fetch();
+                if ($footerPage && $footerPage['contents']) {
+                    $footerBlocks = json_decode($footerPage['contents'], true);
+                }
+            }
+            require_once __DIR__ . '/../Views/public/page.php';
+            return; // Przerywamy, nie ładujemy domyślnego widoku!
+        }
+    }
+
+    // Widok domyślny jako fallback
+    require_once __DIR__ . '/../Views/auth/login.php';
+}
 
     public function login() {
         Session::init();
@@ -95,22 +118,45 @@ class AuthController {
         Session::init();
         $settings = $this->getSettings();
         $regMode = $settings['reg_mode'] ?? 'disabled';
-
+    
         // 1. Odrzucamy jeśli rejestracja jest całkowicie wyłączona
         if ($regMode === 'disabled') {
             Session::setFlash('Rejestracja jest zablokowana.', 'error');
             header('Location: /login');
             exit;
         }
-
+    
         // 2. Odrzucamy jeśli tryb to secret, a użytkownik NIE ma ścisłego klucza w sesji
         if ($regMode === 'secret' && Session::get('secret_reg_unlocked') !== true) {
             Session::setFlash('Rejestracja ukryta. Wpisz poprawne dane dostępu w logowaniu.', 'error');
             header('Location: /login');
             exit;
         }
-
-        // Jeśli przejdzie powyższe filtry - pokazujemy formularz
+    
+        // 3. SPRAWDZENIE CUSTOMOWEJ STRONY REJESTRACJI (Wbudowanej w Page Builder)
+        if (!empty($settings['register_page_id'])) {
+            $db = \CMS\Core\Database::getInstance();
+            $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $settings['register_page_id']])->fetch();
+            
+            if ($page) {
+                $blocks = json_decode($page['contents'], true) ?? [];
+                
+                // Załadowanie globalnej stopki, jeśli jest włączona
+                $footerBlocks = null;
+                if (($settings['hide_footer'] ?? 0) != 1 && !empty($settings['footer_page_id'])) {
+                    $footerPage = $db->query("SELECT contents FROM pa_data WHERE id = :id", ['id' => $settings['footer_page_id']])->fetch();
+                    if ($footerPage && $footerPage['contents']) {
+                        $footerBlocks = json_decode($footerPage['contents'], true);
+                    }
+                }
+                
+                // Renderowanie pełnego widoku jak dla zwykłej strony
+                require_once __DIR__ . '/../Views/public/page.php';
+                return; // Przerywamy działanie funkcji, aby nie załadować domyślnego widoku!
+            }
+        }
+    
+        // 4. Jeśli nie ustawiono customowej strony - ładujemy domyślny widok awaryjny (fallback)
         require_once __DIR__ . '/../Views/auth/register.php';
     }
 
@@ -173,10 +219,39 @@ class AuthController {
 
     public function changePasswordForm() {
         Session::init();
+        
+        // Sprawdzenie, czy użytkownik ma uprawnienia do przebywania na tej stronie
         if (!Session::get('temp_user_id')) {
             header('Location: /login');
             exit;
         }
+    
+        $settings = $this->getSettings();
+    
+        // SPRAWDZENIE CUSTOMOWEJ STRONY ZMIANY HASŁA (Wbudowanej w Page Builder)
+        if (!empty($settings['change_password_page_id'])) {
+            $db = \CMS\Core\Database::getInstance();
+            $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $settings['change_password_page_id']])->fetch();
+            
+            if ($page) {
+                $blocks = json_decode($page['contents'], true) ?? [];
+                
+                // Załadowanie globalnej stopki, jeśli jest włączona
+                $footerBlocks = null;
+                if (($settings['hide_footer'] ?? 0) != 1 && !empty($settings['footer_page_id'])) {
+                    $footerPage = $db->query("SELECT contents FROM pa_data WHERE id = :id", ['id' => $settings['footer_page_id']])->fetch();
+                    if ($footerPage && $footerPage['contents']) {
+                        $footerBlocks = json_decode($footerPage['contents'], true);
+                    }
+                }
+                
+                // Renderowanie pełnego widoku jak dla zwykłej strony
+                require_once __DIR__ . '/../Views/public/page.php';
+                return; // Przerywamy działanie funkcji, aby nie załadować domyślnego widoku!
+            }
+        }
+    
+        // Jeśli nie ustawiono customowej strony - ładujemy domyślny widok awaryjny (fallback)
         require_once __DIR__ . '/../Views/auth/change_password.php';
     }
 

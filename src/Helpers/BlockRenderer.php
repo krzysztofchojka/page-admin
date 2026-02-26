@@ -677,6 +677,75 @@ class BlockRenderer {
                 }
                 echo '</div>';
             }
+            // 21. SYSTEM: LOGOWANIE
+elseif ($block['type'] === 'system_login') {
+    $flash = \CMS\Core\Session::getFlash();
+    $oldLogin = \CMS\Core\Session::get('old_login');
+    \CMS\Core\Session::remove('old_login');
+    
+    // Opcjonalnie: pobranie ustawień dla logiki ukrytej rejestracji
+    $setRows = $db->query("SELECT setting_key, setting_value FROM pa_settings")->fetchAll();
+    $s = []; foreach($setRows as $r) $s[$r['setting_key']] = $r['setting_value'];
+
+    echo '<div class="max-w-md w-full mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">';
+    if ($flash) {
+        echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
+    }
+    echo '<form action="/login" method="POST">';
+    echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Email lub Login</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="login" type="text" required value="'.htmlspecialchars($oldLogin ?? '').'"></div>';
+    echo '  <div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Hasło</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="password" type="password" required></div>';
+    echo '  <button class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded w-full transition shadow" type="submit">Zaloguj się</button>';
+    echo '</form>';
+    
+    $regMode = $s['reg_mode'] ?? 'disabled';
+    $isSecretUnlocked = \CMS\Core\Session::get('secret_reg_unlocked') === true;
+    if ($regMode === 'open' || ($regMode === 'secret' && $isSecretUnlocked)) {
+        echo '<p class="text-center mt-5 text-sm text-gray-600 border-t pt-4">Nie masz konta? <br><a href="/register" class="text-blue-600 font-bold hover:underline">Zarejestruj się</a></p>';
+    }
+    echo '</div>';
+}
+// 22. SYSTEM: REJESTRACJA
+elseif ($block['type'] === 'system_register') {
+    $flash = \CMS\Core\Session::getFlash();
+    $oldEmail = \CMS\Core\Session::get('old_email');
+    \CMS\Core\Session::remove('old_email');
+
+    echo '<div class="max-w-md w-full mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">';
+    if ($flash) {
+        echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
+    }
+    echo '<form action="/register" method="POST">';
+    echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input class="border rounded w-full py-2 px-3 focus:ring-2 focus:ring-blue-500" name="email" type="email" required value="'.htmlspecialchars($oldEmail ?? '').'"></div>';
+    echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-2 focus:ring-blue-500" name="password" type="password" required></div>';
+    echo '  <div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Potwierdź hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-2 focus:ring-blue-500" name="confirm_password" type="password" required></div>';
+    echo '  <button class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded w-full transition shadow" type="submit">Utwórz konto</button>';
+    echo '</form>';
+    echo '<p class="text-center mt-4 text-sm text-gray-500">Masz już konto? <a href="/login" class="text-blue-600 font-bold hover:underline">Zaloguj</a></p>';
+    echo '</div>';
+}
+// 23. SYSTEM: ZMIANA HASŁA
+elseif ($block['type'] === 'system_change_password') {
+    $flash = \CMS\Core\Session::getFlash();
+    echo '<div class="max-w-sm w-full mx-auto bg-white p-8 rounded-lg shadow-lg border-t-4 border-yellow-500">';
+    echo '<h2 class="text-2xl font-bold mb-2 text-center text-gray-800">Zmiana Hasła</h2>';
+    echo '<p class="text-sm text-gray-600 mb-6 text-center">Wymagana jest zmiana hasła w celach bezpieczeństwa.</p>';
+    if ($flash) echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
+    echo '<form action="/change-password" method="POST">';
+    echo '<div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Nowe Hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-blue-500" name="pass1" type="password" required></div>';
+    echo '<div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Potwierdź Hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-blue-500" name="pass2" type="password" required></div>';
+    echo '<button class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full shadow transition" type="submit">Zaktualizuj Hasło</button>';
+    echo '</form></div>';
+}
+// 24. SYSTEM: LOCKDOWN
+elseif ($block['type'] === 'system_lockdown') {
+    echo '<div class="max-w-md w-full mx-auto bg-gray-900 p-8 rounded-xl shadow-2xl border border-gray-700 text-center">';
+    echo '<h1 class="text-3xl font-bold mb-4 text-white">Strona Zabezpieczona</h1>';
+    echo '<p class="mb-6 text-gray-400">Podaj kod dostępu, aby kontynuować.</p>';
+    echo '<form method="POST">';
+    echo '<input type="password" name="site_pass" class="w-full p-3 rounded mb-4 text-black focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Kod dostępu..." required>';
+    echo '<button class="bg-blue-600 hover:bg-blue-700 text-white w-full p-3 rounded font-bold shadow transition">Wejdź na stronę</button>';
+    echo '</form></div>';
+}
 
             // Zamknięcie uniwersalnego wrappera
             echo "</div>";

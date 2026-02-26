@@ -68,6 +68,17 @@ class PageController {
 
         $templates = $db->query("SELECT id, title FROM pa_templates ORDER BY title ASC")->fetchAll();
 
+        // Pobranie nazwy szablonu
+$templateName = '';
+if (!empty($page['template_id'])) {
+    $tpl = $db->query("SELECT title FROM pa_templates WHERE id = :id", ['id' => $page['template_id']])->fetch();
+    $templateName = $tpl['title'] ?? '';
+}
+
+// Pobranie aktualnej roli strony z ustawień
+$roleRows = $db->query("SELECT setting_key FROM pa_settings WHERE setting_value = :id AND setting_key IN ('footer_page_id', 'login_page_id', 'register_page_id', 'change_password_page_id', 'lockdown_page_id')", ['id' => $id])->fetchAll();
+$currentRole = count($roleRows) > 0 ? $roleRows[0]['setting_key'] : 'standard';
+
         require_once __DIR__ . '/../Views/admin/pages/edit.php';
     }
 
@@ -86,16 +97,26 @@ class PageController {
         // Pobieramy template_id, jeśli istnieje (rzutujemy na int lub null)
         $templateId = !empty($data['template_id']) ? (int)$data['template_id'] : null;
     
-        // Aktualizujemy rekord w bazie (dodano kolumnę template_id)
-        $db->query("UPDATE pa_data SET title = :title, slug = :slug, contents = :content, template_id = :tid, edit_date = NOW() WHERE id = :id", [
-            'title'   => $data['title'],
-            'slug'    => $data['slug'],
-            'content' => json_encode($data['content']),
-            'tid'     => $templateId,
-            'id'      => $data['id']
-        ]);
-    
-        echo json_encode(['status' => 'success']);
+        // Zapisz główną zawartość
+$db->query("UPDATE pa_data SET title = :title, slug = :slug, contents = :content, template_id = :tid, edit_date = NOW() WHERE id = :id", [
+    'title' => $data['title'],
+    'slug' => $data['slug'],
+    'content' => json_encode($data['content']),
+    'tid' => !empty($data['template_id']) ? (int)$data['template_id'] : null,
+    'id' => $data['id']
+]);
+
+// Zarządzanie rolą strony w pa_settings
+$db->query("DELETE FROM pa_settings WHERE setting_value = :id AND setting_key IN ('footer_page_id', 'login_page_id', 'register_page_id', 'change_password_page_id', 'lockdown_page_id')", ['id' => $data['id']]);
+
+if (!empty($data['page_role']) && $data['page_role'] !== 'standard') {
+    $db->query("REPLACE INTO pa_settings (setting_key, setting_value) VALUES (:key, :val)", [
+        'key' => $data['page_role'],
+        'val' => $data['id']
+    ]);
+}
+
+echo json_encode(['status' => 'success']);
     }
 
     public function delete() {

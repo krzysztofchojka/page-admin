@@ -17,18 +17,23 @@ class PublicController {
 
         // --- GATE 1: LOCKDOWN (Hasło globalne) ---
         if (($settings['lockdown_enabled'] ?? 0) == 1) {
-            // Jeśli przesłano formularz z hasłem
             if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['site_pass'])) {
                 if ($_POST['site_pass'] === ($settings['lockdown_password'] ?? '')) {
                     Session::set('site_unlocked', true);
-                    // Przekieruj, aby uniknąć komunikatu o ponownym przesłaniu formularza przy odświeżaniu
                     header("Location: " . $_SERVER['REQUEST_URI']);
                     exit;
                 }
             }
-
-            // Jeśli sesja nie ma flagi odblokowania, pokaż widok blokady i zatrzymaj skrypt
             if (!Session::get('site_unlocked')) {
+                if (!empty($settings['lockdown_page_id'])) {
+                    $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $settings['lockdown_page_id']])->fetch();
+                    if ($page) {
+                        $blocks = json_decode($page['contents'], true) ?? [];
+                        require_once __DIR__ . '/../Views/public/page.php';
+                        exit; // Renderujemy naszą stronę i przerywamy!
+                    }
+                }
+                // Fallback
                 require_once __DIR__ . '/../Views/public/lockdown.php';
                 exit;
             }
