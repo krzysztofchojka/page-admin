@@ -4,19 +4,18 @@ namespace CMS\Core;
 class Session {
     public static function init() {
         if (session_status() === PHP_SESSION_NONE) {
-            
-            // 1. Set cookie lifetime based on DB (We need DB connection here)
-            // Note: Doing DB query before session_start can be heavy, but necessary for dynamic duration.
-            // A simpler way is to manage it manually via timestamps inside the session.
+            // Informujemy przeglądarkę, aby zatrzymała ciastko na bardzo długi czas (1 rok w sekundach).
+            // Dzięki temu nie znika ono po zamknięciu okna. Twoja funkcja checkLifetime()
+            // i tak odpowiednio wcześnie wyloguje użytkownika bazując na bazie danych.
+            session_set_cookie_params(31536000);
             
             ini_set('session.cookie_httponly', 1);
             ini_set('session.use_only_cookies', 1);
-            
             // Set a long GC maxlifetime (e.g., 1 year) so PHP doesn't garbage collect valid files
-            ini_set('session.gc_maxlifetime', 31536000); 
+            ini_set('session.gc_maxlifetime', 31536000);
             
             session_start();
-
+            
             // 2. TIMEOUT CHECK
             self::checkLifetime();
         }
