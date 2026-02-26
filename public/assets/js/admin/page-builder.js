@@ -250,22 +250,61 @@ function renderRecursive(blocks, container) {
 // ==========================================
 // 2. RENDEROWANIE BLOKÓW (HTML/JS)
 // ==========================================
+// 1. Register style-based alignment (Optional: Use this if you want inline styles)
+// 1. Setup Attributors (Run once at top of file)
+const Size = Quill.import('attributors/style/size');
+Size.whitelist = ['12px', '16px', '20px', '24px', '32px'];
+Quill.register(Size, true);
+
+const Align = Quill.import('attributors/style/align');
+Quill.register(Align, true);
 
 function initQuill(element, content) {
     const id = 'quill_' + Math.random().toString(36).substr(2, 9);
     element.id = id;
+
+    // Create the hidden textarea for HTML editing
+    const container = element.parentElement;
+    const txtArea = document.createElement('textarea');
+    txtArea.className = 'quill-source-area';
+    txtArea.style.display = 'none';
+    container.appendChild(txtArea);
+
     const quill = new Quill('#' + id, {
         theme: 'snow',
         modules: {
-            toolbar: [
-                [{ 'header': [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                ['link', 'clean']
-            ]
+            toolbar: {
+                container: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    [{ 'size': Size.whitelist }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'align': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link', 'code-block'], // 'code-block' acts as our HTML toggle
+                    ['clean']
+                ],
+                handlers: {
+                    'code-block': function() {
+                        const isSourceMode = txtArea.style.display === 'block';
+                        if (!isSourceMode) {
+                            // Moving to Source: Show HTML
+                            txtArea.value = quill.root.innerHTML;
+                            quill.container.style.display = 'none';
+                            txtArea.style.display = 'block';
+                        } else {
+                            // Moving to Visual: Save HTML
+                            quill.root.innerHTML = txtArea.value;
+                            txtArea.style.display = 'none';
+                            quill.container.style.display = 'block';
+                        }
+                    }
+                }
+            }
         }
     });
-    if(content) quill.root.innerHTML = content;
+
+    if (content) quill.root.innerHTML = content;
     quillRegistry[id] = quill;
 }
 

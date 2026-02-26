@@ -12,7 +12,8 @@
         .ghost { opacity: 0.5; background: #e0e7ff; border: 2px dashed #4f46e5; }
         .drag-handle { cursor: grab; }
         .drag-handle:active { cursor: grabbing; }
-        .drop-zone { min-height: 100px; padding-bottom: 20px; }
+        .drop-zone { min-height: 100px; padding-bottom: 20px; padding: 0 !important; border-radius:14px !important;}
+        .block-item, .block-item *, .ql-editor, .ql-editor * {margin-bottom:0 !important;}
         .ql-toolbar { background: white; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
         .ql-container { background: white; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; font-size: 16px; }
         .ql-editor { min-height: 150px; }
@@ -21,6 +22,19 @@
         .drag-handle-nav { cursor: grab; }
         .drag-handle-nav:active { cursor: grabbing; }
         #navigator-tree li div{ padding:0 3px;}
+        .ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item::before {
+  content: attr(data-value) !important;
+}
+.quill-source-area {
+  width: 100%;
+  height: 300px;
+  background: #ffffff;
+  padding: 10px;
+  font-family: monospace;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+}
         /* To wymusi czarny kolor dla każdego elementu wewnątrz bloku edytora, 
    niezależnie od tego, co mówi szablon */
 .block-item, 

@@ -17,7 +17,7 @@ class BlockRenderer {
             $styleAttr = !empty($set['style']) ? ' style="'.htmlspecialchars($set['style']).'"' : '';
 
             // Otwieramy uniwersalny wrapper dla bloku
-            echo "<div{$idAttr} class=\"block-wrapper mb-4{$clsAttr}\"{$styleAttr}>";
+            echo "<div{$idAttr} class=\"block-wrapper mb-0{$clsAttr}\"{$styleAttr}>";
 
             // 1. COLUMNS 2
             if ($block['type'] === 'columns_2') {
@@ -36,7 +36,7 @@ class BlockRenderer {
             }
             // 3. TEXT
             elseif ($block['type'] === 'text') {
-                echo '<div class="prose max-w-none mb-6">' . $block['content'] . '</div>';
+                echo '<div class="prose max-w-none mb-0">' . $block['content'] . '</div>';
             }
             // 4. IMAGE
             elseif ($block['type'] === 'image') {
@@ -320,7 +320,7 @@ class BlockRenderer {
                 $cid = 'c_' . (!empty($set['id']) ? htmlspecialchars($set['id']) : substr(md5(json_encode($tabs)), 0, 8));
 
                 if (!empty($tabs)) {
-                    echo '<div class="mb-10 carousel-wrapper" id="'.$cid.'">';
+                    echo '<div class="mb-10 carousel-wrapper mt-10" id="'.$cid.'">';
                     echo '<div class="flex flex-wrap gap-3 justify-center mb-8 items-center">';
                     if ($arrows) {
                         echo '<button onclick="moveCarousel(\''.$cid.'\', -1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow">&lt;</button>';

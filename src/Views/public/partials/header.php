@@ -33,10 +33,10 @@
         .hover\:text-white:hover { color: #ffffff; }
         
         /* Typografia dla edytora tekstu */
-        .prose h1 { font-size: 2.25em; font-weight: 800; margin-bottom: 0.5em; }
+       /* .prose h1 { font-size: 2.25em; font-weight: 800; margin-bottom: 0.5em; }
         .prose h2 { font-size: 1.5em; font-weight: 700; margin-bottom: 0.5em; }
         .prose p { margin-bottom: 1em; line-height: 1.6; }
-        .prose ul { list-style: disc; margin-left: 1.5em; }
+        .prose ul { list-style: disc; margin-left: 1.5em; }*/
         
         /* Przeloty CSS (Zoptymalizowane) */
         .przelot-widget { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 24px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }

@@ -126,7 +126,7 @@ foreach ($menuTree as $item) {
         echo $adminNavHtml;
         echo $navigatorHtml;
         
-        echo '<div class="max-w-6xl w-full mx-auto p-6 md:p-12">';
+        echo '<div class="max-w-6xl w-full mx-auto p-6 md:p-0">';
         $blocksToRender = $pageContents['editor'] ?? (isset($pageContents[0]) ? $pageContents : []);
         \CMS\Helpers\BlockRenderer::render($blocksToRender, $db);
         echo '</div>';
