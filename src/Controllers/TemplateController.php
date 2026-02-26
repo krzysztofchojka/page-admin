@@ -13,12 +13,26 @@ class TemplateController {
         }
     }
 
-    public function index() {
+    private function ensureActiveColumnExists($db)
+    {
+        try {
+            $db->query("ALTER TABLE pa_templates ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER html_content");
+        } catch (\Exception $e) {
+            // Kolumna już istnieje
+        }
+    }
+
+    public function index()
+    {
         $db = Database::getInstance();
+        $this->ensureActiveColumnExists($db);
+        
         $templates = $db->query("SELECT * FROM pa_templates ORDER BY id DESC")->fetchAll();
+        
         ob_start();
         require_once __DIR__ . '/../Views/admin/templates/index.php';
         $content = ob_get_clean();
+        
         require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
@@ -383,24 +397,68 @@ OPIS SZABLONU DO WYGENEROWANIA:
         require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
-    public function delete() {
-        $id = $_GET['id'] ?? null;
+    public function toggleActive()
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id = $data['id'] ?? null;
+
         if (!$id) {
-            header("Location: /admin/templates");
+            echo json_encode(['status' => 'error', 'message' => 'Brak ID szablonu.']);
+            exit;
+        }
+
+        $db = Database::getInstance();
+        $this->ensureActiveColumnExists($db);
+        
+        $template = $db->query("SELECT * FROM pa_templates WHERE id = :id", ['id' => $id])->fetch();
+        
+        if ($template) {
+            if ($template['is_active']) {
+                $usage = $db->query("SELECT COUNT(*) as cnt FROM pa_data WHERE template_id = :id", ['id' => $id])->fetch();
+                if ($usage['cnt'] > 0) {
+                    echo json_encode(['status' => 'error', 'message' => "Nie można wyłączyć tego szablonu, używa go {$usage['cnt']} strona/y."]);
+                    exit;
+                } else {
+                    $db->query("UPDATE pa_templates SET is_active = 0 WHERE id = :id", ['id' => $id]);
+                    echo json_encode(['status' => 'success', 'is_active' => 0]);
+                    exit;
+                }
+            } else {
+                $db->query("UPDATE pa_templates SET is_active = 1 WHERE id = :id", ['id' => $id]);
+                echo json_encode(['status' => 'success', 'is_active' => 1]);
+                exit;
+            }
+        }
+        
+        echo json_encode(['status' => 'error', 'message' => 'Szablon nie istnieje.']);
+        exit;
+    }
+
+    public function delete()
+    {
+        // Odbieramy dane JSON z frontendu
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id = $data['id'] ?? null;
+
+        if (!$id) {
+            echo json_encode(['status' => 'error', 'message' => 'Brak ID szablonu.']);
             exit;
         }
 
         $db = Database::getInstance();
         $usage = $db->query("SELECT COUNT(*) as cnt FROM pa_data WHERE template_id = :id", ['id' => $id])->fetch();
-
+        
         if ($usage['cnt'] > 0) {
-            Session::setFlash("Nie można usunąć tego szablonu, ponieważ używa go <b>{$usage['cnt']}</b> strona/y.", 'error');
+            // Szablon jest w użyciu - zwracamy błąd w JSON
+            echo json_encode([
+                'status' => 'error', 
+                'message' => "Nie można usunąć tego szablonu, ponieważ używa go {$usage['cnt']} strona/y."
+            ]);
         } else {
+            // Sukces - usuwamy
             $db->query("DELETE FROM pa_templates WHERE id = :id", ['id' => $id]);
-            Session::setFlash("Szablon usunięty poprawnie.", 'success');
+            echo json_encode(['status' => 'success']);
         }
-
-        header("Location: /admin/templates");
         exit;
     }
 

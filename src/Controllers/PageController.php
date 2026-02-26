@@ -23,11 +23,12 @@ class PageController {
         require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
-    public function create() {
+    public function create()
+    {
         $db = Database::getInstance();
-        // Pobieramy szablony do wyboru
-        $templates = $db->query("SELECT id, title FROM pa_templates ORDER BY title ASC")->fetchAll();
-        
+        // Pobieramy TYLKO aktywne szablony do wyboru
+        $templates = $db->query("SELECT id, title FROM pa_templates WHERE is_active = 1 ORDER BY title ASC")->fetchAll();
+
         ob_start();
         require_once __DIR__ . '/../Views/admin/pages/create.php';
         $content = ob_get_clean();
@@ -64,7 +65,10 @@ class PageController {
 
         $forms = $db->query("SELECT id, title FROM pa_forms ORDER BY id DESC")->fetchAll();
         $galleries = $db->query("SELECT id, title FROM pa_galleries ORDER BY id DESC")->fetchAll();
-        $templates = $db->query("SELECT id, title FROM pa_templates ORDER BY title ASC")->fetchAll();
+        
+        // Pobieramy szablony aktywne ORAZ ewentualnie ten obecnie wybrany (nawet jeśli został wyłączony)
+        $currentTplId = $page['template_id'] ?? 0;
+        $templates = $db->query("SELECT id, title FROM pa_templates WHERE is_active = 1 OR id = :cid ORDER BY title ASC", ['cid' => $currentTplId])->fetchAll();
 
         $templateName = '';
         if (!empty($page['template_id'])) {

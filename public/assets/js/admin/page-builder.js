@@ -17,24 +17,39 @@ function updateNavigator() {
     const navTree = document.getElementById('navigator-tree');
     navTree.innerHTML = '';
     
-    // Iterujemy po wszystkich głównych strefach (drop-zone) w edytorze
-    // Dzięki temu nawigator widzi wszystkie sekcje szablonu
-    const zones = document.querySelectorAll('div[data-zone-uid]');
-    if (zones.length > 0) {
-        zones.forEach(zone => {
-            // Nagłówek strefy w nawigatorze (tylko jeśli mamy szablon z wieloma strefami)
-            if(zones.length > 1) {
+    // Szukamy TYLKO głównych stref w edytorze (odfiltrowujemy te zagnieżdżone wewnątrz klocków .block-item)
+    // To naprawia błąd podwójnego renderowania zawartości kolumn!
+    const rootZones = Array.from(document.querySelectorAll('.drop-zone[data-zone-uid]')).filter(z => !z.closest('.block-item'));
+
+    if (rootZones.length > 0) {
+        rootZones.forEach(zone => {
+            // Nagłówek strefy w nawigatorze
+            if(rootZones.length > 1) {
                 const zoneTitle = document.createElement('div');
-                zoneTitle.className = "text-[10px] font-bold uppercase text-gray-500 mt-2 mb-1 pl-1";
+                zoneTitle.className = "text-[10px] font-bold uppercase text-gray-500 mt-3 mb-1 pl-1";
                 zoneTitle.innerText = "Strefa: " + zone.dataset.zoneUid;
                 navTree.appendChild(zoneTitle);
             }
-            buildNavTree(zone, navTree);
+
+            // Każda główna strefa dostaje własną listę <ul> z poprawnym targetem (data-ref-zone)
+            // To naprawia przeciąganie elementów na głównym poziomie nawigatora!
+            const ul = document.createElement('ul');
+            ul.className = 'nav-drop-zone min-h-[30px] pb-4 space-y-1';
+            ul.dataset.refZone = zone.dataset.zoneUid;
+            
+            buildNavTree(zone, ul);
+            navTree.appendChild(ul);
         });
     } else {
-        // Fallback dla starego edytora bez atrybutów data-zone-uid
+        // Fallback dla bardzo starych wersji bez jakichkolwiek atrybutów
         const editor = document.getElementById('editor');
-        if(editor) buildNavTree(editor, navTree);
+        if(editor) {
+            const ul = document.createElement('ul');
+            ul.className = 'nav-drop-zone min-h-[30px] pb-4 space-y-1';
+            ul.dataset.refZone = 'editor';
+            buildNavTree(editor, ul);
+            navTree.appendChild(ul);
+        }
     }
     
     initNavSortables();
@@ -77,6 +92,7 @@ function buildNavTree(domContainer, navContainer) {
                 if(dz.className.includes('col-left')) zoneName = 'Lewa kolumna';
                 if(dz.className.includes('col-center')) zoneName = 'Środkowa kolumna';
                 if(dz.className.includes('col-right')) zoneName = 'Prawa kolumna';
+                if(dz.className.includes('tab-content')) zoneName = 'Zakładka';
 
                 const zoneLabel = document.createElement('div');
                 zoneLabel.className = 'text-[9px] text-gray-400 font-bold uppercase mb-1 mt-1';
@@ -103,8 +119,8 @@ function initNavSortables() {
     navSortables.forEach(s => s.destroy());
     navSortables = [];
     
-    // Znajdź wszystkie strefy w nawigatorze
-    document.querySelectorAll('.nav-drop-zone, #navigator-tree').forEach(el => {
+    // Szukamy już tylko poprawnie oznaczonych stref .nav-drop-zone
+    document.querySelectorAll('.nav-drop-zone').forEach(el => {
         navSortables.push(Sortable.create(el, {
             group: 'navigator',
             animation: 150,
@@ -122,17 +138,8 @@ function initNavSortables() {
                 
                 // Znajdź prawdziwy blok w edytorze
                 const realBlock = document.querySelector(`[data-uid="${refUid}"]`);
-                let realZone;
-
                 // Znajdź prawdziwą strefę w edytorze
-                if (refZoneUid) {
-                    realZone = document.querySelector(`[data-zone-uid="${refZoneUid}"]`);
-                } else {
-                    // Fallback dla głównego drzewa - szukamy pierwszej strefy głównej lub konkretnej
-                    // W trybie szablonu nawigator główny (#navigator-tree) nie powinien przyjmować bezpośrednio bloków jeśli nie jest zmapowany,
-                    // ale dla uproszczenia zakładamy, że wrzucamy do pierwszej dostępnej strefy edytora.
-                    realZone = document.querySelector('.drop-zone[data-zone-uid]');
-                }
+                const realZone = document.querySelector(`[data-zone-uid="${refZoneUid}"]`);
 
                 if (realBlock && realZone) {
                     const childBlocks = Array.from(realZone.children).filter(c => c.classList.contains('block-item') && c !== realBlock);
@@ -159,12 +166,11 @@ function scrollToBlock(uid) {
     }
 }
 
-// Inicjalizacja Sortable na dowolnym kontenerze
 function initSortable(el) {
     if(!el) return;
     
     Sortable.create(el, {
-        group: 'shared', // Ważne: pozwala przenosić między różnymi strefami
+        group: 'shared', 
         animation: 150,
         handle: '.drag-handle',
         ghostClass: 'ghost',
@@ -218,7 +224,6 @@ function renderRecursive(blocks, container) {
 
         if (block.type === 'text') initQuill(el.querySelector('.quill-editor'), block.content);
         
-        // Obsługa zagnieżdżonych stref
         if (block.type === 'columns_2' && block.children) {
             if(block.children.left) renderRecursive(block.children.left, el.querySelector('.col-left'));
             if(block.children.right) renderRecursive(block.children.right, el.querySelector('.col-right'));
@@ -289,7 +294,6 @@ function renderBlock(type, content = '', blockSettings = null) {
 
     let innerHTML = '';
 
-    // --- BLOKI ---
     if (type === 'text') {
         innerHTML = `
         <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-blue-500 uppercase">T Tekst / Edytor Wizualny</span></div>
@@ -297,7 +301,6 @@ function renderBlock(type, content = '', blockSettings = null) {
     } 
     else if (type === 'raw_html') {
         const aceId = 'ace_' + Math.random().toString(36).substr(2, 9);
-        // Bezpieczne kodowanie zawartości, żeby ukryta textarea się nie zepsuła
         const safeContent = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         
         innerHTML = `
@@ -310,22 +313,19 @@ function renderBlock(type, content = '', blockSettings = null) {
             <textarea class="block-content hidden">${safeContent}</textarea>
         </div>`;
         
-        // Inicjalizacja Ace Editor w tle po wyrenderowaniu elementu HTML w drzewie DOM
         setTimeout(() => {
             const editor = ace.edit(aceId);
             editor.setTheme("ace/theme/monokai");
             editor.session.setMode("ace/mode/html");
             editor.setOptions({ fontSize: "13px", showPrintMargin: false, wrap: true });
             
-            // Pobieramy z ukrytego pola i zrzucamy do Ace Editora
             const hiddenTextarea = document.querySelector(`#${aceId}`).nextElementSibling;
             editor.session.setValue(hiddenTextarea.value);
             
-            // Kiedy programista pisze w Ace, aktualizujemy ukrytą textareę w czasie rzeczywistym
             editor.session.on('change', () => {
                 hiddenTextarea.value = editor.getValue();
             });
-        }, 50); // małe opóźnienie upewnia nas, że element widnieje w DOM-ie.
+        }, 50);
     }
     else if (type === 'columns_2') {
         div.className += " border-2 border-dashed border-indigo-200 bg-indigo-50/20";
@@ -357,10 +357,18 @@ function renderBlock(type, content = '', blockSettings = null) {
     }
     else if (type === 'image') {
         const hasImg = content && content.length > 5;
+        const uniqueId = 'img_in_' + Math.random().toString(36).substr(2, 9);
         innerHTML = `
         <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-green-500 uppercase">🖼 Pojedynczy Obrazek</span></div>
-        <div class="${hasImg ? 'relative' : 'p-10 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-center cursor-pointer transition'}" onclick="triggerUpload(this)">
-            ${hasImg ? `<img src="${content}" class="w-full rounded shadow"><input type="hidden" class="block-content" value="${content}">` : `<div class="pointer-events-none"><span class="text-3xl block mb-2">📸</span><span class="text-gray-500 font-bold">Kliknij, aby wybrać lub wgrać obraz</span></div><input type="hidden" class="block-content" value="">`}
+        <div class="mb-3">
+            <div class="flex w-full mb-2">
+                <input type="text" id="${uniqueId}" class="block-content w-full border border-r-0 p-2 text-sm rounded-l bg-gray-50 focus:bg-white focus:outline-none" placeholder="Adres URL obrazka..." value="${content}" oninput="this.closest('.block-item').querySelector('.img-preview').src = this.value || 'https://via.placeholder.com/800x400?text=Wybierz+lub+wgraj+obraz'">
+                <button type="button" onclick="openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media">📂</button>
+                <button type="button" onclick="triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik">⬆️</button>
+            </div>
+        </div>
+        <div class="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center min-h-[100px]">
+            <img src="${hasImg ? content : 'https://via.placeholder.com/800x400?text=Wybierz+lub+wgraj+obraz'}" class="img-preview w-full object-contain max-h-[400px]">
         </div>`;
     }
     else if (type === 'linked_image') {
@@ -687,9 +695,7 @@ function addCarouselTab(btn) {
 }
 
 function setActive(el, e) {
-    // Odznaczamy stare
     document.querySelectorAll('.ring-2').forEach(d => d.classList.remove('ring-2', 'ring-blue-300'));
-    // Zaznaczamy nowe
     el.classList.add('ring-2', 'ring-blue-300');
     e.stopPropagation();
 }
@@ -834,29 +840,24 @@ function getBlocksFromContainer(container) {
 }
 
 function savePage() {
-    // 1. Sprawdzamy, czy mamy jeden kontener czy wiele stref
     const zones = document.querySelectorAll('div[data-zone-uid]');
     let dataToSave;
 
     if (zones.length > 0) {
-        // Mamy szablon z wieloma strefami - zapisujemy jako OBIEKT
         dataToSave = {};
         zones.forEach(zone => {
             const uid = zone.dataset.zoneUid;
             dataToSave[uid] = getBlocksFromContainer(zone);
         });
     } else {
-        // Stary tryb (jedna strefa #editor) - zapisujemy jako TABLICA
-        // Używamy fallbacku do elementu #editor jeśli nie ma stref
         const editor = document.getElementById('editor');
         if (editor) {
              dataToSave = getBlocksFromContainer(editor);
         } else {
-             dataToSave = []; // Pusta strona
+             dataToSave = [];
         }
     }
 
-    // 2. Pobranie ID szablonu
     const tplSelect = document.getElementById('pageTemplate');
     const templateId = tplSelect ? tplSelect.value : '';
 
@@ -873,7 +874,7 @@ function savePage() {
             slug: document.getElementById('pageSlug').value,
             content: dataToSave,
             template_id: templateId,
-            page_role: document.getElementById('pageRole').value // <--- Pobieranie wybranej roli
+            page_role: document.getElementById('pageRole').value
         })
     })
     .then(res => res.json())
@@ -1175,6 +1176,7 @@ function handleInputUpload(inputEl, file) {
     .then(r=>r.json()).then(d => {
         inputEl.value = d.url || '';
         inputEl.disabled = false;
+        inputEl.dispatchEvent(new Event('input'));
     }).catch(() => {
         inputEl.value = '';
         inputEl.disabled = false;
@@ -1206,7 +1208,9 @@ function closeMediaPicker() {
 window.addEventListener('message', function(event) {
     if (event.data && event.data.type === 'media_selected') {
         if (activePickerInputId) {
-            document.getElementById(activePickerInputId).value = event.data.url;
+            const inputEl = document.getElementById(activePickerInputId);
+            inputEl.value = event.data.url;
+            inputEl.dispatchEvent(new Event('input')); // <-- To odświeży podgląd
         }
         closeMediaPicker();
     }
@@ -1216,24 +1220,22 @@ window.addEventListener('message', function(event) {
 // 6. INITIALIZATION (URUCHOMIENIE SKRYPTU NA KOŃCU)
 // ==========================================
 
-// NAPRAWA PRZECIĄGANIA Z PASKA BOCZNEGO:
 const sidebar = document.getElementById('block-sidebar');
 if (sidebar) {
     Sortable.create(sidebar, {
         group: {
             name: 'shared',
-            pull: 'clone', // Klonuje element z paska (zamiast go wycinać)
-            put: false     // Zabrania wrzucania elementów z powrotem do paska
+            pull: 'clone', 
+            put: false     
         },
-        sort: false,       // Zabrania sortowania samych ikon w pasku
+        sort: false,       
         animation: 150
     });
 }
 
-const zones = document.querySelectorAll('div[data-zone-uid]');
+const zones = document.querySelectorAll('.drop-zone[data-zone-uid]');
 
 if (zones.length > 0) {
-    // TRYB SZABLONU: Wiele stref
     zones.forEach(zone => {
         initSortable(zone);
         const uid = zone.dataset.zoneUid;
@@ -1244,7 +1246,6 @@ if (zones.length > 0) {
         }
     });
 } else {
-    // TRYB KLASYCZNY: Jedna strefa #editor
     const editor = document.getElementById('editor');
     if (editor) {
         initSortable(editor);

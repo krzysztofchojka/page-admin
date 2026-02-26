@@ -57,7 +57,7 @@ $router->get('/admin/forms/builder', [CMS\Controllers\FormController::class, 'bu
 $router->post('/admin/forms/save', [CMS\Controllers\FormController::class, 'save']);
 $router->post('/submit-form', [CMS\Controllers\FormController::class, 'submit']); // Public submission
 $router->get('/admin/forms/submissions/delete', [CMS\Controllers\FormController::class, 'deleteSubmission']);
-$router->get('/admin/templates/delete', [CMS\Controllers\TemplateController::class, 'delete']);
+$router->post('/admin/templates/delete', [CMS\Controllers\TemplateController::class, 'delete']);
 
 // Ustawienia & Backup
 $router->get('/admin/settings/backup', [CMS\Controllers\SettingsController::class, 'backup']);
@@ -107,6 +107,8 @@ $router->get('/admin/templates', [CMS\Controllers\TemplateController::class, 'in
 $router->get('/admin/templates/create', [CMS\Controllers\TemplateController::class, 'create']);
 $router->get('/admin/templates/edit', [CMS\Controllers\TemplateController::class, 'edit']);
 $router->post('/admin/templates/save', [CMS\Controllers\TemplateController::class, 'save']);
+
+$router->post('/admin/templates/toggleActive', [CMS\Controllers\TemplateController::class, 'toggleActive']);
 
 $router->setNotFoundHandler([CMS\Controllers\PublicController::class, 'show']);
 
