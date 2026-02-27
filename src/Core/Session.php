@@ -5,32 +5,22 @@ class Session {
     public static function init() {
         if (session_status() === PHP_SESSION_NONE) {
             
-            // 1. Zabezpieczenie przed systemowym GC - własny folder na sesje
-            // Używamy realpath, aby mieć pewność absolutnej i poprawnej ścieżki
-            $baseDir = realpath(__DIR__ . '/../../');
-            $sessionPath = $baseDir . '/sessions';
-            
-            if (!is_dir($sessionPath)) {
-                @mkdir($sessionPath, 0775, true);
-            }
+            // Rejestracja naszego handlera opartego o bazę danych
+            $handler = new DatabaseSessionHandler();
+            session_set_save_handler($handler, true);
 
-            // BEZPIECZNIK: Nadpisz ścieżkę tylko wtedy, gdy serwer fizycznie może tam zapisać dane.
-            // Jeśli uprawnień brakuje, logowanie zadziała po staremu (bez wydłużonego czasu trwania).
-            if (is_dir($sessionPath) && is_writable($sessionPath)) {
-                session_save_path($sessionPath);
-            }
-
-            // Informujemy przeglądarkę, aby zatrzymała ciastko na bardzo długi czas (1 rok w sekundach).
+            // Informujemy przeglądarkę, aby zatrzymała ciastko na 1 rok
             session_set_cookie_params(31536000);
             ini_set('session.cookie_httponly', 1);
             ini_set('session.use_only_cookies', 1);
             
-            // Set a long GC maxlifetime (e.g., 1 year)
-            ini_set('session.gc_maxlifetime', 31536000);
+            // PHP GC usunie z bazy stare sesje po 7 dniach (lub innej wartości, jeśli wolisz)
+            // Możemy tu zostawić wartość z ustawień lub bezpieczny rok, bo metoda checkLifetime() i tak robi swoje
+            ini_set('session.gc_maxlifetime', 31536000); 
             
             session_start();
             
-            // 2. TIMEOUT CHECK
+            // Sprawdzanie wygasania według ustawień CMS
             self::checkLifetime();
         }
     }
