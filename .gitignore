@@ -2,4 +2,5 @@ logs
 dump.txt
 dump_files.sh
 .env
+sessions/
 public/uploads/*

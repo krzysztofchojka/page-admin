@@ -4,14 +4,28 @@ namespace CMS\Core;
 class Session {
     public static function init() {
         if (session_status() === PHP_SESSION_NONE) {
-            // Informujemy przeglądarkę, aby zatrzymała ciastko na bardzo długi czas (1 rok w sekundach).
-            // Dzięki temu nie znika ono po zamknięciu okna. Twoja funkcja checkLifetime()
-            // i tak odpowiednio wcześnie wyloguje użytkownika bazując na bazie danych.
-            session_set_cookie_params(31536000);
             
+            // 1. Zabezpieczenie przed systemowym GC - własny folder na sesje
+            // Używamy realpath, aby mieć pewność absolutnej i poprawnej ścieżki
+            $baseDir = realpath(__DIR__ . '/../../');
+            $sessionPath = $baseDir . '/sessions';
+            
+            if (!is_dir($sessionPath)) {
+                @mkdir($sessionPath, 0775, true);
+            }
+
+            // BEZPIECZNIK: Nadpisz ścieżkę tylko wtedy, gdy serwer fizycznie może tam zapisać dane.
+            // Jeśli uprawnień brakuje, logowanie zadziała po staremu (bez wydłużonego czasu trwania).
+            if (is_dir($sessionPath) && is_writable($sessionPath)) {
+                session_save_path($sessionPath);
+            }
+
+            // Informujemy przeglądarkę, aby zatrzymała ciastko na bardzo długi czas (1 rok w sekundach).
+            session_set_cookie_params(31536000);
             ini_set('session.cookie_httponly', 1);
             ini_set('session.use_only_cookies', 1);
-            // Set a long GC maxlifetime (e.g., 1 year) so PHP doesn't garbage collect valid files
+            
+            // Set a long GC maxlifetime (e.g., 1 year)
             ini_set('session.gc_maxlifetime', 31536000);
             
             session_start();
