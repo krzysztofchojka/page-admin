@@ -44,6 +44,11 @@
             <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Zaawansowane</div>
             <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="file"><span class="text-lg">📎</span>Plik</div>
             <div class="sidebar-block border bg-white hover:border-gray-800 hover:bg-gray-100 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="html"><span class="text-lg">&lt;/&gt;</span>Custom HTML</div>
+
+            <div class="col-span-2 text-xs font-bold text-red-400 uppercase mt-4 mb-1 border-b border-red-100 pb-1">Anty-Spam (Boty)</div>
+            <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="honeypot"><span class="text-lg">🍯</span>Honeypot</div>
+            <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-[11px] font-bold transition flex flex-col items-center gap-1" data-type="captcha_image"><span class="text-lg">🖼️</span>Obrazek</div>
+            <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-[11px] font-bold transition flex flex-col items-center gap-1" data-type="captcha_turnstile"><span class="text-lg">🛡️</span>Turnstile</div>
         </div>
 
         <div class="p-4 border-t bg-gray-50">
@@ -62,6 +67,8 @@
                 <span>✉️</span> Powiadomienia Email
             </button>
         </div>
+    </div>
+
     </div>
 
     <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
@@ -204,7 +211,6 @@
     </div>
 
     <script>
-        // Iniekcja danych dla JavaScript
         window.CMS_CONFIG = {
             formId: <?= $form['id'] ?>,
             savedFields: <?= $form['form_json'] ?: '[]' ?>,
@@ -214,37 +220,32 @@
 
         const emailTemplatesData = <?= json_encode($emailTemplates ?? []) ?>;
 
-        // Lokalny stan ustawień e-mail
         let currentEmailSettings = window.CMS_CONFIG.savedSettings.email || {
             sendUser: false, userTemplate: '', userField: '',
             sendAdmin: false, adminTemplate: '', adminList: '',
             tags: []
         };
 
-        // Tworzy listę `<option>` dla pól formularza + Opcja Systemowa
         function getFieldOptions() {
             const fields = window.CMS_CONFIG.savedFields || [];
             const isLoginReq = document.getElementById('reqLogin').checked;
             
             let options = '<option value="">-- Wybierz powiązane pole --</option>';
-            
-            // Logika wyszarzania konta systemowego
             if (isLoginReq) {
                 options += '<option value="system_user_email" class="font-bold text-blue-600">🌍 Pobierz z konta systemowego zalogowanego usera</option>';
             } else {
-                options += '<option value="system_user_email" disabled class="text-gray-400">🌍 Konto systemowe (Wymaga zaznaczenia "Wymaga logowania" w opcjach formularza)</option>';
+                options += '<option value="system_user_email" disabled class="text-gray-400">🌍 Konto systemowe (Wymaga zaznaczenia "Wymaga logowania")</option>';
             }
 
             fields.forEach(f => {
                 const fieldId = f.custom_id || f.id;
-                if(fieldId && f.type !== 'html') {
+                if(fieldId && f.type !== 'html' && f.type !== 'honeypot' && f.type !== 'captcha_math') {
                     options += `<option value="${fieldId}">P: ${f.label} [${f.type}]</option>`;
                 }
             });
             return options;
         }
 
-        // Otwieranie Modala Konfiguracji
         function openEmailModal() {
             document.getElementById('email_send_user').checked = currentEmailSettings.sendUser;
             document.getElementById('email_send_admin').checked = currentEmailSettings.sendAdmin;
@@ -256,7 +257,7 @@
             document.getElementById('email_admin_list').value = currentEmailSettings.adminList || '';
             document.getElementById('email_user_field').value = currentEmailSettings.userField || '';
 
-            updateTagRows(); // Auto-rozpoznawanie
+            updateTagRows(); 
             document.getElementById('email-settings-modal').classList.remove('hidden');
         }
 
@@ -264,13 +265,11 @@
             document.getElementById('email-settings-modal').classList.add('hidden');
         }
 
-        // --- AUTOMATYCZNE WYCIĄGANIE TAGÓW Z SZABLONU ---
         function getTagsFromTemplate(id) {
             if(!id) return [];
             const tpl = emailTemplatesData.find(t => t.id == id);
             if(!tpl) return [];
             const content = (tpl.subject || '') + " " + (tpl.body || '');
-            // Dopasowuje {{ cokolwiek }} i eliminuje duplikaty
             const matches = content.match(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g) || [];
             return [...new Set(matches.map(m => m.replace(/[{}]/g, '').trim()))];
         }
@@ -279,15 +278,11 @@
             const t1 = document.getElementById('email_user_template').value;
             const t2 = document.getElementById('email_admin_template').value;
 
-            // Wyłuskujemy wszystkie unikalne tagi z używanych szablonów
             let neededTags = [...new Set([...getTagsFromTemplate(t1), ...getTagsFromTemplate(t2)])];
-            
-            // Wycofujemy z manualnego przypisania bezpieczne tagi standardowe (jeśli użytkownik z nich korzysta)
             neededTags = neededTags.filter(t => t !== 'email'); 
 
             let newTags = [];
             neededTags.forEach(tag => {
-                // Próbujemy zachować dotychczasowe przypisanie usera, jeśli istniało
                 let existing = (currentEmailSettings.tags || []).find(t => t.tag === tag);
                 newTags.push({
                     tag: tag,
@@ -299,7 +294,6 @@
             renderTags();
         }
 
-        // Renderowanie okienek mapowania
         function renderTags() {
             const container = document.getElementById('tag-mapping-container');
             container.innerHTML = '';
@@ -326,7 +320,6 @@
                     </select>
                 `;
                 container.appendChild(row);
-                // Ustawienie starej wartości po zbudowaniu elementu (timeout by uniknąć błędu cyklu JS)
                 setTimeout(() => { row.querySelector('select').value = t.field || ''; }, 0);
             });
         }
@@ -335,46 +328,35 @@
             currentEmailSettings.tags[index][key] = val;
         }
 
-        // Zapis w pamięci tymczasowej przed kliknięciem "Zapisz Formularz"
         function saveEmailModal() {
             currentEmailSettings.sendUser = document.getElementById('email_send_user').checked;
             currentEmailSettings.userTemplate = document.getElementById('email_user_template').value;
             currentEmailSettings.userField = document.getElementById('email_user_field').value;
-
             currentEmailSettings.sendAdmin = document.getElementById('email_send_admin').checked;
             currentEmailSettings.adminTemplate = document.getElementById('email_admin_template').value;
             currentEmailSettings.adminList = document.getElementById('email_admin_list').value;
-
             closeEmailModal();
         }
 
-        // --- PODGLĄD MAILA (MODAL) ---
         function previewTemplate(selectId) {
             const id = document.getElementById(selectId).value;
             if(!id) return alert('Wybierz najpierw szablon z listy rozwijanej obok, aby móc go podejrzeć.');
             const tpl = emailTemplatesData.find(t => t.id == id);
             if(tpl) {
                 const box = document.getElementById('email-preview-content');
-                // Zamknięcie we wrspper pozwala oszukać tailwinda aby poprawnie to sformatował, lub wymusza zachowanie natywnych styli
                 box.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 max-w-2xl mx-auto text-sm text-gray-800">${tpl.body}</div>`;
                 document.getElementById('email-preview-modal').classList.remove('hidden');
             }
         }
 
-        // --- MONKEY PATCHING ZAPISU DO BAZY ---
         const originalFetch = window.fetch;
         window.fetch = async function() {
             if (arguments[0] === '/admin/forms/save') {
                 try {
                     let payload = JSON.parse(arguments[1].body);
-                    
-                    // Bezpieczna aktualizacja zmiennej w pamięci by tagi widziały nowe nazwy
                     window.CMS_CONFIG.savedFields = payload.fields;
-                    
-                    // Doklejenie opcji mailowych
                     payload.settings = payload.settings || {};
                     payload.settings.email = currentEmailSettings;
-
                     arguments[1].body = JSON.stringify(payload);
                 } catch (e) {
                     console.error('Błąd przesyłu danych email:', e);

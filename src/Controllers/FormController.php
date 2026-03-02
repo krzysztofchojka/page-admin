@@ -30,7 +30,6 @@ class FormController {
         $db = Database::getInstance();
         $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $id])->fetch();
 
-        // Pobieramy całe szablony, aby mieć dostęp do ich treści w JS (do tagów i podglądu)
         $emailTemplates = $db->query("SELECT id, title, subject, body FROM pa_email_templates ORDER BY title ASC")->fetchAll();
         $mailingLists = $db->query("SELECT id, name FROM pa_mailing_lists ORDER BY name ASC")->fetchAll();
 
@@ -149,23 +148,32 @@ class FormController {
         $files = $_FILES['files'] ?? [];
 
         $service = new \CMS\Services\FormSubmissionService();
-        $service->handleSubmission($formId, $submissionId, $formData, $files, $userId);
+        $result = $service->handleSubmission($formId, $submissionId, $formData, $files, $userId);
 
-        // NAPRAWA PRZEKIEROWANIA:
-        // Pobieramy url z ukrytego pola (dodanego w BlockRenderer) lub awaryjnie z HTTP_REFERER
         $redirect = $_POST['return_url'] ?? ($_SERVER['HTTP_REFERER'] ?? '/');
         
-        // Parsujemy URL, by bezpiecznie podmienić/dodać zapytania GET nie niszcząc np. ?id=19
         $parsedUrl = parse_url($redirect);
         $path = $parsedUrl['path'] ?? '/';
         $query = $parsedUrl['query'] ?? '';
-        
         parse_str($query, $queryParams);
-        $queryParams['submitted'] = $formId; // Flaga sukcesu przypisana do tego formularza
-        unset($queryParams['edit']); // Zabezpieczenie usuwające tryb edycji z paska URL
+
+        // Wykryto błąd zabezpieczeń Captcha / Honeypot!
+        if (is_array($result) && isset($result['status']) && $result['status'] === 'error') {
+            \CMS\Core\Session::setFlash($result['msg'], 'error');
+            $queryParams['err_form'] = $formId; // Flaga pozwalająca odczytać błąd tylko dla tego formsa
+            unset($queryParams['submitted']);
+            $newQuery = http_build_query($queryParams);
+            header("Location: " . $path . '?' . $newQuery . '#form-container-' . $formId);
+            exit;
+        }
+
+        // Zwykły, poprawny przebieg
+        $queryParams['submitted'] = $formId; 
+        unset($queryParams['edit']);
+        unset($queryParams['err_form']);
         
         $newQuery = http_build_query($queryParams);
-        $newRedirect = $path . '?' . $newQuery;
+        $newRedirect = $path . '?' . $newQuery . '#form-container-' . $formId;
         
         header("Location: " . $newRedirect);
         exit;

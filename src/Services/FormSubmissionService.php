@@ -8,6 +8,70 @@ class FormSubmissionService {
     public function handleSubmission($formId, $submissionId, $formData, $files, $userId) {
         $vault = new Vault();
         $db = Database::getInstance();
+        
+        // --- 1. WERYFIKACJA ANTY-SPAMOWA ---
+        $formDef = $db->query("SELECT form_json FROM pa_forms WHERE id = :id", ['id' => $formId])->fetch();
+        $fields = json_decode($formDef['form_json'] ?? '[]', true);
+
+        foreach ($fields as $f) {
+            $type = $f['type'] ?? '';
+            
+            // A. Honeypot
+            if ($type === 'honeypot') {
+                $hpId = $f['custom_id'] ?? $f['id'] ?? null;
+                foreach ($_POST as $k => $v) {
+                    if (strpos($k, 'hp_data_') === 0 && !empty(trim($v))) {
+                        return ['status' => 'error', 'msg' => 'Wykryto niedozwoloną aktywność automatyczną.'];
+                    }
+                }
+            }
+            
+            // B. Captcha Obrazkowa (Gregwar)
+            if ($type === 'captcha_image') {
+                $expected = \CMS\Core\Session::get('captcha_img_' . $formId);
+                $provided = $_POST['captcha_answer'] ?? '';
+                
+                // Porównujemy bez względu na wielkość liter
+                if (!$expected || strtolower(trim($provided)) !== strtolower($expected)) {
+                    return ['status' => 'error', 'msg' => 'Błędny kod z obrazka. Spróbuj ponownie.'];
+                }
+                \CMS\Core\Session::remove('captcha_img_' . $formId);
+            }
+
+            // C. Cloudflare Turnstile
+            if ($type === 'captcha_turnstile') {
+                $secretKey = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'turnstile_secret_key'")->fetch()['setting_value'] ?? '';
+                $token = $_POST['cf-turnstile-response'] ?? '';
+                
+                if (empty($token)) {
+                    return ['status' => 'error', 'msg' => 'Zaznacz pole zabezpieczające "Nie jestem robotem".'];
+                }
+
+                if (empty($secretKey)) {
+                    return ['status' => 'error', 'msg' => 'Błąd systemu: Brak klucza Secret Key dla Turnstile.'];
+                }
+
+                // Weryfikacja tokenu w API Cloudflare
+                $verify = file_get_contents("https://challenges.cloudflare.com/turnstile/v0/siteverify", false, stream_context_create([
+                    'http' => [
+                        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                        'method'  => 'POST',
+                        'content' => http_build_query([
+                            'secret' => $secretKey,
+                            'response' => $token,
+                            'remoteip' => $_SERVER['REMOTE_ADDR']
+                        ])
+                    ]
+                ]));
+
+                $captchaResponse = json_decode($verify);
+                if (!$captchaResponse || !$captchaResponse->success) {
+                    return ['status' => 'error', 'msg' => 'Weryfikacja Cloudflare Turnstile nie powiodła się. Spróbuj odświeżyć stronę.'];
+                }
+            }
+        }
+        // -----------------------------------
+
         $encryptedData = $vault->encrypt(json_encode($formData));
         $savedFiles = [];
 
@@ -23,15 +87,12 @@ class FormSubmissionService {
 
         if (!empty($files['name']) && is_array($files['name'])) {
             $uploadDir = __DIR__ . '/../../public/uploads/secure/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            
             foreach ($files['name'] as $fieldKey => $filename) {
                 if ($files['error'][$fieldKey] === UPLOAD_ERR_OK) {
                     $tmpName = $files['tmp_name'][$fieldKey];
-                    $content = file_get_contents($tmpName);
-                    
-                    $encryptedContent = $vault->encrypt($content);
+                    $encryptedContent = $vault->encrypt(file_get_contents($tmpName));
                     $safeName = bin2hex(random_bytes(16)) . '.enc';
                     file_put_contents($uploadDir . $safeName, $encryptedContent);
 
@@ -48,26 +109,16 @@ class FormSubmissionService {
 
         if ($submissionId && $userId) {
             $db->query("UPDATE pa_submissions SET data_json = :d, files_json = :f, user_ip = :ip WHERE id = :id AND user_id = :uid", [
-                'd' => $encryptedData,
-                'f' => $filesJson,
-                'ip' => $userIp,
-                'id' => $submissionId,
-                'uid' => $userId
+                'd' => $encryptedData, 'f' => $filesJson, 'ip' => $userIp, 'id' => $submissionId, 'uid' => $userId
             ]);
         } else {
             $db->query("INSERT INTO pa_submissions (form_id, user_id, user_ip, data_json, files_json) VALUES (:fid, :uid, :ip, :d, :f)", [
-                'fid' => $formId,
-                'uid' => $userId,
-                'ip' => $userIp,
-                'd' => $encryptedData,
-                'f' => $filesJson
+                'fid' => $formId, 'uid' => $userId, 'ip' => $userIp, 'd' => $encryptedData, 'f' => $filesJson
             ]);
-            
-            // WYSYŁKA POWIADOMIEŃ EMAIL
             $this->sendEmailNotifications($formId, $formData, $userId);
         }
 
-        return true;
+        return ['status' => 'success'];
     }
 
     private function sendEmailNotifications($formId, $formData, $userId) {
@@ -94,7 +145,7 @@ class FormSubmissionService {
 
         $mailer = new \CMS\Services\MailerService();
 
-        // 1. ADMIN
+        // ADMIN
         if (!empty($emailSettings['sendAdmin']) && !empty($emailSettings['adminTemplate']) && !empty($emailSettings['adminList'])) {
             $template = $db->query("SELECT * FROM pa_email_templates WHERE id = ?", [$emailSettings['adminTemplate']])->fetch();
             
@@ -125,12 +176,11 @@ class FormSubmissionService {
             }
         }
 
-        // 2. KLIENT (Z UWZGLĘDNIENIEM KONTA SYSTEMOWEGO)
+        // KLIENT
         if (!empty($emailSettings['sendUser']) && !empty($emailSettings['userTemplate']) && !empty($emailSettings['userField'])) {
             $userEmailField = $emailSettings['userField'];
             $userEmail = null;
 
-            // Sprawdzamy czy to zaciąg systemowy
             if ($userEmailField === 'system_user_email') {
                 if ($userId) {
                     $user = $db->query("SELECT email FROM pa_users WHERE id = ?", [$userId])->fetch();

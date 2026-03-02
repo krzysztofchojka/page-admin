@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'type' => 'library',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'reference' => 'dcd16eff1881736cf3e72395361b101bcfbdefd5',
+        'name' => '__root__',
+        'dev' => true,
+    ),
+    'versions' => array(
+        '__root__' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'reference' => 'dcd16eff1881736cf3e72395361b101bcfbdefd5',
+            'dev_requirement' => false,
+        ),
+        'gregwar/captcha' => array(
+            'pretty_version' => 'v1.3.0',
+            'version' => '1.3.0.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../gregwar/captcha',
+            'aliases' => array(),
+            'reference' => '4edbcd09fde4353b94ce550f43460eba73baf2cc',
+            'dev_requirement' => false,
+        ),
+        'symfony/finder' => array(
+            'pretty_version' => 'v6.4.34',
+            'version' => '6.4.34.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../symfony/finder',
+            'aliases' => array(),
+            'reference' => '9590e86be1d1c57bfbb16d0dd040345378c20896',
+            'dev_requirement' => false,
+        ),
+    ),
+);

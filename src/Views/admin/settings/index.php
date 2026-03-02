@@ -228,6 +228,19 @@ function toggleVisibility(id) {
     </div>
 </div>
 
+<h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Anty-Spam (Cloudflare Turnstile)</h3>
+        <p class="text-xs text-gray-500 mb-4">Wklej tutaj klucze API wygenerowane w panelu <a href="https://dash.cloudflare.com" style="color:rgb(246, 130, 31);text-decoration: underline;" target="_blank">Cloudflare</a>, aby móc korzystać z bloku "Turnstile Captcha" w formularzach.</p>
+        <div class="grid grid-cols-1 gap-4 mb-4">
+            <div>
+                <label class="block font-bold text-sm">Site Key (Klucz Witryny)</label>
+                <input type="text" name="turnstile_site_key" value="<?= htmlspecialchars($settings['turnstile_site_key'] ?? '') ?>" class="w-full border p-2 rounded text-sm bg-gray-50 focus:bg-white" placeholder="np. 0x4AAAAAAAX...">
+            </div>
+            <div>
+                <label class="block font-bold text-sm">Secret Key (Klucz Tajny)</label>
+                <input type="password" name="turnstile_secret_key" value="<?= htmlspecialchars($settings['turnstile_secret_key'] ?? '') ?>" class="w-full border p-2 rounded text-sm bg-gray-50 focus:bg-white" placeholder="Wymagane do weryfikacji na serwerze">
+            </div>
+        </div>
+
 <h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Zaawansowane</h3>
         <div class="mb-4">
             <label class="block font-bold text-sm">Custom Head (Skrypty, Pixele, Google Analytics)</label>
