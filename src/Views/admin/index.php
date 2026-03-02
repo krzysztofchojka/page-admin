@@ -42,6 +42,9 @@
             <a href="/admin/users" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
                 <span>👥</span> <span class="menu-text">Użytkownicy</span>
             </a>
+            <a href="/admin/email" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+                <span>✉️</span> <span class="menu-text">Email</span>
+            </a>
             <a href="/admin/settings" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
                 <span>⚙️</span> <span class="menu-text">Ustawienia</span>
             </a>

@@ -108,6 +108,29 @@ $router->get('/admin/templates/create', [CMS\Controllers\TemplateController::cla
 $router->get('/admin/templates/edit', [CMS\Controllers\TemplateController::class, 'edit']);
 $router->post('/admin/templates/save', [CMS\Controllers\TemplateController::class, 'save']);
 
+// --- MODUŁ EMAIL ---
+$router->get('/admin/email', [CMS\Controllers\EmailController::class, 'index']);
+$router->get('/admin/email/queue', [CMS\Controllers\EmailController::class, 'queue']);
+$router->post('/admin/email/schedule', [CMS\Controllers\EmailController::class, 'schedule']);
+$router->get('/admin/email/trigger', [CMS\Controllers\EmailController::class, 'triggerJob']);
+
+// Szablony
+$router->get('/admin/email/templates', [CMS\Controllers\EmailController::class, 'templates']);
+$router->get('/admin/email/templates/create', [CMS\Controllers\EmailController::class, 'createTemplate']);
+$router->get('/admin/email/templates/edit', [CMS\Controllers\EmailController::class, 'editTemplate']);
+$router->post('/admin/email/templates/save', [CMS\Controllers\EmailController::class, 'saveTemplate']);
+
+// Listy
+$router->get('/admin/email/lists', [CMS\Controllers\EmailController::class, 'lists']);
+$router->post('/admin/email/lists/create', [CMS\Controllers\EmailController::class, 'createList']);
+$router->get('/admin/email/lists/manage', [CMS\Controllers\EmailController::class, 'manageList']);
+$router->post('/admin/email/lists/add-subscriber', [CMS\Controllers\EmailController::class, 'addSubscriber']);
+$router->get('/admin/email/lists/remove-subscriber', [CMS\Controllers\EmailController::class, 'removeSubscriber']);
+
+$router->get('/admin/email/fetch-imap', [CMS\Controllers\EmailController::class, 'fetchEmails']);
+
+$router->get('/admin/email/read', [CMS\Controllers\EmailController::class, 'readEmail']);
+
 $router->post('/admin/templates/toggleActive', [CMS\Controllers\TemplateController::class, 'toggleActive']);
 
 $router->setNotFoundHandler([CMS\Controllers\PublicController::class, 'show']);

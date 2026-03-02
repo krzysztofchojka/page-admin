@@ -182,6 +182,29 @@ function toggleVisibility(id) {
     </div>
 </div>
 
+<h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Serwer IMAP (Odbiór Wiadomości)</h3>
+<div class="grid grid-cols-2 gap-4 mb-4">
+    <div>
+        <label class="block font-bold text-sm">Serwer (Host)</label>
+        <input type="text" name="imap_host" value="<?= htmlspecialchars($settings['imap_host'] ?? '') ?>" class="w-full border p-2 rounded text-sm" placeholder="imap.gmail.com">
+    </div>
+    <div>
+        <label class="block font-bold text-sm">Port</label>
+        <input type="number" name="imap_port" value="<?= htmlspecialchars($settings['imap_port'] ?? '993') ?>" class="w-full border p-2 rounded text-sm">
+    </div>
+    <div>
+        <label class="block font-bold text-sm">Użytkownik (Login)</label>
+        <input type="text" name="imap_user" value="<?= htmlspecialchars($settings['imap_user'] ?? '') ?>" class="w-full border p-2 rounded text-sm">
+    </div>
+    <div>
+        <label class="block font-bold text-sm">Hasło</label>
+        <div class="relative">
+            <input type="password" id="input_imap" name="imap_pass" value="<?= htmlspecialchars($settings['imap_pass'] ?? '') ?>" class="w-full border p-2 rounded text-sm pr-10">
+            <button type="button" onclick="toggleVisibility('input_imap')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+        </div>
+    </div>
+</div>
+
 <h3 class="font-bold text-gray-500 uppercase text-xs mt-8 mb-4 border-b pb-2">Serwer SMTP (Wysyłka Formularzy)</h3>
 <div class="grid grid-cols-2 gap-4 mb-4">
     <div>

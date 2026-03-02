@@ -50,6 +50,9 @@ function isActive($path, $current) {
             <a href="/admin/users" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/users', $currentPath) ?>">
                 <span>👥</span> <span class="menu-text">Użytkownicy</span>
             </a>
+            <a href="/admin/email" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/email', $currentPath) ?>">
+                <span>✉️</span> <span class="menu-text">Email</span>
+            </a>
             <a href="/admin/settings" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/settings', $currentPath) ?>">
                 <span>⚙️</span> <span class="menu-text">Ustawienia</span>
             </a>
