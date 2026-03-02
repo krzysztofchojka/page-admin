@@ -8,8 +8,13 @@
         <input type="hidden" name="id" value="<?= $user['id'] ?>">
 
         <div class="mb-5">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Adres Email / Login</label>
-            <input type="text" name="email" value="<?= htmlspecialchars($user['uname'] ?: $user['email']) ?>" required class="w-full border border-gray-300 p-2.5 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+            <label class="block text-sm font-bold text-gray-700 mb-2">Login (Nazwa Użytkownika)</label>
+            <input type="text" name="username" value="<?= htmlspecialchars($user['uname'] ?? '') ?>" required class="w-full border border-gray-300 p-2.5 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+
+        <div class="mb-5">
+            <label class="block text-sm font-bold text-gray-700 mb-2">Adres Email (np. do powiadomień)</label>
+            <input type="email" name="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>" class="w-full border border-gray-300 p-2.5 rounded focus:ring-2 focus:ring-blue-500 outline-none">
         </div>
 
         <div class="mb-5">

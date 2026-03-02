@@ -2,7 +2,6 @@
 namespace CMS\Helpers;
 
 class BlockRenderer {
-    
     // Zapobiega wielokrotnemu pobieraniu skryptów Swiper i GLightbox na jednej stronie
     private static $galleryAssetsLoaded = false;
 
@@ -22,28 +21,42 @@ class BlockRenderer {
             // 1. COLUMNS 2
             if ($block['type'] === 'columns_2') {
                 echo '<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">';
-                echo '<div>'; if(!empty($block['children']['left'])) self::render($block['children']['left'], $db); echo '</div>';
-                echo '<div>'; if(!empty($block['children']['right'])) self::render($block['children']['right'], $db); echo '</div>';
+                echo '<div>';
+                if(!empty($block['children']['left'])) self::render($block['children']['left'], $db);
+                echo '</div>';
+                echo '<div>';
+                if(!empty($block['children']['right'])) self::render($block['children']['right'], $db);
+                echo '</div>';
                 echo '</div>';
             }
+
             // 2. COLUMNS 3
             elseif ($block['type'] === 'columns_3') {
                 echo '<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">';
-                echo '<div>'; if(!empty($block['children']['left'])) self::render($block['children']['left'], $db); echo '</div>';
-                echo '<div>'; if(!empty($block['children']['center'])) self::render($block['children']['center'], $db); echo '</div>';
-                echo '<div>'; if(!empty($block['children']['right'])) self::render($block['children']['right'], $db); echo '</div>';
+                echo '<div>';
+                if(!empty($block['children']['left'])) self::render($block['children']['left'], $db);
+                echo '</div>';
+                echo '<div>';
+                if(!empty($block['children']['center'])) self::render($block['children']['center'], $db);
+                echo '</div>';
+                echo '<div>';
+                if(!empty($block['children']['right'])) self::render($block['children']['right'], $db);
+                echo '</div>';
                 echo '</div>';
             }
+
             // 3. TEXT
             elseif ($block['type'] === 'text') {
                 echo '<div class="prose max-w-none mb-0">' . $block['content'] . '</div>';
             }
+
             // 4. IMAGE
             elseif ($block['type'] === 'image') {
                 if (!empty($block['content'])) {
                     echo '<div class="mb-6"><img src="' . htmlspecialchars($block['content']) . '" class="w-full rounded-xl shadow-lg"></div>';
                 }
             }
+
             // 5. WIDEO
             elseif ($block['type'] === 'video') {
                 $url = $block['content'] ?? '';
@@ -62,6 +75,7 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
+
             // 6. PRZYCISK
             elseif ($block['type'] === 'button') {
                 $data = is_array($block['content']) ? $block['content'] : [];
@@ -80,12 +94,14 @@ class BlockRenderer {
                 echo '<a href="'.htmlspecialchars($url).'" class="'.$btnClass.'">'.htmlspecialchars($label).'</a>';
                 echo '</div>';
             }
+
             // 7. SEPARATOR
             elseif ($block['type'] === 'divider') {
                 $data = is_array($block['content']) ? $block['content'] : [];
-                $height = $data['height'] ?? '8'; 
+                $height = $data['height'] ?? '8';
                 echo '<hr class="border-t border-gray-200 my-'.htmlspecialchars($height).' w-full">';
             }
+
             // 8. CYTAT
             elseif ($block['type'] === 'quote') {
                 $data = is_array($block['content']) ? $block['content'] : [];
@@ -99,9 +115,11 @@ class BlockRenderer {
                 }
                 echo '</blockquote>';
             }
+
             // 9. AKORDEON
             elseif ($block['type'] === 'accordion') {
                 $title = $block['content']['title'] ?? 'Kliknij, aby rozwinąć';
+                
                 echo '<details class="group mb-4 bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer overflow-hidden transition-all">';
                 echo '<summary class="p-5 font-bold text-lg text-purple-800 bg-purple-50 list-none flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-purple-300">';
                 echo '<span>'.htmlspecialchars($title).'</span>';
@@ -114,13 +132,14 @@ class BlockRenderer {
                 echo '</div>';
                 echo '</details>';
             }
+
             // 10. FORMULARZ
             elseif ($block['type'] === 'form') {
                 $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $block['content']])->fetch();
                 if ($form) {
                     $formSettings = json_decode($form['settings'] ?? '{}', true);
                     $userId = \CMS\Core\Session::get('user_id');
-                    
+
                     echo '<div class="bg-gray-50 border border-gray-200 p-6 md:p-8 rounded-xl mb-8 shadow-sm" id="form-container-'.$form['id'].'">';
                     echo '<h3 class="text-2xl font-bold mb-6 text-gray-800">' . htmlspecialchars($form['title']) . '</h3>';
 
@@ -131,7 +150,7 @@ class BlockRenderer {
 
                     $isSubmittedNow = isset($_GET['submitted']) && $_GET['submitted'] == $form['id'];
                     $isEditing = isset($_GET['edit']) && $_GET['edit'] == $form['id'];
-                    
+
                     $existingSubmission = null;
                     if ($userId) {
                         $existingSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1", [$form['id'], $userId])->fetch();
@@ -147,13 +166,16 @@ class BlockRenderer {
                     if ($showThankYou) {
                         echo '<div class="bg-green-100 border border-green-400 text-green-800 px-5 py-5 rounded-lg mb-4 shadow-sm"><span class="text-3xl mb-3 block">🎉</span> <strong class="text-lg">Dziękujemy!</strong><br> Twój formularz został poprawnie zapisany na serwerze.</div>';
                         echo '<div class="flex flex-wrap gap-4 mt-6">';
-                        if (!empty($formSettings['editable']) && $existingSubmission) echo '<a href="?edit='.$form['id'].'#form-container-'.$form['id'].'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">Kliknij, by edytować</a>';
-                        if (empty($formSettings['fillOnce'])) echo '<a href="?#form-container-'.$form['id'].'" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded shadow transition">Wyślij ponownie</a>';
+                        if (!empty($formSettings['editable']) && $existingSubmission) 
+                            echo '<a href="?edit='.$form['id'].'#form-container-'.$form['id'].'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">Kliknij, by edytować</a>';
+                        if (empty($formSettings['fillOnce'])) 
+                            echo '<a href="?#form-container-'.$form['id'].'" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded shadow transition">Wyślij ponownie</a>';
                         echo '</div>';
                     } else {
                         $prefill = [];
                         $existingFiles = [];
                         $vault = new \CMS\Core\Vault();
+
                         if ($isEditing && $existingSubmission) {
                             $prefill = json_decode($vault->decrypt($existingSubmission['data_json']), true) ?? [];
                             $existingFiles = json_decode($existingSubmission['files_json'] ?? '{}', true) ?? [];
@@ -174,12 +196,14 @@ class BlockRenderer {
 
                         echo '<form action="/submit-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-6">';
                         echo '<input type="hidden" name="form_id" value="'.$form['id'].'">';
+                        echo '<input type="hidden" name="return_url" value="'.htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/').'">';
+                        
                         if ($isEditing && $existingSubmission) echo '<input type="hidden" name="submission_id" value="'.$existingSubmission['id'].'">';
 
                         $fields = json_decode($form['form_json'], true) ?? [];
                         foreach ($fields as $field) {
                             $type = $field['type'] ?? 'text';
-                            
+
                             if ($type === 'html') {
                                 $widthClass = 'md:col-span-3';
                                 if (isset($field['width'])) $widthClass = $field['width'] === 'full' ? 'md:col-span-3' : ($field['width'] === 'half' ? 'md:col-span-2' : 'md:col-span-1');
@@ -190,13 +214,12 @@ class BlockRenderer {
                             $widthClass = ($field['width']??'full') === 'full' ? 'md:col-span-3' : (($field['width']??'full')==='half'?'md:col-span-2':'md:col-span-1');
                             $fieldId = $field['custom_id'] ?? $field['id'] ?? md5($field['label']);
                             $val = $prefill[$fieldId] ?? '';
-                            
                             $req = !empty($field['required']);
                             $reqAttr = $req ? 'required' : '';
                             $reqStar = $req ? '<span class="text-red-500 ml-1" title="Pole wymagane">*</span>' : '';
 
                             echo "<div class='$widthClass'><label class='block text-sm font-bold text-gray-700 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
-                            
+
                             if($type == 'file') {
                                 $fileReqAttr = ($req && !isset($existingFiles[$fieldId])) ? 'required' : '';
                                 if ($isEditing && isset($existingFiles[$fieldId])) {
@@ -231,8 +254,7 @@ class BlockRenderer {
                                     echo "<select id='{$fieldId}' name='data[{$fieldId}]' class='w-full border p-2.5 rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none' {$reqAttr}><option value=''>-- Wybierz --</option>";
                                     foreach ($options as $o) {
                                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                                        $disabled = '';
-                                        $limitText = '';
+                                        $disabled = ''; $limitText = '';
                                         if ($o['limit'] > 0) {
                                             $left = $o['limit'] - $currentCount;
                                             if ($left <= 0 && $val !== $o['label']) {
@@ -250,8 +272,7 @@ class BlockRenderer {
                                     echo "<div class='flex flex-col gap-2' id='{$fieldId}'>";
                                     foreach ($options as $idx => $o) {
                                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                                        $disabled = '';
-                                        $limitText = '';
+                                        $disabled = ''; $limitText = '';
                                         if ($o['limit'] > 0) {
                                             $left = $o['limit'] - $currentCount;
                                             if ($left <= 0 && $val !== $o['label']) {
@@ -271,8 +292,7 @@ class BlockRenderer {
                                     echo "<div class='flex flex-col gap-2' id='{$fieldId}'>";
                                     foreach ($options as $idx => $o) {
                                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                                        $disabled = '';
-                                        $limitText = '';
+                                        $disabled = ''; $limitText = '';
                                         if ($o['limit'] > 0) {
                                             $left = $o['limit'] - $currentCount;
                                             if ($left <= 0 && !in_array($o['label'], $valArray)) {
@@ -295,7 +315,7 @@ class BlockRenderer {
                             }
                             echo "</div>";
                         }
-                        
+
                         $btnText = $isEditing ? 'Zaktualizuj dane' : 'Wyślij';
                         echo '<div class="md:col-span-3 mt-4"><button class="w-full bg-primary hover:opacity-90 text-white font-bold py-3.5 rounded-lg transition shadow-md">'.$btnText.'</button>';
                         if ($isEditing) echo '<div class="text-center mt-3"><a href="?" class="text-sm font-bold text-gray-500 hover:text-gray-800">Anuluj edycję</a></div>';
@@ -304,6 +324,7 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
+
             // 11. LINKED IMAGE
             elseif ($block['type'] === 'linked_image') {
                 $img = $block['content']['url'] ?? '';
@@ -312,6 +333,7 @@ class BlockRenderer {
                     echo '<div class="mb-8"><a href="'.htmlspecialchars($link).'"><img src="'.htmlspecialchars($img).'" class="w-full rounded-xl shadow-md hover:opacity-90 transition transform hover:scale-[1.01]"></a></div>';
                 }
             }
+
             // 12. CAROUSEL (Taby)
             elseif ($block['type'] === 'carousel') {
                 $data = is_array($block['content']) ? $block['content'] : [];
@@ -322,16 +344,18 @@ class BlockRenderer {
                 if (!empty($tabs)) {
                     echo '<div class="mb-10 carousel-wrapper mt-10" id="'.$cid.'">';
                     echo '<div class="flex flex-wrap gap-3 justify-center mb-8 items-center">';
+                    
                     if ($arrows) {
                         echo '<button onclick="moveCarousel(\''.$cid.'\', -1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow">&lt;</button>';
                     }
+
                     foreach ($tabs as $idx => $tab) {
                         $activeClass = $idx === 0 ? 'bg-blue-900 scale-105' : 'bg-blue-700 hover:bg-blue-800';
                         $tSet = $tab['settings'] ?? [];
                         $tId = !empty($tSet['id']) ? ' id="'.htmlspecialchars($tSet['id']).'"' : '';
                         $tCls = !empty($tSet['css']) ? ' ' . htmlspecialchars($tSet['css']) : '';
                         $tStyle = !empty($tSet['style']) ? ' style="'.htmlspecialchars($tSet['style']).'"' : '';
-                        
+
                         echo '<button'.$tId.' onclick="showCarouselTab(\''.$cid.'\', '.$idx.')" data-index="'.$idx.'" class="c-btn-'.$cid.' flex flex-col items-center justify-center p-4 rounded-xl w-32 md:w-40 text-white shadow-lg transition-all duration-300 transform '.$activeClass.$tCls.'"'.$tStyle.'>';
                         if (strpos($tab['icon'], 'http') === 0 || strpos($tab['icon'], '/') === 0) {
                             echo '<img src="'.htmlspecialchars($tab['icon']).'" class="h-8 w-8 mb-2 invert">';
@@ -341,11 +365,12 @@ class BlockRenderer {
                         echo '<span class="text-xs md:text-sm font-bold text-center leading-tight uppercase">'.htmlspecialchars($tab['label']).'</span>';
                         echo '</button>';
                     }
+
                     if ($arrows) {
                         echo '<button onclick="moveCarousel(\''.$cid.'\', 1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow">&gt;</button>';
                     }
-                    echo '</div>';
 
+                    echo '</div>';
                     echo '<div class="bg-white p-6 md:p-10 rounded-xl shadow border-t-4 border-blue-900 relative">';
                     foreach ($tabs as $idx => $tab) {
                         $display = $idx === 0 ? 'block' : 'hidden';
@@ -361,15 +386,15 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
-            // 13. GALLERY (Nowoczesny standard: GLightbox + Facebook-style Grid + Swiper JS)
-            // 13. GALLERY (Nowoczesny standard: GLightbox + Facebook-style Grid + Swiper JS)
+
+            // 13. GALLERY 
             elseif ($block['type'] === 'gallery') {
                 $gal = $db->query("SELECT * FROM pa_galleries WHERE id = :id", ['id' => $block['content']])->fetch();
                 if ($gal) {
                     $imgs = json_decode($gal['images_json'], true);
                     $settings = json_decode($gal['settings'] ?? '{}', true);
-                    if (empty($imgs)) continue;
 
+                    if (empty($imgs)) continue;
                     echo '<div class="mb-10">';
                     echo '<h3 class="text-2xl font-bold mb-6 text-gray-800">'.htmlspecialchars($gal['title']).'</h3>';
 
@@ -385,7 +410,6 @@ class BlockRenderer {
                     }
 
                     if ($gal['type'] === 'grid') {
-                        // Kafelkowa siatka stylizowana na Facebooka
                         $maxVisible = 5;
                         $total = count($imgs);
                         echo '<div class="grid grid-cols-6 gap-2 md:gap-3 rounded-xl overflow-hidden shadow-sm">';
@@ -410,25 +434,21 @@ class BlockRenderer {
                             echo "</a>";
                         }
                         echo '</div>';
-                        
                     } else {
-                        // Dynamiczna konfiguracja Swiper JS na podstawie ustawień
                         $swiperId = 'gallery_swiper_' . $gal['id'] . '_' . md5(uniqid());
-                        
                         $isLoop = !empty($settings['loop']) ? 'true' : 'false';
                         $showNav = !empty($settings['nav']);
                         $showPag = !empty($settings['pag']);
                         $autoplay = (!empty($settings['autoplay']) && $settings['autoplay'] > 0) ? "{ delay: {$settings['autoplay']}, disableOnInteraction: false }" : 'false';
-
-                        $effect = 'slide'; // Domyslnie
+                        $effect = 'slide'; 
                         $extraConfig = '';
-                        $containerClasses = 'rounded-xl shadow-sm relative'; // bez overflow-hidden dla wsparcia 3D
+                        $containerClasses = 'rounded-xl shadow-sm relative'; 
                         $slideClasses = 'relative bg-gray-100 group rounded-xl overflow-hidden';
 
                         if ($gal['type'] === 'swiper_coverflow') {
                             $effect = 'coverflow';
                             $extraConfig = "coverflowEffect: { rotate: 50, stretch: 0, depth: 100, modifier: 1, slideShadows: true },";
-                            $containerClasses .= ' !p-4 !-m-4 !overflow-visible'; // coverflow musi wychodzić poza ramki
+                            $containerClasses .= ' !p-4 !-m-4 !overflow-visible';
                             $slideClasses .= ' aspect-[4/3] md:aspect-[16/9]';
                         } elseif ($gal['type'] === 'swiper_fade') {
                             $effect = 'fade';
@@ -437,9 +457,8 @@ class BlockRenderer {
                             $slideClasses .= ' aspect-[4/3] md:aspect-[16/9]';
                         } elseif ($gal['type'] === 'swiper_cards') {
                             $effect = 'cards';
-                            $extraConfig = "cardsEffect: { slideShadows: true }, grabCursor: true,";
-                            // max-w-sm naprawia proporcje kart, a overflow-visible pozwala na renderowanie stosu
-                            $containerClasses .= ' !overflow-visible max-w-sm mx-auto mt-8 mb-12'; 
+                            $extraConfig = "cardsEffect: { slideShadows: true }, grabCursor: true,"; 
+                            $containerClasses .= ' !overflow-visible max-w-sm mx-auto mt-8 mb-12';
                             $slideClasses .= ' aspect-[3/4] shadow-lg';
                         } else {
                             $containerClasses .= ' overflow-hidden';
@@ -447,95 +466,84 @@ class BlockRenderer {
                         }
 
                         echo '<div class="swiper '.$swiperId.' '.$containerClasses.'">';
-        echo '<div class="swiper-wrapper">';
-        foreach ($imgs as $img) {
-            // Dodano w-full h-full, aby zapobiec zapadaniu się slajdów w Safari
-            echo '<div class="swiper-slide w-full h-full">';
-            echo "<a href='$img' class='glightbox block {$slideClasses}' data-gallery='gallery-{$gal['id']}'>";
-            // Dodano draggable='false' oraz select-none, by systemowy drag&drop nie psuł przesuwania galerii!
-            echo "<img src='$img' draggable='false' class='w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 select-none'>";
-            echo "</a>";
-            echo '</div>';
-        }
-        echo '</div>';
+                        echo '<div class="swiper-wrapper">';
+                        foreach ($imgs as $img) {
+                            echo '<div class="swiper-slide w-full h-full">';
+                            echo "<a href='$img' class='glightbox block {$slideClasses}' data-gallery='gallery-{$gal['id']}'>";
+                            echo "<img src='$img' draggable='false' class='w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 select-none'>";
+                            echo "</a>";
+                            echo '</div>';
+                        }
+                        echo '</div>';
 
-        // Bezpieczne, unikalne ID/Klasy dla nawigacji
-        $navNext = 'next_' . $swiperId;
-        $navPrev = 'prev_' . $swiperId;
-        $pagEl = 'pag_' . $swiperId;
+                        $navNext = 'next_' . $swiperId;
+                        $navPrev = 'prev_' . $swiperId;
+                        $pagEl = 'pag_' . $swiperId;
 
-        if ($showPag) echo '<div class="swiper-pagination '.$pagEl.' !bottom-0"></div>';
-        if ($showNav) {
-            // Zmieniono z-10 na z-50, aby strzałki były zawsze nad efektem 3D Cards
-            echo '<button type="button" aria-label="Poprzedni slajd" class="'.$navPrev.' absolute top-1/2 left-4 z-50 -translate-y-1/2 cursor-pointer text-white w-10 h-10 bg-black/30 rounded-full shadow-lg border border-white/20 flex items-center justify-center hover:bg-black/60 transition backdrop-blur-sm focus:outline-none"><span class="text-xl font-bold leading-none">&lt;</span></button>';
-            echo '<button type="button" aria-label="Następny slajd" class="'.$navNext.' absolute top-1/2 right-4 z-50 -translate-y-1/2 cursor-pointer text-white w-10 h-10 bg-black/30 rounded-full shadow-lg border border-white/20 flex items-center justify-center hover:bg-black/60 transition backdrop-blur-sm focus:outline-none"><span class="text-xl font-bold leading-none">&gt;</span></button>';
-        }
-        echo '</div>';
+                        if ($showPag) echo '<div class="swiper-pagination '.$pagEl.' !bottom-0"></div>';
+                        if ($showNav) {
+                            echo '<button type="button" aria-label="Poprzedni slajd" class="'.$navPrev.' absolute top-1/2 left-4 z-50 -translate-y-1/2 cursor-pointer text-white w-10 h-10 bg-black/30 rounded-full shadow-lg border border-white/20 flex items-center justify-center hover:bg-black/60 transition backdrop-blur-sm focus:outline-none"><span class="text-xl font-bold leading-none">&lt;</span></button>';
+                            echo '<button type="button" aria-label="Następny slajd" class="'.$navNext.' absolute top-1/2 right-4 z-50 -translate-y-1/2 cursor-pointer text-white w-10 h-10 bg-black/30 rounded-full shadow-lg border border-white/20 flex items-center justify-center hover:bg-black/60 transition backdrop-blur-sm focus:outline-none"><span class="text-xl font-bold leading-none">&gt;</span></button>';
+                        }
+                        echo '</div>';
 
-        // Ustalenie odpowiednich parametrów responsywności
-        $jsBreakpoints = "";
-        $jsSlidesPerView = "1";
-        $imgCount = count($imgs); // Liczymy zdjęcia
+                        $jsBreakpoints = "";
+                        $jsSlidesPerView = "1";
+                        $imgCount = count($imgs); 
+                        if ($effect === 'slide') {
+                            $jsBreakpoints = "breakpoints: { 640: { slidesPerView: 1, spaceBetween: 16 }, 768: { slidesPerView: 2, spaceBetween: 20 }, 1024: { slidesPerView: 3, spaceBetween: 24 } }";
+                        } elseif ($effect === 'coverflow') {
+                            $jsSlidesPerView = "'auto'";
+                            $jsBreakpoints = "breakpoints: { 640: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } }";
+                        } else {
+                            $jsSlidesPerView = "1";
+                            $jsBreakpoints = "";
+                        }
 
-        if ($effect === 'slide') {
-            $jsBreakpoints = "breakpoints: { 640: { slidesPerView: 1, spaceBetween: 16 }, 768: { slidesPerView: 2, spaceBetween: 20 }, 1024: { slidesPerView: 3, spaceBetween: 24 } }";
-        } elseif ($effect === 'coverflow') {
-            $jsSlidesPerView = "'auto'";
-            $jsBreakpoints = "breakpoints: { 640: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } }";
-        } else {
-            // Karty i Przenikanie MUSZĄ mieć dokładnie 1 slajd, bez responsywnych breakpointów
-            $jsSlidesPerView = "1";
-            $jsBreakpoints = "";
-        }
+                        if ($imgCount <= 1) $isLoop = 'false';
+                        if ($effect === 'cards' && $imgCount < 4) $isLoop = 'false';
+                        if ($effect === 'fade' && $imgCount < 2) $isLoop = 'false';
 
-        // AUTO-NAPRAWA LOOP: Swiper 11 zawiesza się, jeśli użyjemy zapętlania przy zbyt małej liczbie zdjęć (szczególnie dla Cards)
-        if ($imgCount <= 1) $isLoop = 'false';
-        if ($effect === 'cards' && $imgCount < 4) $isLoop = 'false';
-        if ($effect === 'fade' && $imgCount < 2) $isLoop = 'false';
+                        $jsSpaceBetween = in_array($effect, ['fade', 'cards']) ? '0' : '12';
 
-        // Odstępy psują efekty absolutne (Cards/Fade) - wyzerujmy je dla tych trybów
-        $jsSpaceBetween = in_array($effect, ['fade', 'cards']) ? '0' : '12';
-
-        // Wstrzyknięcie czystego JS
-        echo "<script>
-        document.addEventListener('DOMContentLoaded', function() {
-            new Swiper('.$swiperId', {
-                effect: '{$effect}',
-                {$extraConfig}
-                loop: {$isLoop},
-                autoplay: {$autoplay},
-                observer: true,
-                observeParents: true,
-                ".($showPag ? "pagination: { el: '.{$pagEl}', clickable: true, dynamicBullets: true }," : "")."
-                ".($showNav ? "navigation: { nextEl: '.{$navNext}', prevEl: '.{$navPrev}' }," : "")."
-                slidesPerView: {$jsSlidesPerView},
-                spaceBetween: {$jsSpaceBetween},
-                {$jsBreakpoints}
-                on: {
-                    init: function () {
-                        const swiperInstance = this;
-                        // Natychmiastowe przeliczenie w pierwszej dostępnej klatce renderowania
-                        requestAnimationFrame(() => {
-                            swiperInstance.update();
+                        echo "<script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            new Swiper('.$swiperId', {
+                                effect: '{$effect}',
+                                {$extraConfig}
+                                loop: {$isLoop},
+                                autoplay: {$autoplay},
+                                observer: true,
+                                observeParents: true,
+                                ".($showPag ? "pagination: { el: '.{$pagEl}', clickable: true, dynamicBullets: true }," : "")."
+                                ".($showNav ? "navigation: { nextEl: '.{$navNext}', prevEl: '.{$navPrev}' }," : "")."
+                                slidesPerView: {$jsSlidesPerView},
+                                spaceBetween: {$jsSpaceBetween},
+                                {$jsBreakpoints}
+                                on: {
+                                    init: function () {
+                                        const swiperInstance = this;
+                                        requestAnimationFrame(() => {
+                                            swiperInstance.update();
+                                        });
+                                        setTimeout(() => {
+                                            swiperInstance.update();
+                                        }, 150);
+                                    }
+                                }
+                            });
                         });
-                        // Zapasowe odświeżenie (po 150ms), na wypadek gdyby przeglądarka 
-                        // potrzebowała chwili na wczytanie fizycznych wymiarów obrazków
-                        setTimeout(() => {
-                            swiperInstance.update();
-                        }, 150);
-                    }
-                }
-            });
-        });
-        </script>";
+                        </script>";
                     }
                     echo '</div>';
                 }
             }
-            // 14. IMAGE CARDS (Siatka Kart)
+
+            // 14. IMAGE CARDS 
             elseif ($block['type'] === 'image_cards') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $cards = $data['cards'] ?? [];
+
                 if (!empty($cards)) {
                     echo '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">';
                     foreach ($cards as $card) {
@@ -544,7 +552,7 @@ class BlockRenderer {
                         $cId = !empty($cSet['id']) ? ' id="'.htmlspecialchars($cSet['id']).'"' : '';
                         $cCls = !empty($cSet['css']) ? ' ' . htmlspecialchars($cSet['css']) : '';
                         $cStyle = !empty($cSet['style']) ? ' style="'.htmlspecialchars($cSet['style']).'"' : '';
-                        
+
                         echo '<a href="'.$link.'"'.$cId.' class="block bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100 group flex flex-col h-full'.$cCls.'"'.$cStyle.'>';
                         echo '<div class="h-48 w-full overflow-hidden bg-gray-100">';
                         if (!empty($card['img'])) {
@@ -562,29 +570,32 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
+
             // 15. BANNER
             elseif ($block['type'] === 'banner') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $bg = $data['bg'] ?? '';
                 $title = $data['title'] ?? '';
                 $subtitle = $data['subtitle'] ?? '';
-                
+
                 echo '<div class="relative w-screen h-64 md:h-[500px] bg-cover bg-center mb-10" style="margin-left: calc(-50vw + 50%); background-image: url(\''.htmlspecialchars($bg).'\');">';
                 if (!empty($title)) {
-                    echo ' <div class="absolute bottom-8 left-0 w-11/12 md:w-2/3 bg-white/90 p-6 md:pl-16 backdrop-blur-sm shadow-xl rounded-r-2xl">';
-                    echo ' <h1 class="text-3xl md:text-5xl font-extrabold text-orange-500 tracking-wide drop-shadow-sm">'.htmlspecialchars($title).'</h1>';
-                    echo ' </div>';
+                    echo '  <div class="absolute bottom-8 left-0 w-11/12 md:w-2/3 bg-white/90 p-6 md:pl-16 backdrop-blur-sm shadow-xl rounded-r-2xl">';
+                    echo '      <h1 class="text-3xl md:text-5xl font-extrabold text-orange-500 tracking-wide drop-shadow-sm">'.htmlspecialchars($title).'</h1>';
+                    echo '  </div>';
                 }
                 echo '</div>';
-                
+
                 if (!empty($subtitle)) {
                     echo '<div class="text-gray-800 font-medium mb-10 text-lg md:text-xl max-w-4xl border-l-4 border-orange-500 pl-5 leading-relaxed">'.nl2br(htmlspecialchars($subtitle)).'</div>';
                 }
             }
+
             // 16. RAW HTML
             elseif ($block['type'] === 'raw_html') {
                 echo $block['content'];
             }
+
             // 17. MAPA LEAFLET
             elseif ($block['type'] === 'map') {
                 $data = is_array($block['content']) ? $block['content'] : [];
@@ -593,7 +604,7 @@ class BlockRenderer {
                 $zoom = $data['zoom'] ?? '13';
                 $tooltip = htmlspecialchars($data['tooltip'] ?? '');
                 $mapId = 'map_' . uniqid();
-                
+
                 echo '<div class="mb-8 w-full h-[400px] rounded-xl shadow-lg border border-gray-200 z-10" id="'.$mapId.'"></div>';
                 echo "<script>
                     document.addEventListener('DOMContentLoaded', function() {
@@ -605,13 +616,14 @@ class BlockRenderer {
                     });
                 </script>";
             }
+
             // 18. ODLICZANIE
             elseif ($block['type'] === 'countdown') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $targetDate = $data['date'] ?? '';
                 $title = htmlspecialchars($data['title'] ?? '');
                 $cdId = 'cd_' . uniqid();
-                
+
                 if ($targetDate) {
                     echo '<div class="mb-8 bg-gray-900 text-white p-8 rounded-2xl shadow-xl text-center">';
                     echo '<h3 class="text-xl md:text-2xl font-bold mb-6 text-gray-300">'.$title.'</h3>';
@@ -624,23 +636,28 @@ class BlockRenderer {
                     echo '<div class="text-gray-600">:</div>';
                     echo '<div><span class="seconds block">00</span><span class="text-xs uppercase text-gray-400 font-normal">Sekund</span></div>';
                     echo '</div></div>';
+
                     echo "<script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            var target = new Date('{$targetDate}').getTime();
-                            var el = document.getElementById('{$cdId}');
-                            var interval = setInterval(function() {
-                                var now = new Date().getTime();
-                                var distance = target - now;
-                                if (distance < 0) { clearInterval(interval); return; }
-                                el.querySelector('.days').innerText = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
-                                el.querySelector('.hours').innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-                                el.querySelector('.minutes').innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                                el.querySelector('.seconds').innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                            }, 1000);
-                        });
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var target = new Date('{$targetDate}').getTime();
+                        var el = document.getElementById('{$cdId}');
+                        var interval = setInterval(function() {
+                            var now = new Date().getTime();
+                            var distance = target - now;
+                            if (distance < 0) {
+                                clearInterval(interval);
+                                return;
+                            }
+                            el.querySelector('.days').innerText = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+                            el.querySelector('.hours').innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+                            el.querySelector('.minutes').innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                            el.querySelector('.seconds').innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                        }, 1000);
+                    });
                     </script>";
                 }
             }
+
             // 19. TABELA
             elseif ($block['type'] === 'table') {
                 $raw = $block['content'] ?? '';
@@ -667,6 +684,7 @@ class BlockRenderer {
                     echo '</tbody></table></div>';
                 }
             }
+
             // 20. PRZELOT
             elseif ($block['type'] === 'flight') {
                 echo '<div class="flight-container mb-8">';
@@ -677,75 +695,79 @@ class BlockRenderer {
                 }
                 echo '</div>';
             }
+
             // 21. SYSTEM: LOGOWANIE
-elseif ($block['type'] === 'system_login') {
-    $flash = \CMS\Core\Session::getFlash();
-    $oldLogin = \CMS\Core\Session::get('old_login');
-    \CMS\Core\Session::remove('old_login');
-    
-    // Opcjonalnie: pobranie ustawień dla logiki ukrytej rejestracji
-    $setRows = $db->query("SELECT setting_key, setting_value FROM pa_settings")->fetchAll();
-    $s = []; foreach($setRows as $r) $s[$r['setting_key']] = $r['setting_value'];
+            elseif ($block['type'] === 'system_login') {
+                $flash = \CMS\Core\Session::getFlash();
+                $oldLogin = \CMS\Core\Session::get('old_login');
+                \CMS\Core\Session::remove('old_login');
 
-    echo '<div class="max-w-md w-full mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">';
-    if ($flash) {
-        echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
-    }
-    echo '<form action="/login" method="POST">';
-    echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Email lub Login</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="login" type="text" required value="'.htmlspecialchars($oldLogin ?? '').'"></div>';
-    echo '  <div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Hasło</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="password" type="password" required></div>';
-    echo '  <button class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded w-full transition shadow" type="submit">Zaloguj się</button>';
-    echo '</form>';
-    
-    $regMode = $s['reg_mode'] ?? 'disabled';
-    $isSecretUnlocked = \CMS\Core\Session::get('secret_reg_unlocked') === true;
-    if ($regMode === 'open' || ($regMode === 'secret' && $isSecretUnlocked)) {
-        echo '<p class="text-center mt-5 text-sm text-gray-600 border-t pt-4">Nie masz konta? <br><a href="/register" class="text-blue-600 font-bold hover:underline">Zarejestruj się</a></p>';
-    }
-    echo '</div>';
-}
-// 22. SYSTEM: REJESTRACJA
-elseif ($block['type'] === 'system_register') {
-    $flash = \CMS\Core\Session::getFlash();
-    $oldEmail = \CMS\Core\Session::get('old_email');
-    \CMS\Core\Session::remove('old_email');
+                $setRows = $db->query("SELECT setting_key, setting_value FROM pa_settings")->fetchAll();
+                $s = []; foreach($setRows as $r) $s[$r['setting_key']] = $r['setting_value'];
 
-    echo '<div class="max-w-md w-full mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">';
-    if ($flash) {
-        echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
-    }
-    echo '<form action="/register" method="POST">';
-    echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input class="border rounded w-full py-2 px-3 focus:ring-2 focus:ring-blue-500" name="email" type="email" required value="'.htmlspecialchars($oldEmail ?? '').'"></div>';
-    echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-2 focus:ring-blue-500" name="password" type="password" required></div>';
-    echo '  <div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Potwierdź hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-2 focus:ring-blue-500" name="confirm_password" type="password" required></div>';
-    echo '  <button class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded w-full transition shadow" type="submit">Utwórz konto</button>';
-    echo '</form>';
-    echo '<p class="text-center mt-4 text-sm text-gray-500">Masz już konto? <a href="/login" class="text-blue-600 font-bold hover:underline">Zaloguj</a></p>';
-    echo '</div>';
-}
-// 23. SYSTEM: ZMIANA HASŁA
-elseif ($block['type'] === 'system_change_password') {
-    $flash = \CMS\Core\Session::getFlash();
-    echo '<div class="max-w-sm w-full mx-auto bg-white p-8 rounded-lg shadow-lg border-t-4 border-yellow-500">';
-    echo '<h2 class="text-2xl font-bold mb-2 text-center text-gray-800">Zmiana Hasła</h2>';
-    echo '<p class="text-sm text-gray-600 mb-6 text-center">Wymagana jest zmiana hasła w celach bezpieczeństwa.</p>';
-    if ($flash) echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
-    echo '<form action="/change-password" method="POST">';
-    echo '<div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Nowe Hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-blue-500" name="pass1" type="password" required></div>';
-    echo '<div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Potwierdź Hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-blue-500" name="pass2" type="password" required></div>';
-    echo '<button class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full shadow transition" type="submit">Zaktualizuj Hasło</button>';
-    echo '</form></div>';
-}
-// 24. SYSTEM: LOCKDOWN
-elseif ($block['type'] === 'system_lockdown') {
-    echo '<div class="max-w-md w-full mx-auto bg-gray-900 p-8 rounded-xl shadow-2xl border border-gray-700 text-center">';
-    echo '<h1 class="text-3xl font-bold mb-4 text-white">Strona Zabezpieczona</h1>';
-    echo '<p class="mb-6 text-gray-400">Podaj kod dostępu, aby kontynuować.</p>';
-    echo '<form method="POST">';
-    echo '<input type="password" name="site_pass" class="w-full p-3 rounded mb-4 text-black focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Kod dostępu..." required>';
-    echo '<button class="bg-blue-600 hover:bg-blue-700 text-white w-full p-3 rounded font-bold shadow transition">Wejdź na stronę</button>';
-    echo '</form></div>';
-}
+                echo '<div class="max-w-md w-full mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">';
+                if ($flash) {
+                    echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
+                }
+                echo '<form action="/login" method="POST">';
+                echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Login</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="login" type="text" required value="'.htmlspecialchars($oldLogin ?? '').'"></div>';
+                echo '  <div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Hasło</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="password" type="password" required></div>';
+                echo '  <button class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded w-full transition shadow" type="submit">Zaloguj się</button>';
+                echo '</form>';
+                
+                $regMode = $s['reg_mode'] ?? 'disabled';
+                $isSecretUnlocked = \CMS\Core\Session::get('secret_reg_unlocked') === true;
+
+                if ($regMode === 'open' || ($regMode === 'secret' && $isSecretUnlocked)) {
+                    echo '<p class="text-center mt-5 text-sm text-gray-600 border-t pt-4">Nie masz konta? <br><a href="/register" class="text-blue-600 font-bold hover:underline">Zarejestruj się</a></p>';
+                }
+                echo '</div>';
+            }
+
+            // 22. SYSTEM: REJESTRACJA
+            elseif ($block['type'] === 'system_register') {
+                $flash = \CMS\Core\Session::getFlash();
+                $oldEmail = \CMS\Core\Session::get('old_email');
+                \CMS\Core\Session::remove('old_email');
+
+                echo '<div class="max-w-md w-full mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">';
+                if ($flash) {
+                    echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
+                }
+                echo '<form action="/register" method="POST">';
+                echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Email</label><input class="border rounded w-full py-2 px-3 focus:ring-2 focus:ring-blue-500" name="email" type="email" required value="'.htmlspecialchars($oldEmail ?? '').'"></div>';
+                echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-2 focus:ring-blue-500" name="password" type="password" required></div>';
+                echo '  <div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Potwierdź hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-2 focus:ring-blue-500" name="confirm_password" type="password" required></div>';
+                echo '  <button class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded w-full transition shadow" type="submit">Utwórz konto</button>';
+                echo '</form>';
+                echo '<p class="text-center mt-4 text-sm text-gray-500">Masz już konto? <a href="/login" class="text-blue-600 font-bold hover:underline">Zaloguj</a></p>';
+                echo '</div>';
+            }
+
+            // 23. SYSTEM: ZMIANA HASŁA
+            elseif ($block['type'] === 'system_change_password') {
+                $flash = \CMS\Core\Session::getFlash();
+                echo '<div class="max-w-sm w-full mx-auto bg-white p-8 rounded-lg shadow-lg border-t-4 border-yellow-500">';
+                echo '<h2 class="text-2xl font-bold mb-2 text-center text-gray-800">Zmiana Hasła</h2>';
+                echo '<p class="text-sm text-gray-600 mb-6 text-center">Wymagana jest zmiana hasła w celach bezpieczeństwa.</p>';
+                if ($flash) echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
+                echo '<form action="/change-password" method="POST">';
+                echo '<div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Nowe Hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-blue-500" name="pass1" type="password" required></div>';
+                echo '<div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Potwierdź Hasło</label><input class="border rounded w-full py-2 px-3 focus:ring-blue-500" name="pass2" type="password" required></div>';
+                echo '<button class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full shadow transition" type="submit">Zaktualizuj Hasło</button>';
+                echo '</form></div>';
+            }
+
+            // 24. SYSTEM: LOCKDOWN
+            elseif ($block['type'] === 'system_lockdown') {
+                echo '<div class="max-w-md w-full mx-auto bg-gray-900 p-8 rounded-xl shadow-2xl border border-gray-700 text-center">';
+                echo '<h1 class="text-3xl font-bold mb-4 text-white">Strona Zabezpieczona</h1>';
+                echo '<p class="mb-6 text-gray-400">Podaj kod dostępu, aby kontynuować.</p>';
+                echo '<form method="POST">';
+                echo '<input type="password" name="site_pass" class="w-full p-3 rounded mb-4 text-black focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Kod dostępu..." required>';
+                echo '<button class="bg-blue-600 hover:bg-blue-700 text-white w-full p-3 rounded font-bold shadow transition">Wejdź na stronę</button>';
+                echo '</form></div>';
+            }
 
             // Zamknięcie uniwersalnego wrappera
             echo "</div>";

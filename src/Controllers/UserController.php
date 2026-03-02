@@ -9,7 +9,7 @@ class UserController {
         $db = Database::getInstance();
         $admins = $db->query("SELECT * FROM pa_users WHERE admin = 1 ORDER BY id DESC")->fetchAll();
         $regularUsers = $db->query("SELECT * FROM pa_users WHERE admin = 0 ORDER BY id DESC")->fetchAll();
-        
+
         ob_start();
         require_once __DIR__ . '/../Views/admin/users/index.php';
         $content = ob_get_clean();
@@ -17,16 +17,23 @@ class UserController {
     }
 
     public function create() {
-        $u = $_POST['username'];
+        $u = trim($_POST['username']);
+        $e = trim($_POST['email'] ?? '');
         $p = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        Database::getInstance()->query("INSERT INTO pa_users (uname, pass, admin) VALUES (?, ?, 1)", [$u, $p]);
+        
+        Database::getInstance()->query(
+            "INSERT INTO pa_users (uname, email, pass, admin) VALUES (?, ?, ?, 1)", 
+            [$u, $e, $p]
+        );
+        
+        Session::init();
+        Session::setFlash('Administrator został utworzony.', 'success');
         header('Location: /admin/users');
     }
 
     public function edit() {
         $id = $_GET['id'] ?? 0;
         $user = Database::getInstance()->query("SELECT * FROM pa_users WHERE id = ?", [$id])->fetch();
-        
         if (!$user) {
             header('Location: /admin/users');
             exit;
@@ -40,7 +47,8 @@ class UserController {
 
     public function update() {
         $id = $_POST['id'];
-        $email = $_POST['email']; // używamy email jako głównego loginu (uname)
+        $uname = trim($_POST['username'] ?? '');
+        $email = trim($_POST['email'] ?? ''); 
         $pass = $_POST['password'] ?? '';
         $forceChange = isset($_POST['force_change']) ? 1 : 0;
         $isAdmin = isset($_POST['is_admin']) ? 1 : 0;
@@ -49,11 +57,11 @@ class UserController {
 
         if (!empty($pass)) {
             $hash = password_hash($pass, PASSWORD_DEFAULT);
-            $db->query("UPDATE pa_users SET email = ?, uname = ?, pass = ?, admin = ?, pass_expired = ? WHERE id = ?", 
-                [$email, $email, $hash, $isAdmin, $forceChange, $id]);
+            $db->query("UPDATE pa_users SET uname = ?, email = ?, pass = ?, admin = ?, pass_expired = ? WHERE id = ?", 
+                [$uname, $email, $hash, $isAdmin, $forceChange, $id]);
         } else {
-            $db->query("UPDATE pa_users SET email = ?, uname = ?, admin = ?, pass_expired = ? WHERE id = ?", 
-                [$email, $email, $isAdmin, $forceChange, $id]);
+            $db->query("UPDATE pa_users SET uname = ?, email = ?, admin = ?, pass_expired = ? WHERE id = ?", 
+                [$uname, $email, $isAdmin, $forceChange, $id]);
         }
 
         Session::init();
@@ -64,6 +72,7 @@ class UserController {
     public function delete() {
         Session::init();
         $id = $_GET['id'];
+        
         if ($id != Session::get('user_id')) { // Zapobiega usunięciu samego siebie
             Database::getInstance()->query("DELETE FROM pa_users WHERE id = ?", [$id]);
         }

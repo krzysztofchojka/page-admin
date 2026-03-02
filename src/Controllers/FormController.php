@@ -6,11 +6,9 @@ use CMS\Core\Session;
 use CMS\Core\Vault;
 
 class FormController {
-
     // --- ADMIN: BUILDER ---
     public function index() {
         Session::init();
-        // Security check omitted for brevity, ensure you add !isLoggedIn check
         $db = Database::getInstance();
         $forms = $db->query("SELECT * FROM pa_forms ORDER BY id DESC")->fetchAll();
         ob_start();
@@ -20,7 +18,6 @@ class FormController {
     }
 
     public function create() {
-        // Create blank form and redirect to editor
         $db = Database::getInstance();
         $db->query("INSERT INTO pa_forms (title, form_json) VALUES ('New Form', '[]')");
         $id = $db->getConnection()->lastInsertId();
@@ -32,6 +29,11 @@ class FormController {
         $id = $_GET['id'] ?? 0;
         $db = Database::getInstance();
         $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $id])->fetch();
+
+        // Pobieramy całe szablony, aby mieć dostęp do ich treści w JS (do tagów i podglądu)
+        $emailTemplates = $db->query("SELECT id, title, subject, body FROM pa_email_templates ORDER BY title ASC")->fetchAll();
+        $mailingLists = $db->query("SELECT id, name FROM pa_mailing_lists ORDER BY name ASC")->fetchAll();
+
         require_once __DIR__ . '/../Views/admin/forms/builder.php';
     }
 
@@ -55,25 +57,16 @@ class FormController {
         $db = Database::getInstance();
         $vault = new \CMS\Core\Vault();
 
-        // 1. Get Form Definition (to know column headers)
         $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $formId])->fetch();
         if (!$form) die("Form not found");
-
         $fields = json_decode($form['form_json'], true);
 
-        // 2. Get Encrypted Submissions
         $rows = $db->query("SELECT s.*, u.email as user_email FROM pa_submissions s LEFT JOIN pa_users u ON s.user_id = u.id WHERE form_id = :id ORDER BY id DESC", ['id' => $formId])->fetchAll();
 
-        // 3. Decrypt Rows for Display
         $decryptedRows = [];
         foreach ($rows as $row) {
-            // Decrypt the JSON blob
             $jsonString = $vault->decrypt($row['data_json']);
             $data = json_decode($jsonString, true);
-            
-            // Decrypt File Metadata (not the files themselves, just the names)
-            // Note: files_json was NOT encrypted in previous step, just the file content. 
-            // If you encrypted files_json, decrypt it here. In previous step we stored it as plain JSON of filenames.
             $files = json_decode($row['files_json'], true);
 
             $decryptedRows[] = [
@@ -94,35 +87,23 @@ class FormController {
 
     public function deleteSubmission() {
         Session::init();
-        if (!Session::isLoggedIn()) {
-            header('Location: /login');
-            exit;
-        }
-    
+        if (!Session::isLoggedIn()) { header('Location: /login'); exit; }
+
         $subId = $_GET['id'] ?? 0;
         $formId = $_GET['form_id'] ?? 0;
-    
         $db = Database::getInstance();
-        
-        // 1. Pobierz zgłoszenie, aby namierzyć i usunąć pliki z dysku
+
         $submission = $db->query("SELECT * FROM pa_submissions WHERE id = :id", ['id' => $subId])->fetch();
-        
         if ($submission) {
             $files = json_decode($submission['files_json'], true);
             if (is_array($files)) {
                 foreach ($files as $file) {
                     $filePath = __DIR__ . '/../../public/uploads/secure/' . $file['storage_name'];
-                    if (file_exists($filePath)) {
-                        unlink($filePath); // Usuwamy fizyczny plik
-                    }
+                    if (file_exists($filePath)) unlink($filePath);
                 }
             }
-            
-            // 2. Usuń rekord z bazy
             $db->query("DELETE FROM pa_submissions WHERE id = :id", ['id' => $subId]);
         }
-    
-        // 3. Powrót do listy zgłoszeń
         header("Location: /admin/forms/submissions?id=" . $formId);
         exit;
     }
@@ -130,10 +111,8 @@ class FormController {
     public function downloadFile() {
         Session::init();
         if (!Session::isLoggedIn()) die("Access Denied");
-
         $file = $_GET['file'] ?? '';
-        
-        // Security: Prevent Directory Traversal
+
         if (strpos($file, '..') !== false || strpos($file, '/') !== false) {
             die("Invalid filename");
         }
@@ -141,51 +120,54 @@ class FormController {
         $path = __DIR__ . '/../../public/uploads/secure/' . $file;
         if (!file_exists($path)) die("File not found");
 
-        // 1. Read Encrypted Content
         $encryptedContent = file_get_contents($path);
-        
-        // 2. Decrypt
         $vault = new \CMS\Core\Vault();
         $decryptedContent = $vault->decrypt($encryptedContent);
 
-        // 3. Force Download
         header('Content-Description: File Transfer');
         header('Content-Type: application/octet-stream');
-$origName = $_GET['orig'] ?? ('odkodowany_' . str_replace('.enc', '', $file));
-$origName = basename(urldecode($origName));
-header('Content-Disposition: attachment; filename="' . $origName . '"');
+        $origName = $_GET['orig'] ?? ('odkodowany_' . str_replace('.enc', '', $file));
+        $origName = basename(urldecode($origName));
+        header('Content-Disposition: attachment; filename="' . $origName . '"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
         header('Pragma: public');
         header('Content-Length: ' . strlen($decryptedContent));
-        
         echo $decryptedContent;
         exit;
     }
 
-    // --- PUBLIC: SUBMISSION ---
     public function submit() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            die("Method not allowed");
-        }
-    
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') die("Method not allowed");
+
         \CMS\Core\Session::init();
         $userId = \CMS\Core\Session::get('user_id') ?: null;
-    
-        // Zbieranie danych wejściowych
+
         $formId = $_POST['form_id'];
         $submissionId = $_POST['submission_id'] ?? null;
         $formData = $_POST['data'] ?? [];
         $files = $_FILES['files'] ?? [];
-    
-        // Przekazanie trudnej pracy do Serwisu
+
         $service = new \CMS\Services\FormSubmissionService();
         $service->handleSubmission($formId, $submissionId, $formData, $files, $userId);
-    
-        // Przekierowanie użytkownika po sukcesie
-        $redirect = $_SERVER['HTTP_REFERER'] ?? '/';
-        $redirect = strtok($redirect, '?');
-        header("Location: " . $redirect . "?submitted=" . $formId);
+
+        // NAPRAWA PRZEKIEROWANIA:
+        // Pobieramy url z ukrytego pola (dodanego w BlockRenderer) lub awaryjnie z HTTP_REFERER
+        $redirect = $_POST['return_url'] ?? ($_SERVER['HTTP_REFERER'] ?? '/');
+        
+        // Parsujemy URL, by bezpiecznie podmienić/dodać zapytania GET nie niszcząc np. ?id=19
+        $parsedUrl = parse_url($redirect);
+        $path = $parsedUrl['path'] ?? '/';
+        $query = $parsedUrl['query'] ?? '';
+        
+        parse_str($query, $queryParams);
+        $queryParams['submitted'] = $formId; // Flaga sukcesu przypisana do tego formularza
+        unset($queryParams['edit']); // Zabezpieczenie usuwające tryb edycji z paska URL
+        
+        $newQuery = http_build_query($queryParams);
+        $newRedirect = $path . '?' . $newQuery;
+        
+        header("Location: " . $newRedirect);
         exit;
     }
 }
