@@ -149,7 +149,12 @@ $router->get('/admin/email/lists/remove-subscriber', [CMS\Controllers\EmailContr
 
 $router->get('/admin/email/fetch-imap', [CMS\Controllers\EmailController::class, 'fetchEmails']);
 
+$router->get('/admin/email', [CMS\Controllers\EmailController::class, 'index']);
 $router->get('/admin/email/read', [CMS\Controllers\EmailController::class, 'readEmail']);
+$router->post('/admin/email/send-direct', [CMS\Controllers\EmailController::class, 'sendDirect']); // <--- DODANA LINIA
+$router->get('/admin/email/queue', [CMS\Controllers\EmailController::class, 'queue']);
+$router->get('/admin/email/fetch-sent', [CMS\Controllers\EmailController::class, 'fetchSentEmails']); // <--- NOWA LINIA
+$router->get('/admin/email/queue', [CMS\Controllers\EmailController::class, 'queue']);
 
 $router->post('/admin/templates/toggleActive', [CMS\Controllers\TemplateController::class, 'toggleActive']);
 

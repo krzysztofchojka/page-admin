@@ -17,6 +17,58 @@ class EmailController {
         require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
+    // --- BŁYSKAWICZNA WYSYŁKA Z UI (Odpowiedz / Przekaż) ---
+    public function sendDirect() {
+        header('Content-Type: application/json');
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if (empty($data['to']) || empty($data['subject']) || empty($data['body'])) {
+            echo json_encode(['status' => 'error', 'message' => 'Wypełnij poprawnie wszystkie pola (Odbiorca, Temat, Treść).']);
+            exit;
+        }
+
+        require_once __DIR__ . '/../Services/MailerService.php';
+        $mailer = new \CMS\Services\MailerService();
+
+        $result = $mailer->send($data['to'], $data['subject'], $data['body']);
+
+        if ($result === true) {
+            // ZAPIS DO LOKALNEJ BAZY DANYCH (HISTORIA)
+            $db = \CMS\Core\Database::getInstance();
+            $db->query("CREATE TABLE IF NOT EXISTS pa_sent_emails (
+                id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                recipient VARCHAR(255) NOT NULL,
+                subject VARCHAR(255) NOT NULL,
+                body LONGTEXT NOT NULL,
+                sent_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+            $db->query("INSERT INTO pa_sent_emails (recipient, subject, body, sent_at) VALUES (?, ?, ?, NOW())", [
+                $data['to'], 
+                $data['subject'], 
+                $data['body']
+            ]);
+
+            echo json_encode(['status' => 'success']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => is_string($result) ? $result : 'Błąd komunikacji z serwerem SMTP.']);
+        }
+        exit;
+    }
+
+    // --- POBIERANIE HISTORII WYSŁANYCH WIADOMOŚCI ---
+    public function fetchSentEmails() {
+        header('Content-Type: application/json');
+        $db = \CMS\Core\Database::getInstance();
+        try {
+            $emails = $db->query("SELECT id, recipient as `from`, subject, body, sent_at as `date` FROM pa_sent_emails ORDER BY id DESC LIMIT 50")->fetchAll();
+            echo json_encode(['status' => 'success', 'emails' => $emails]);
+        } catch (\Exception $e) {
+            // Jeśli tabela jeszcze nie istnieje (bo nic nie wysłano), zwracamy pustą tablicę
+            echo json_encode(['status' => 'success', 'emails' => []]);
+        }
+        exit;
+    }
+
     // --- 1B. ASYNCHRONICZNE POBIERANIE MAILI (AJAX + CACHE 5 MINUT) ---
     public function fetchEmails() {
         header('Content-Type: application/json');
