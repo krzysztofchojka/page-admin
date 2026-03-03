@@ -24,7 +24,7 @@
             <label class="block text-xs font-bold text-gray-500 mb-1">Domyślna szerokość bloków</label>
             <select id="defaultFieldWidth" class="w-full border p-2 rounded text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
                 <option value="full">Pełna szerokość (Full)</option>
-                <option value="half">Połowa ekranu (1/2)</option>
+                <option value="half">Dwie trzecie ekranu (2/3)</option>
                 <option value="third">Jedna trzecia (1/3)</option>
             </select>
         </div>
@@ -35,6 +35,7 @@
             <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="email"><span class="text-lg">📧</span>Email</div>
             <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="phone"><span class="text-lg">📞</span>Telefon</div>
             <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="textarea"><span class="text-lg">📄</span>Długi tekst</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="date"><span class="text-lg">📅</span>Data</div>
             
             <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Wybór</div>
             <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="select"><span class="text-lg">🔽</span>Lista (Select)</div>

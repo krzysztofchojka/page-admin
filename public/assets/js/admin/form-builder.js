@@ -100,7 +100,7 @@ function createFieldElement(data) {
             <div class="flex gap-2">
                 <div class="flex bg-gray-100 p-0.5 rounded border border-gray-200">
                     <button type="button" onclick="setWidth(this.closest('.field-card'), 'third')" class="px-2 py-0.5 text-[10px] font-bold rounded hover:bg-white hover:shadow-sm ${data.width === 'third' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}">1/3</button>
-                    <button type="button" onclick="setWidth(this.closest('.field-card'), 'half')" class="px-2 py-0.5 text-[10px] font-bold rounded hover:bg-white hover:shadow-sm ${data.width === 'half' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}">1/2</button>
+                    <button type="button" onclick="setWidth(this.closest('.field-card'), 'half')" class="px-2 py-0.5 text-[10px] font-bold rounded hover:bg-white hover:shadow-sm ${data.width === 'half' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}">2/3</button>
                     <button type="button" onclick="setWidth(this.closest('.field-card'), 'full')" class="px-2 py-0.5 text-[10px] font-bold rounded hover:bg-white hover:shadow-sm ${data.width === 'full' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}">Full</button>
                 </div>
                 <div class="flex gap-1">

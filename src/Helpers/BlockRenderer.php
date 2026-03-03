@@ -10,38 +10,26 @@ class BlockRenderer {
         if (empty($blocks)) return;
 
         foreach ($blocks as $block) {
-            // Wyciąganie globalnych ustawień bloku (ID HTML, Klasy CSS, Style Inline)
             $set = $block['settings'] ?? [];
             $idAttr = !empty($set['id']) ? ' id="'.htmlspecialchars($set['id']).'"' : '';
             $clsAttr = !empty($set['css']) ? ' ' . htmlspecialchars($set['css']) : '';
             $styleAttr = !empty($set['style']) ? ' style="'.htmlspecialchars($set['style']).'"' : '';
 
-            // Otwieramy uniwersalny wrapper dla bloku
             echo "<div{$idAttr} class=\"block-wrapper mb-0{$clsAttr}\"{$styleAttr}>";
 
             // 1. COLUMNS 2
             if ($block['type'] === 'columns_2') {
                 echo '<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">';
-                echo '<div>';
-                if(!empty($block['children']['left'])) self::render($block['children']['left'], $db);
-                echo '</div>';
-                echo '<div>';
-                if(!empty($block['children']['right'])) self::render($block['children']['right'], $db);
-                echo '</div>';
+                echo '<div>'; if(!empty($block['children']['left'])) self::render($block['children']['left'], $db); echo '</div>';
+                echo '<div>'; if(!empty($block['children']['right'])) self::render($block['children']['right'], $db); echo '</div>';
                 echo '</div>';
             }
             // 2. COLUMNS 3
             elseif ($block['type'] === 'columns_3') {
                 echo '<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">';
-                echo '<div>';
-                if(!empty($block['children']['left'])) self::render($block['children']['left'], $db);
-                echo '</div>';
-                echo '<div>';
-                if(!empty($block['children']['center'])) self::render($block['children']['center'], $db);
-                echo '</div>';
-                echo '<div>';
-                if(!empty($block['children']['right'])) self::render($block['children']['right'], $db);
-                echo '</div>';
+                echo '<div>'; if(!empty($block['children']['left'])) self::render($block['children']['left'], $db); echo '</div>';
+                echo '<div>'; if(!empty($block['children']['center'])) self::render($block['children']['center'], $db); echo '</div>';
+                echo '<div>'; if(!empty($block['children']['right'])) self::render($block['children']['right'], $db); echo '</div>';
                 echo '</div>';
             }
             // 3. TEXT
@@ -130,11 +118,11 @@ class BlockRenderer {
                     $formSettings = json_decode($form['settings'] ?? '{}', true);
                     $userId = \CMS\Core\Session::get('user_id');
 
-                    echo '<div class="bg-gray-50 border border-gray-200 p-6 md:p-8 rounded-xl mb-8 shadow-sm" id="form-container-'.$form['id'].'">';
-                    echo '<h3 class="text-2xl font-bold mb-6 text-gray-800">' . htmlspecialchars($form['title']) . '</h3>';
+                    echo '<div class="bg-gray-50 border border-gray-200 p-6 md:p-10 rounded-2xl mb-8 shadow-sm" id="form-container-'.$form['id'].'">';
+                    echo '<h3 class="text-2xl font-extrabold mb-8 text-gray-800">' . htmlspecialchars($form['title']) . '</h3>';
 
                     if (!empty($formSettings['reqLogin']) && !$userId) {
-                        echo '<div class="bg-yellow-100 p-5 rounded-lg text-yellow-800 border border-yellow-300">Zaloguj się, aby wyświetlić i wypełnić ten formularz. <br><a href="/login" class="font-bold underline text-yellow-900 mt-2 inline-block">Przejdź do logowania</a></div></div>';
+                        echo '<div class="bg-yellow-50 p-6 rounded-xl text-yellow-800 border border-yellow-200 flex items-center gap-4"><span class="text-3xl">🔐</span><div>Zaloguj się, aby wyświetlić i wypełnić ten formularz. <br><a href="/login" class="font-bold underline text-yellow-900 mt-1 inline-block hover:text-yellow-700 transition-colors">Przejdź do logowania</a></div></div></div>';
                         continue;
                     }
 
@@ -148,7 +136,7 @@ class BlockRenderer {
 
                     $flash = \CMS\Core\Session::getFlash();
                     if ($flash && isset($_GET['err_form']) && $_GET['err_form'] == $form['id']) {
-                        echo '<div class="bg-red-100 border border-red-400 text-red-700 px-5 py-4 rounded-lg mb-6 text-sm font-bold shadow-sm">⚠️ ' . htmlspecialchars($flash['msg']) . '</div>';
+                        echo '<div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-5 py-4 rounded-r-lg mb-8 text-sm font-bold shadow-sm">⚠️ ' . htmlspecialchars($flash['msg']) . '</div>';
                     }
 
                     $showThankYou = false;
@@ -161,17 +149,16 @@ class BlockRenderer {
                     }
 
                     if ($showThankYou) {
-                        echo '<div class="bg-green-100 border border-green-400 text-green-800 px-5 py-5 rounded-lg mb-4 shadow-sm"><span class="text-3xl mb-3 block">🎉</span> <strong class="text-lg">Dziękujemy!</strong><br> Twój formularz został poprawnie zapisany na serwerze.</div>';
-                        echo '<div class="flex flex-wrap gap-4 mt-6">';
+                        echo '<div class="bg-green-50 border border-green-200 text-green-800 px-8 py-8 rounded-xl mb-4 shadow-sm text-center"><span class="text-5xl mb-4 block">🎉</span> <strong class="text-2xl block mb-2">Dziękujemy!</strong><p class="text-green-700">Twój formularz został poprawnie zapisany.</p></div>';
+                        echo '<div class="flex flex-wrap justify-center gap-4 mt-6">';
                         if (!empty($formSettings['editable']) && $existingSubmission) {
-                            echo '<a href="?edit='.$form['id'].'#form-container-'.$form['id'].'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">Kliknij, by edytować</a>';
+                            echo '<a href="?edit='.$form['id'].'#form-container-'.$form['id'].'" class="bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-700 font-bold py-3 px-8 rounded-xl shadow-sm transition-all">✏️ Kliknij, by edytować</a>';
                         }
                         if (empty($formSettings['fillOnce'])) {
-                            echo '<a href="?#form-container-'.$form['id'].'" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded shadow transition">Wyślij ponownie</a>';
+                            echo '<a href="?#form-container-'.$form['id'].'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-md transition-all">🔄 Wyślij ponownie</a>';
                         }
                         echo '</div>';
                     } else {
-                        // Budowa formularza
                         $prefill = [];
                         $existingFiles = [];
                         $vault = new \CMS\Core\Vault();
@@ -194,7 +181,9 @@ class BlockRenderer {
                             }
                         }
 
-                        echo '<form action="/submit-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-6">';
+                        $inputClasses = "w-full border border-gray-200 bg-gray-50/50 text-gray-800 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white block p-3.5 shadow-sm transition-all outline-none";
+
+                        echo '<form action="/submit-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-8">';
                         echo '<input type="hidden" name="form_id" value="'.$form['id'].'">';
                         echo '<input type="hidden" name="return_url" value="'.htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/').'">';
                         
@@ -208,11 +197,11 @@ class BlockRenderer {
                             $widthClass = ($field['width']??'full') === 'full' ? 'md:col-span-3' : (($field['width']??'full')==='half'?'md:col-span-2':'md:col-span-1');
 
                             if ($type === 'html') {
-                                echo "<div class='{$widthClass} prose max-w-none text-sm'>" . ($field['html'] ?? '') . "</div>";
+                                echo "<div class='{$widthClass} prose max-w-none text-sm bg-white p-6 rounded-xl border border-gray-100'>" . ($field['html'] ?? '') . "</div>";
                                 continue;
                             }
 
-                            // A. HONEYPOT
+                            // HONEYPOT
                             if ($type === 'honeypot') {
                                 $fieldId = $field['custom_id'] ?? $field['id'] ?? md5('hp' . rand());
                                 echo "<div style='position:absolute; left:-9999px; top:-9999px; opacity:0;' aria-hidden='true'>";
@@ -222,31 +211,31 @@ class BlockRenderer {
                                 continue;
                             }
 
-                            // B. CAPTCHA OBRAZKOWA (Gregwar)
+                            // CAPTCHA OBRAZKOWA
                             if ($type === 'captcha_image') {
                                 if (!class_exists('\Gregwar\Captcha\CaptchaBuilder')) {
-                                    echo "<div class='{$widthClass} p-3 bg-red-100 text-red-700 text-xs font-bold rounded'>Błąd systemu: Biblioteka obrazków nie została zainstalowana. Uruchom <code>composer require gregwar/captcha</code> w konsoli.</div>";
+                                    echo "<div class='{$widthClass} p-3 bg-red-100 text-red-700 text-xs font-bold rounded'>Błąd: Brak biblioteki Gregwar/Captcha.</div>";
                                     continue;
                                 }
                                 $builder = new \Gregwar\Captcha\CaptchaBuilder;
                                 $builder->build();
                                 \CMS\Core\Session::set('captcha_img_' . $form['id'], $builder->getPhrase());
 
-                                echo "<div class='{$widthClass} bg-blue-50/50 p-4 rounded-xl border border-blue-100'>";
-                                echo "<label class='block text-sm font-bold text-gray-700 mb-3'>Zabezpieczenie przed robotami <span class='text-red-500'>*</span></label>";
-                                echo "<div class='flex flex-wrap sm:flex-nowrap gap-3 items-center'>";
-                                echo "<img src='{$builder->inline()}' class='rounded-lg border border-blue-200 shadow-sm h-[50px] pointer-events-none select-none'>";
-                                echo "<input type='text' name='captcha_answer' required class='flex-1 min-w-[150px] border border-blue-200 p-3 rounded-lg shadow-inner focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white' placeholder='Przepisz kod...'>";
+                                echo "<div class='{$widthClass} bg-white p-5 rounded-2xl border border-gray-200 shadow-sm'>";
+                                echo "<label class='block text-sm font-bold text-gray-700 mb-3'>Weryfikacja <span class='text-red-500'>*</span></label>";
+                                echo "<div class='flex flex-col sm:flex-row gap-4 items-center'>";
+                                echo "<img src='{$builder->inline()}' class='rounded-xl border border-gray-200 shadow-sm h-[56px] pointer-events-none select-none w-auto object-cover'>";
+                                echo "<input type='text' name='captcha_answer' required class='{$inputClasses} flex-1 min-w-[150px]' placeholder='Przepisz kod z obrazka...'>";
                                 echo "</div></div>";
                                 continue;
                             }
 
-                            // C. TURNSTILE (Cloudflare)
+                            // CLOUDFLARE TURNSTILE
                             if ($type === 'captcha_turnstile') {
                                 $siteKey = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'turnstile_site_key'")->fetch()['setting_value'] ?? '';
                                 echo "<div class='{$widthClass}'>";
                                 if (empty($siteKey)) {
-                                    echo "<div class='p-3 bg-red-100 text-red-700 text-xs font-bold rounded'>Błąd systemu: Brak klucza <b>Site Key</b>. Dodaj go w zakładce Ustawienia.</div>";
+                                    echo "<div class='p-3 bg-red-100 text-red-700 text-xs font-bold rounded'>Błąd: Brak klucza Turnstile Site Key.</div>";
                                 } else {
                                     if (!self::$turnstileLoaded) {
                                         echo "<script src='https://challenges.cloudflare.com/turnstile/v0/api.js' async defer></script>";
@@ -265,41 +254,49 @@ class BlockRenderer {
                             $reqAttr = $req ? 'required' : '';
                             $reqStar = $req ? '<span class="text-red-500 ml-1" title="Pole wymagane">*</span>' : '';
 
-                            // --- POLE PLIKÓW - ASYNCHRONICZNE ---
+                            // POLE PLIKÓW - ASYNCHRONICZNE
                             if ($type === 'file') {
                                 $allowMultiple = !empty($formSettings['allowMultipleFiles']) ? 'multiple' : '';
                                 echo "<div class='{$widthClass} async-file-upload' data-field-id='{$fieldId}'>";
-                                echo "<label class='block text-sm font-bold text-gray-700 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
+                                echo "<label class='block text-sm font-bold text-gray-800 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
                                 
                                 $hasExisting = isset($existingFiles[$fieldId]) && !empty($existingFiles[$fieldId]);
-                                // Usuwamy 'required' jeśli pole już ma załadowane pliki
                                 $currentReqAttr = ($hasExisting) ? '' : $reqAttr;
                                 
-                                echo "<input type='file' id='{$fieldId}' class='w-full border p-2 bg-white rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none file-input' {$currentReqAttr} {$allowMultiple}>";
+                                echo "<div class='relative border-2 border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-100/50 rounded-xl py-4 px-6 text-center transition-all group overflow-hidden focus-within:ring-4 focus-within:ring-blue-100 focus-within:border-blue-500 flex flex-col items-center justify-center'>";
+                                echo "<input type='file' id='{$fieldId}' class='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 file-input' {$currentReqAttr} {$allowMultiple}>";
                                 if ($req) echo "<input type='hidden' class='original-required-flag' value='1'>";
 
-                                echo "<div class='progress-container hidden mt-2'>";
-                                echo "<div class='w-full bg-gray-200 rounded-full h-2.5 overflow-hidden'><div class='progress-bar bg-blue-600 h-2.5 rounded-full transition-all duration-300' style='width: 0%'></div></div>";
-                                echo "<div class='text-xs text-gray-500 mt-1 progress-text font-bold'>0%</div>";
+                                echo "<div class='text-blue-500 mb-1 transition-transform group-hover:scale-110 flex justify-center'>
+                                        <svg class='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'></path></svg>
+                                      </div>";
+                                echo "<p class='text-sm font-bold text-blue-700 mb-0'>Przeciągnij lub kliknij</p>";
+                                echo "</div>";
+
+                                // Pasek postępu
+                                echo "<div class='progress-container hidden mt-3'>";
+                                echo "<div class='flex justify-between text-xs font-bold text-blue-800 mb-1'><span class='progress-text-name truncate max-w-[80%]'>Wgrywanie...</span><span class='progress-text-pct'>0%</span></div>";
+                                echo "<div class='w-full bg-blue-100 rounded-full h-2.5 overflow-hidden shadow-inner'><div class='progress-bar bg-blue-600 h-2.5 rounded-full transition-all duration-300' style='width: 0%'></div></div>";
                                 echo "</div>";
                                 
-                                echo "<div class='uploaded-files-list mt-2 flex flex-col gap-2'>";
+                                // Lista wgranych plików
+                                echo "<div class='uploaded-files-list mt-3 flex flex-col gap-2'>";
                                 if ($hasExisting) {
-                                    // Obsługa obu wariantów z historii (pojedynczy plik lub ich tablica)
                                     $eFiles = isset($existingFiles[$fieldId]['original_name']) ? [$existingFiles[$fieldId]] : $existingFiles[$fieldId];
                                     foreach ($eFiles as $eFile) {
                                         if (empty($eFile['original_name']) || empty($eFile['storage_name'])) continue;
                                         
                                         $jsonVal = htmlspecialchars(json_encode($eFile), ENT_QUOTES, 'UTF-8');
-                                        
-                                        // Generowanie linku do pobrania
                                         $origName = urlencode($eFile['original_name']);
                                         $dlUrl = "/admin/forms/download?file=" . urlencode($eFile['storage_name']) . "&orig=" . $origName;
 
-                                        echo "<div class='flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 shadow-sm existing-file-item'>";
-                                        echo "<a href='{$dlUrl}' target='_blank' class='truncate flex-1 font-medium text-blue-600 hover:text-blue-800 hover:underline'>📎 " . htmlspecialchars($eFile['original_name']) . "</a>";
-                                        echo "<button type='button' class='text-red-500 hover:text-red-700 font-bold ml-3 px-2 remove-existing-file' title='Usuń plik'>✕</button>";
-                                        echo "<input type='hidden' name='async_files[{$fieldId}][]' value='{$jsonVal}'>";
+                                        echo "<div class='flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item animate-fade-in'>";
+                                        echo "  <div class='flex items-center gap-3 overflow-hidden'>";
+                                        echo "    <div class='bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0'><svg class='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'><path fill-rule='evenodd' d='M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z' clip-rule='evenodd'></path></svg></div>";
+                                        echo "    <a href='{$dlUrl}' target='_blank' class='truncate font-medium hover:text-blue-600 transition-colors'>".htmlspecialchars($eFile['original_name'])."</a>";
+                                        echo "  </div>";
+                                        echo "  <button type='button' class='text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file' title='Usuń plik'><svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg></button>";
+                                        echo "  <input type='hidden' name='async_files[{$fieldId}][]' value='{$jsonVal}'>";
                                         echo "</div>";
                                     }
                                 }
@@ -307,11 +304,10 @@ class BlockRenderer {
                                 echo "</div>";
                                 continue;
                             }
-                            // ------------------------------------
 
-                            echo "<div class='$widthClass'><label class='block text-sm font-bold text-gray-700 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
+                            echo "<div class='$widthClass'><label class='block text-sm font-bold text-gray-800 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
                             
-                            // LOGIKA DLA LIST: SELECT, RADIO, CHECKBOX
+                            // LISTY (JEDNA POD DRUGĄ)
                             if (in_array($type, ['select', 'radio', 'checkbox'])) {
                                 $optionsRaw = explode("\n", trim($field['options'] ?? ''));
                                 $options = [];
@@ -322,8 +318,9 @@ class BlockRenderer {
                                 }
 
                                 if ($type === 'select') {
-                                    echo "<select id='{$fieldId}' name='data[{$fieldId}]' class='w-full border p-2.5 rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white' {$reqAttr}>";
-                                    echo "<option value=''>-- Wybierz --</option>";
+                                    echo "<div class='relative'>";
+                                    echo "<select id='{$fieldId}' name='data[{$fieldId}]' class='appearance-none {$inputClasses} pr-10' {$reqAttr}>";
+                                    echo "<option value=''>-- Wybierz opcję --</option>";
                                     foreach ($options as $o) {
                                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
                                         $disabled = '';
@@ -341,8 +338,10 @@ class BlockRenderer {
                                         echo "<option value='".htmlspecialchars($o['label'])."' {$disabled} {$selected}>".htmlspecialchars($o['label']) . $limitText."</option>";
                                     }
                                     echo "</select>";
+                                    echo "<div class='pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500'><svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'></path></svg></div>";
+                                    echo "</div>";
                                 } elseif ($type === 'radio') {
-                                    echo "<div class='space-y-2 mt-1'>";
+                                    echo "<div class='flex flex-col gap-3 mt-1' id='{$fieldId}'>";
                                     foreach ($options as $idx => $o) {
                                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
                                         $disabled = '';
@@ -351,22 +350,25 @@ class BlockRenderer {
                                             $left = $o['limit'] - $currentCount;
                                             if ($left <= 0 && $val !== $o['label']) {
                                                 $disabled = 'disabled';
-                                                $limitText = " <span class='text-xs text-red-500 font-bold'>(Brak miejsc)</span>";
+                                                $limitText = " <span class='text-xs text-red-500 font-bold block'>(Brak miejsc)</span>";
                                             } else {
-                                                $limitText = " <span class='text-xs text-gray-500 font-medium'>(Zostało: {$left})</span>";
+                                                $limitText = " <span class='text-xs text-gray-500 block'>(Zostało: {$left})</span>";
                                             }
                                         }
                                         $checked = ($val === $o['label']) ? 'checked' : '';
                                         $optId = $fieldId . '_' . $idx;
                                         
-                                        echo "<label class='flex items-center gap-2 cursor-pointer ".($disabled?'opacity-50':'')."' for='{$optId}'>";
-                                        echo "<input type='radio' id='{$optId}' name='data[{$fieldId}]' value='".htmlspecialchars($o['label'])."' class='w-4 h-4 text-blue-600 focus:ring-blue-500' {$disabled} {$checked} {$reqAttr}>";
-                                        echo "<span class='text-sm text-gray-700'>".htmlspecialchars($o['label']) . $limitText."</span>";
+                                        echo "<label class='relative flex items-start p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-all focus-within:ring-2 focus-within:ring-blue-500 bg-white shadow-sm ".(($disabled)?'opacity-50 cursor-not-allowed':'')."' for='{$optId}'>";
+                                        echo "<input type='radio' id='{$optId}' name='data[{$fieldId}]' value='".htmlspecialchars($o['label'])."' class='peer w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 mt-0.5 transition-all' {$disabled} {$checked} {$reqAttr}>";
+                                        echo "<div class='ml-3 flex flex-col'>";
+                                        echo "<span class='text-sm font-medium text-gray-800 peer-checked:text-blue-700 transition-colors'>".htmlspecialchars($o['label'])."</span>";
+                                        echo $limitText;
+                                        echo "</div>";
                                         echo "</label>";
                                     }
                                     echo "</div>";
                                 } elseif ($type === 'checkbox') {
-                                    echo "<div class='space-y-2 mt-1'>";
+                                    echo "<div class='flex flex-col gap-3 mt-1' id='{$fieldId}'>";
                                     $valArr = is_array($val) ? $val : (is_string($val) && strpos($val, ',') !== false ? explode(', ', $val) : [$val]);
                                     foreach ($options as $idx => $o) {
                                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
@@ -376,35 +378,40 @@ class BlockRenderer {
                                             $left = $o['limit'] - $currentCount;
                                             if ($left <= 0 && !in_array($o['label'], $valArr)) {
                                                 $disabled = 'disabled';
-                                                $limitText = " <span class='text-xs text-red-500 font-bold'>(Brak miejsc)</span>";
+                                                $limitText = " <span class='text-xs text-red-500 font-bold block'>(Brak miejsc)</span>";
                                             } else {
-                                                $limitText = " <span class='text-xs text-gray-500 font-medium'>(Zostało: {$left})</span>";
+                                                $limitText = " <span class='text-xs text-gray-500 block'>(Zostało: {$left})</span>";
                                             }
                                         }
                                         $checked = in_array($o['label'], $valArr) ? 'checked' : '';
                                         $optId = $fieldId . '_' . $idx;
                                         
-                                        echo "<label class='flex items-center gap-2 cursor-pointer ".($disabled?'opacity-50':'')."' for='{$optId}'>";
-                                        echo "<input type='checkbox' id='{$optId}' name='data[{$fieldId}][]' value='".htmlspecialchars($o['label'])."' class='w-4 h-4 text-blue-600 rounded focus:ring-blue-500' {$disabled} {$checked}>";
-                                        echo "<span class='text-sm text-gray-700'>".htmlspecialchars($o['label']) . $limitText."</span>";
+                                        echo "<label class='relative flex items-start p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-all focus-within:ring-2 focus-within:ring-blue-500 bg-white shadow-sm ".(($disabled)?'opacity-50 cursor-not-allowed':'')."' for='{$optId}'>";
+                                        echo "<input type='checkbox' id='{$optId}' name='data[{$fieldId}][]' value='".htmlspecialchars($o['label'])."' class='peer w-5 h-5 rounded text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 mt-0.5 transition-all' {$disabled} {$checked}>";
+                                        echo "<div class='ml-3 flex flex-col'>";
+                                        echo "<span class='text-sm font-medium text-gray-800 peer-checked:text-blue-700 transition-colors'>".htmlspecialchars($o['label'])."</span>";
+                                        echo $limitText;
+                                        echo "</div>";
                                         echo "</label>";
                                     }
                                     echo "</div>";
                                 }
                             } elseif ($type === 'textarea') {
-                                echo "<textarea id='{$fieldId}' name='data[{$fieldId}]' class='w-full border p-2.5 rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none' rows='4' {$reqAttr}>".htmlspecialchars(is_array($val)?'':$val)."</textarea>";
+                                echo "<textarea id='{$fieldId}' name='data[{$fieldId}]' class='{$inputClasses}' rows='4' {$reqAttr} placeholder='Wpisz tekst tutaj...'>".htmlspecialchars(is_array($val)?'':$val)."</textarea>";
+                            } elseif ($type === 'date') {
+                                echo "<input type='date' id='{$fieldId}' name='data[{$fieldId}]' value='".htmlspecialchars(is_array($val)?'':$val)."' class='{$inputClasses}' {$reqAttr}>";
                             } else {
-                                echo "<input type='{$type}' id='{$fieldId}' name='data[{$fieldId}]' value='".htmlspecialchars(is_array($val)?'':$val)."' class='w-full border p-2.5 rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none' {$reqAttr}>";
+                                echo "<input type='{$type}' id='{$fieldId}' name='data[{$fieldId}]' value='".htmlspecialchars(is_array($val)?'':$val)."' class='{$inputClasses}' {$reqAttr} placeholder='Wpisz wartość...'>";
                             }
                             echo "</div>";
                         }
 
-                        $btnText = $isEditing ? 'Zaktualizuj dane' : 'Wyślij';
-                        echo '<div class="md:col-span-3 mt-4"><button class="w-full bg-primary hover:opacity-90 text-white font-bold py-3.5 rounded-lg transition shadow-md" type="submit">'.$btnText.'</button>';
-                        if ($isEditing) echo '<div class="text-center mt-3"><a href="?" class="text-sm font-bold text-gray-500 hover:text-gray-800">Anuluj edycję</a></div>';
+                        $btnText = $isEditing ? 'Zaktualizuj formularz' : 'Wyślij formularz';
+                        echo '<div class="md:col-span-3 mt-6 pt-6 border-t border-gray-200">';
+                        echo '<button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-4 focus:ring-blue-300" type="submit">'.$btnText.'</button>';
+                        if ($isEditing) echo '<div class="text-center mt-4"><a href="?" class="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors">Anuluj edycję</a></div>';
                         echo '</div></form>';
 
-                        // --- SKRYPT AJAX DLA PLIKÓW ---
                         echo '<script>
                         (function() {
                             const formContainer = document.getElementById("form-container-' . $form['id'] . '");
@@ -418,7 +425,8 @@ class BlockRenderer {
                                 const fileInput = container.querySelector(".file-input");
                                 const progressContainer = container.querySelector(".progress-container");
                                 const progressBar = container.querySelector(".progress-bar");
-                                const progressText = container.querySelector(".progress-text");
+                                const progressTextName = container.querySelector(".progress-text-name");
+                                const progressTextPct = container.querySelector(".progress-text-pct");
                                 const filesList = container.querySelector(".uploaded-files-list");
                                 const fieldId = container.dataset.fieldId;
                                 const isMultiple = fileInput.hasAttribute("multiple");
@@ -459,7 +467,8 @@ class BlockRenderer {
 
                                     progressContainer.classList.remove("hidden");
                                     progressBar.style.width = "0%";
-                                    progressText.innerText = "0% - " + file.name;
+                                    progressTextName.innerText = file.name;
+                                    progressTextPct.innerText = "0%";
 
                                     const formData = new FormData();
                                     formData.append("file", file);
@@ -471,7 +480,7 @@ class BlockRenderer {
                                         if (e.lengthComputable) {
                                             const percentComplete = Math.round((e.loaded / e.total) * 100);
                                             progressBar.style.width = percentComplete + "%";
-                                            progressText.innerText = percentComplete + "% - " + file.name;
+                                            progressTextPct.innerText = percentComplete + "%";
                                         }
                                     };
 
@@ -518,12 +527,17 @@ class BlockRenderer {
                                     const dlUrl = "/admin/forms/download?file=" + encodeURIComponent(fileData.storage_name) + "&orig=" + encodeURIComponent(displayName);
 
                                     const item = document.createElement("div");
-                                    item.className = "flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 shadow-sm existing-file-item";
+                                    item.className = "flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item animate-fade-in";
                                     
                                     const safeJson = JSON.stringify(fileData).replace(/\'/g, "&#39;");
 
-                                    item.innerHTML = "<a href=\"" + dlUrl + "\" target=\"_blank\" class=\"truncate flex-1 font-medium text-blue-600 hover:text-blue-800 hover:underline\">📎 " + displayName + "</a>" +
-                                        "<button type=\"button\" class=\"text-red-500 hover:text-red-700 font-bold ml-3 px-2 remove-existing-file\" title=\"Usuń plik\">✕</button>" +
+                                    item.innerHTML = "<div class=\"flex items-center gap-3 overflow-hidden\">" + 
+                                        "<div class=\"bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0\"><svg class=\"w-4 h-4\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z\" clip-rule=\"evenodd\"></path></svg></div>" + 
+                                        "<a href=\"" + dlUrl + "\" target=\"_blank\" class=\"truncate font-medium hover:text-blue-600 transition-colors\">" + displayName + "</a>" +
+                                        "</div>" +
+                                        "<button type=\"button\" class=\"text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file\" title=\"Usuń plik\">" + 
+                                        "<svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg>" + 
+                                        "</button>" +
                                         "<input type=\"hidden\" name=\"async_files[" + fieldId + "][]\" value=\'" + safeJson + "\'>";
                                     
                                     item.querySelector(".remove-existing-file").addEventListener("click", function() {
@@ -538,7 +552,6 @@ class BlockRenderer {
                             });
                         })();
                         </script>';
-                        // ------------------------------
                     }
                     echo '</div>';
                 }
@@ -551,7 +564,7 @@ class BlockRenderer {
                     echo '<div class="mb-8"><a href="'.htmlspecialchars($link).'"><img src="'.htmlspecialchars($img).'" class="w-full rounded-xl shadow-md hover:opacity-90 transition transform hover:scale-[1.01]"></a></div>';
                 }
             }
-            // 12. CAROUSEL (Taby)
+            // 12. CAROUSEL (Przewijany efekt Slide)
             elseif ($block['type'] === 'carousel') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $tabs = $data['tabs'] ?? [];
@@ -560,10 +573,11 @@ class BlockRenderer {
 
                 if (!empty($tabs)) {
                     echo '<div class="mb-10 carousel-wrapper mt-10" id="'.$cid.'">';
-                    echo '<div class="flex flex-wrap gap-3 justify-center mb-8 items-center">';
                     
+                    // Przyciski do przełączania (Zmienione na ładne ikony strzałek)
+                    echo '<div class="flex flex-wrap gap-3 justify-center mb-8 items-center">';
                     if ($arrows) {
-                        echo '<button onclick="moveCarousel(\''.$cid.'\', -1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow">&lt;</button>';
+                        echo '<button onclick="moveSlide_'.$cid.'(-1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>';
                     }
 
                     foreach ($tabs as $idx => $tab) {
@@ -573,7 +587,7 @@ class BlockRenderer {
                         $tCls = !empty($tSet['css']) ? ' ' . htmlspecialchars($tSet['css']) : '';
                         $tStyle = !empty($tSet['style']) ? ' style="'.htmlspecialchars($tSet['style']).'"' : '';
 
-                        echo '<button'.$tId.' onclick="showCarouselTab(\''.$cid.'\', '.$idx.')" data-index="'.$idx.'" class="c-btn-'.$cid.' flex flex-col items-center justify-center p-4 rounded-xl w-32 md:w-40 text-white shadow-lg transition-all duration-300 transform '.$activeClass.$tCls.'"'.$tStyle.'>';
+                        echo '<button'.$tId.' onclick="goToSlide_'.$cid.'('.$idx.')" data-index="'.$idx.'" class="c-btn-'.$cid.' flex flex-col items-center justify-center p-4 rounded-xl w-32 md:w-40 text-white shadow-lg transition-all duration-300 transform '.$activeClass.$tCls.'"'.$tStyle.'>';
                         if (strpos($tab['icon'], 'http') === 0 || strpos($tab['icon'], '/') === 0) {
                             echo '<img src="'.htmlspecialchars($tab['icon']).'" class="h-8 w-8 mb-2 invert">';
                         } else {
@@ -584,14 +598,19 @@ class BlockRenderer {
                     }
 
                     if ($arrows) {
-                        echo '<button onclick="moveCarousel(\''.$cid.'\', 1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow">&gt;</button>';
+                        echo '<button onclick="moveSlide_'.$cid.'(1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>';
                     }
                     echo '</div>';
 
-                    echo '<div class="bg-white p-6 md:p-10 rounded-xl shadow border-t-4 border-blue-900 relative">';
+                    // GŁÓWNY KONTENER EKRANU (overflow-hidden ucina sąsiednie slajdy)
+                    echo '<div class="bg-white rounded-xl shadow border-t-4 border-blue-900 relative overflow-hidden">';
+                    
+                    // TAŚMA ZE SLAJDAMI (Wszystkie taby ustawione w rzędzie przez flex)
+                    // Usunięta klasa duration na starcie, aby zapobiec usterce animacji podczas ładowania
+                    echo '<div id="track-'.$cid.'" class="flex" style="transform: translateX(0%);">';
                     foreach ($tabs as $idx => $tab) {
-                        $display = $idx === 0 ? 'block' : 'hidden';
-                        echo '<div class="c-content-'.$cid.' animate-fade-in '.$display.'" data-index="'.$idx.'">';
+                        // Każdy tab musi być sztywno trzymany na 100% szerokości
+                        echo '<div class="p-6 md:p-10 shrink-0" style="flex: 0 0 100%; max-width: 100%; width: 100%;">';
                         if (!empty($tab['children'])) {
                             self::render($tab['children'], $db);
                         } else if (!empty($tab['content'])) {
@@ -599,8 +618,72 @@ class BlockRenderer {
                         }
                         echo '</div>';
                     }
-                    echo '</div>';
-                    echo '</div>';
+                    echo '</div>'; // Zakończenie track
+                    echo '</div>'; // Zakończenie okna bg-white
+
+                    // SKRYPT TYLKO DLA TEJ KARUZELI
+                    echo "<script>
+                        window.goToSlide_{$cid} = function(index) {
+                            const track = document.getElementById('track-{$cid}');
+                            const buttons = document.querySelectorAll('.c-btn-{$cid}');
+                            
+                            if (track) {
+                                // Przesunięcie całego flex tracka w lewo o wielokrotność 100%
+                                track.style.transform = 'translateX(-' + (index * 100) + '%)';
+                            }
+                            
+                            buttons.forEach(btn => {
+                                if (parseInt(btn.dataset.index) === index) {
+                                    btn.classList.remove('bg-blue-700', 'hover:bg-blue-800');
+                                    btn.classList.add('bg-blue-900', 'scale-105');
+                                } else {
+                                    btn.classList.add('bg-blue-700', 'hover:bg-blue-800');
+                                    btn.classList.remove('bg-blue-900', 'scale-105');
+                                }
+                            });
+                            
+                            localStorage.setItem('active_tab_{$cid}', index);
+                        };
+
+                        window.moveSlide_{$cid} = function(direction) {
+                            const buttons = document.querySelectorAll('.c-btn-{$cid}');
+                            let currentIndex = 0;
+                            const total = " . count($tabs) . ";
+                            
+                            buttons.forEach(btn => {
+                                if (btn.classList.contains('bg-blue-900')) {
+                                    currentIndex = parseInt(btn.dataset.index);
+                                }
+                            });
+                            
+                            let newIndex = currentIndex + direction;
+                            if (newIndex < 0) newIndex = total - 1;
+                            if (newIndex >= total) newIndex = 0;
+                            
+                            window.goToSlide_{$cid}(newIndex);
+                        };
+
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const track = document.getElementById('track-{$cid}');
+                            const savedIndex = localStorage.getItem('active_tab_{$cid}');
+                            
+                            if (track) {
+                                // Ustaw pozycję OD RAZU bez animacji
+                                if (savedIndex !== null) {
+                                    window.goToSlide_{$cid}(parseInt(savedIndex));
+                                }
+                                
+                                // Oczekaj jedną klatkę przeglądarki, zanim podepniemy CSS odpowiadający za płynny tranzyt (usuwa glitch podczas ładowania)
+                                requestAnimationFrame(() => {
+                                    setTimeout(() => {
+                                        track.classList.add('transition-transform', 'duration-500', 'ease-in-out');
+                                    }, 50);
+                                });
+                            }
+                        });
+                    </script>";
+
+                    echo '</div>'; // Zakończenie carousel-wrapper
                 }
             }
             // 13. GALLERY
@@ -695,7 +778,7 @@ class BlockRenderer {
                             echo '</div>';
                         }
                         echo '</div>';
-                        
+
                         $navNext = 'next_' . $swiperId;
                         $navPrev = 'prev_' . $swiperId;
                         $pagEl = 'pag_' . $swiperId;
@@ -724,32 +807,36 @@ class BlockRenderer {
                         if ($imgCount <= 1) $isLoop = 'false';
                         if ($effect === 'cards' && $imgCount < 4) $isLoop = 'false';
                         if ($effect === 'fade' && $imgCount < 2) $isLoop = 'false';
-                        
+
                         $jsSpaceBetween = in_array($effect, ['fade', 'cards']) ? '0' : '12';
 
                         echo "<script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                new Swiper('.$swiperId', {
-                                    effect: '{$effect}',
-                                    {$extraConfig}
-                                    loop: {$isLoop},
-                                    autoplay: {$autoplay},
-                                    observer: true,
-                                    observeParents: true,
-                                    ".($showPag ? "pagination: { el: '.{$pagEl}', clickable: true, dynamicBullets: true }," : "")."
-                                    ".($showNav ? "navigation: { nextEl: '.{$navNext}', prevEl: '.{$navPrev}' }," : "")."
-                                    slidesPerView: {$jsSlidesPerView},
-                                    spaceBetween: {$jsSpaceBetween},
-                                    {$jsBreakpoints}
-                                    on: {
-                                        init: function () {
-                                            const swiperInstance = this;
-                                            requestAnimationFrame(() => { swiperInstance.update(); });
-                                            setTimeout(() => { swiperInstance.update(); }, 150);
-                                        }
+                        document.addEventListener('DOMContentLoaded', function() {
+                            new Swiper('.$swiperId', {
+                                effect: '{$effect}',
+                                {$extraConfig}
+                                loop: {$isLoop},
+                                autoplay: {$autoplay},
+                                observer: true,
+                                observeParents: true,
+                                ".($showPag ? "pagination: { el: '.{$pagEl}', clickable: true, dynamicBullets: true }," : "")."
+                                ".($showNav ? "navigation: { nextEl: '.{$navNext}', prevEl: '.{$navPrev}' }," : "")."
+                                slidesPerView: {$jsSlidesPerView},
+                                spaceBetween: {$jsSpaceBetween},
+                                {$jsBreakpoints}
+                                on: {
+                                    init: function () {
+                                        const swiperInstance = this;
+                                        requestAnimationFrame(() => {
+                                            swiperInstance.update();
+                                        });
+                                        setTimeout(() => {
+                                            swiperInstance.update();
+                                        }, 150);
                                     }
-                                });
+                                }
                             });
+                        });
                         </script>";
                     }
                     echo '</div>';
@@ -916,7 +1003,7 @@ class BlockRenderer {
                     echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm font-bold">' . htmlspecialchars($flash['msg']) . '</div>';
                 }
                 echo '<form action="/login" method="POST">';
-                echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Login</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="login" type="text" required value="'.htmlspecialchars($oldLogin ?? '').'"></div>';
+                echo '  <div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Email lub Login</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="login" type="text" required value="'.htmlspecialchars($oldLogin ?? '').'"></div>';
                 echo '  <div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Hasło</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="password" type="password" required></div>';
                 echo '  <button class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded w-full transition shadow" type="submit">Zaloguj się</button>';
                 echo '</form>';
