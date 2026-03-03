@@ -34,14 +34,25 @@
                             <?php if(($field['type'] ?? '') === 'html') continue; ?>
                             <td class="px-6 py-4 text-gray-700">
                                 <?php 
-                                $key = $field['custom_id'] ?? $field['id'] ?? md5($field['label']); 
+                                $key = $field['custom_id'] ?? $field['id'] ?? md5($field['label']);
                                 if ($field['type'] === 'file') {
                                     if (isset($row['files'][$key])) {
                                         $f = $row['files'][$key];
-                                        $origName = urlencode($f['original_name'] ?? 'plik');
-                                        echo '<a href="/admin/forms/download?file='.$f['storage_name'].'&orig='.$origName.'" title="'.htmlspecialchars($f['original_name'] ?? '').'" class="text-blue-600 hover:text-blue-800 hover:underline font-bold flex items-center gap-1">
-                                            📎 Pobierz ('.htmlspecialchars($f['original_name'] ?? '').')
-                                        </a>';
+                                        
+                                        // Znormalizowanie formatu danych (pojedynczy plik też traktujemy jak listę dla ułatwienia pętli)
+                                        if (isset($f['original_name'])) {
+                                            $f = [$f]; 
+                                        }
+                                        
+                                        if (is_array($f) && count($f) > 0) {
+                                            foreach ($f as $singleFile) {
+                                                if (empty($singleFile['storage_name'])) continue;
+                                                $origName = urlencode($singleFile['original_name'] ?? 'plik');
+                                                echo '<a href="/admin/forms/download?file='.$singleFile['storage_name'].'&orig='.$origName.'" title="'.htmlspecialchars($singleFile['original_name'] ?? '').'" class="text-blue-600 hover:text-blue-800 hover:underline font-bold flex items-center gap-1 mb-1"> 📎 Pobierz ('.htmlspecialchars($singleFile['original_name'] ?? '').') </a>';
+                                            }
+                                        } else {
+                                            echo '<span class="text-gray-300">-</span>';
+                                        }
                                     } else {
                                         echo '<span class="text-gray-300">-</span>';
                                     }

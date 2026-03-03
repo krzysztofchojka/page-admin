@@ -53,6 +53,7 @@
 
         <div class="p-4 border-t bg-gray-50">
             <h3 class="font-bold mb-3 text-sm text-gray-700">Ustawienia Formularza</h3>
+            
             <label class="flex items-center gap-2 text-sm mb-2 cursor-pointer">
                 <input type="checkbox" id="reqLogin" class="rounded text-blue-600"> Wymaga logowania
             </label>
@@ -63,6 +64,9 @@
                 <input type="checkbox" id="editable" class="rounded text-blue-600"> Edytowalne po wysłaniu
             </label>
 
+            <label class="flex items-center gap-2 text-sm mb-4 cursor-pointer border-t border-gray-200 pt-3">
+                <input type="checkbox" id="allowMultipleFiles" class="rounded text-blue-600"> Wiele plików w inputach (Multi-upload)
+            </label>
             <button type="button" onclick="openEmailModal()" class="w-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold py-2.5 rounded shadow-sm transition text-sm flex items-center justify-center gap-2">
                 <span>✉️</span> Powiadomienia Email
             </button>
@@ -211,6 +215,16 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (window.CMS_CONFIG && window.CMS_CONFIG.savedSettings) {
+                    if (window.CMS_CONFIG.savedSettings.allowMultipleFiles) {
+                        document.getElementById('allowMultipleFiles').checked = true;
+                    }
+                }
+            }, 300); // Małe opóźnienie dla pewności, że główny skrypt załadował ustawienia
+        });
+
         window.CMS_CONFIG = {
             formId: <?= $form['id'] ?>,
             savedFields: <?= $form['form_json'] ?: '[]' ?>,
@@ -357,9 +371,16 @@
                     window.CMS_CONFIG.savedFields = payload.fields;
                     payload.settings = payload.settings || {};
                     payload.settings.email = currentEmailSettings;
+
+                    // WSTRZYKNIĘCIE NOWEGO USTAWIENIA:
+                    const allowMult = document.getElementById('allowMultipleFiles');
+                    if (allowMult) {
+                        payload.settings.allowMultipleFiles = allowMult.checked;
+                    }
+
                     arguments[1].body = JSON.stringify(payload);
                 } catch (e) {
-                    console.error('Błąd przesyłu danych email:', e);
+                    console.error('Błąd przesyłu danych formularza:', e);
                 }
             }
             return originalFetch.apply(this, arguments);

@@ -30,7 +30,6 @@ class BlockRenderer {
                 echo '</div>';
                 echo '</div>';
             }
-
             // 2. COLUMNS 3
             elseif ($block['type'] === 'columns_3') {
                 echo '<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">';
@@ -45,19 +44,16 @@ class BlockRenderer {
                 echo '</div>';
                 echo '</div>';
             }
-
             // 3. TEXT
             elseif ($block['type'] === 'text') {
                 echo '<div class="prose max-w-none mb-0">' . $block['content'] . '</div>';
             }
-
             // 4. IMAGE
             elseif ($block['type'] === 'image') {
                 if (!empty($block['content'])) {
                     echo '<div class="mb-6"><img src="' . htmlspecialchars($block['content']) . '" class="w-full rounded-xl shadow-lg"></div>';
                 }
             }
-
             // 5. WIDEO
             elseif ($block['type'] === 'video') {
                 $url = $block['content'] ?? '';
@@ -76,7 +72,6 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
-
             // 6. PRZYCISK
             elseif ($block['type'] === 'button') {
                 $data = is_array($block['content']) ? $block['content'] : [];
@@ -90,25 +85,22 @@ class BlockRenderer {
                 } else {
                     $btnClass .= 'border-2 border-primary text-primary hover:bg-primary hover:text-white';
                 }
-                
+
                 echo '<div class="mb-8">';
                 echo '<a href="'.htmlspecialchars($url).'" class="'.$btnClass.'">'.htmlspecialchars($label).'</a>';
                 echo '</div>';
             }
-
             // 7. SEPARATOR
             elseif ($block['type'] === 'divider') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $height = $data['height'] ?? '8';
                 echo '<hr class="border-t border-gray-200 my-'.htmlspecialchars($height).' w-full">';
             }
-
             // 8. CYTAT
             elseif ($block['type'] === 'quote') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $text = $data['text'] ?? '';
                 $author = $data['author'] ?? '';
-                
                 echo '<blockquote class="border-l-4 border-yellow-500 bg-yellow-50 p-6 rounded-r-xl mb-8 shadow-sm">';
                 echo '<p class="text-xl md:text-2xl italic font-serif text-gray-800 mb-4 leading-relaxed">"'.nl2br(htmlspecialchars($text)).'"</p>';
                 if (!empty($author)) {
@@ -116,11 +108,9 @@ class BlockRenderer {
                 }
                 echo '</blockquote>';
             }
-
             // 9. AKORDEON
             elseif ($block['type'] === 'accordion') {
                 $title = $block['content']['title'] ?? 'Kliknij, aby rozwinąć';
-                
                 echo '<details class="group mb-4 bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer overflow-hidden transition-all">';
                 echo '<summary class="p-5 font-bold text-lg text-purple-800 bg-purple-50 list-none flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-purple-300">';
                 echo '<span>'.htmlspecialchars($title).'</span>';
@@ -133,7 +123,6 @@ class BlockRenderer {
                 echo '</div>';
                 echo '</details>';
             }
-
             // 10. FORMULARZ
             elseif ($block['type'] === 'form') {
                 $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $block['content']])->fetch();
@@ -152,6 +141,7 @@ class BlockRenderer {
                     $isSubmittedNow = isset($_GET['submitted']) && $_GET['submitted'] == $form['id'];
                     $isEditing = isset($_GET['edit']) && $_GET['edit'] == $form['id'];
                     $existingSubmission = null;
+
                     if ($userId) {
                         $existingSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1", [$form['id'], $userId])->fetch();
                     }
@@ -163,7 +153,9 @@ class BlockRenderer {
 
                     $showThankYou = false;
                     if ($userId) {
-                        if ($existingSubmission && ($isSubmittedNow || (!empty($formSettings['fillOnce']) && !$isEditing))) $showThankYou = true;
+                        if ($existingSubmission && ($isSubmittedNow || (!empty($formSettings['fillOnce']) && !$isEditing))) {
+                            $showThankYou = true;
+                        }
                     } else {
                         if ($isSubmittedNow) $showThankYou = true;
                     }
@@ -171,14 +163,17 @@ class BlockRenderer {
                     if ($showThankYou) {
                         echo '<div class="bg-green-100 border border-green-400 text-green-800 px-5 py-5 rounded-lg mb-4 shadow-sm"><span class="text-3xl mb-3 block">🎉</span> <strong class="text-lg">Dziękujemy!</strong><br> Twój formularz został poprawnie zapisany na serwerze.</div>';
                         echo '<div class="flex flex-wrap gap-4 mt-6">';
-                        if (!empty($formSettings['editable']) && $existingSubmission) 
+                        if (!empty($formSettings['editable']) && $existingSubmission) {
                             echo '<a href="?edit='.$form['id'].'#form-container-'.$form['id'].'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">Kliknij, by edytować</a>';
-                        if (empty($formSettings['fillOnce'])) 
+                        }
+                        if (empty($formSettings['fillOnce'])) {
                             echo '<a href="?#form-container-'.$form['id'].'" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded shadow transition">Wyślij ponownie</a>';
+                        }
                         echo '</div>';
                     } else {
                         // Budowa formularza
-                        $prefill = []; $existingFiles = [];
+                        $prefill = [];
+                        $existingFiles = [];
                         $vault = new \CMS\Core\Vault();
 
                         if ($isEditing && $existingSubmission) {
@@ -191,15 +186,21 @@ class BlockRenderer {
                         foreach ($subs as $s) {
                             $d = json_decode($vault->decrypt($s['data_json']), true) ?? [];
                             foreach ($d as $fk => $fv) {
-                                if (is_array($fv)) foreach ($fv as $v) $optionCounts[$fk][$v] = ($optionCounts[$fk][$v] ?? 0) + 1;
-                                else $optionCounts[$fk][$fv] = ($optionCounts[$fk][$fv] ?? 0) + 1;
+                                if (is_array($fv)) {
+                                    foreach ($fv as $v) $optionCounts[$fk][$v] = ($optionCounts[$fk][$v] ?? 0) + 1;
+                                } else {
+                                    $optionCounts[$fk][$fv] = ($optionCounts[$fk][$fv] ?? 0) + 1;
+                                }
                             }
                         }
 
                         echo '<form action="/submit-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-6">';
                         echo '<input type="hidden" name="form_id" value="'.$form['id'].'">';
                         echo '<input type="hidden" name="return_url" value="'.htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/').'">';
-                        if ($isEditing && $existingSubmission) echo '<input type="hidden" name="submission_id" value="'.$existingSubmission['id'].'">';
+                        
+                        if ($isEditing && $existingSubmission) {
+                            echo '<input type="hidden" name="submission_id" value="'.$existingSubmission['id'].'">';
+                        }
 
                         $fields = json_decode($form['form_json'], true) ?? [];
                         foreach ($fields as $field) {
@@ -220,7 +221,7 @@ class BlockRenderer {
                                 echo "</div>";
                                 continue;
                             }
-                            
+
                             // B. CAPTCHA OBRAZKOWA (Gregwar)
                             if ($type === 'captcha_image') {
                                 if (!class_exists('\Gregwar\Captcha\CaptchaBuilder')) {
@@ -230,7 +231,7 @@ class BlockRenderer {
                                 $builder = new \Gregwar\Captcha\CaptchaBuilder;
                                 $builder->build();
                                 \CMS\Core\Session::set('captcha_img_' . $form['id'], $builder->getPhrase());
-                                
+
                                 echo "<div class='{$widthClass} bg-blue-50/50 p-4 rounded-xl border border-blue-100'>";
                                 echo "<label class='block text-sm font-bold text-gray-700 mb-3'>Zabezpieczenie przed robotami <span class='text-red-500'>*</span></label>";
                                 echo "<div class='flex flex-wrap sm:flex-nowrap gap-3 items-center'>";
@@ -257,16 +258,140 @@ class BlockRenderer {
                                 continue;
                             }
 
-                            // Standardowe Pola (Select, Radio, Text, File)
+                            // Standardowe Pola
                             $fieldId = $field['custom_id'] ?? $field['id'] ?? md5($field['label']);
                             $val = $prefill[$fieldId] ?? '';
                             $req = !empty($field['required']);
                             $reqAttr = $req ? 'required' : '';
                             $reqStar = $req ? '<span class="text-red-500 ml-1" title="Pole wymagane">*</span>' : '';
 
+                            // --- POLE PLIKÓW - ASYNCHRONICZNE ---
+                            if ($type === 'file') {
+                                $allowMultiple = !empty($formSettings['allowMultipleFiles']) ? 'multiple' : '';
+                                echo "<div class='{$widthClass} async-file-upload' data-field-id='{$fieldId}'>";
+                                echo "<label class='block text-sm font-bold text-gray-700 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
+                                
+                                $hasExisting = isset($existingFiles[$fieldId]) && !empty($existingFiles[$fieldId]);
+                                // Usuwamy 'required' jeśli pole już ma załadowane pliki
+                                $currentReqAttr = ($hasExisting) ? '' : $reqAttr;
+                                
+                                echo "<input type='file' id='{$fieldId}' class='w-full border p-2 bg-white rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none file-input' {$currentReqAttr} {$allowMultiple}>";
+                                if ($req) echo "<input type='hidden' class='original-required-flag' value='1'>";
+
+                                echo "<div class='progress-container hidden mt-2'>";
+                                echo "<div class='w-full bg-gray-200 rounded-full h-2.5 overflow-hidden'><div class='progress-bar bg-blue-600 h-2.5 rounded-full transition-all duration-300' style='width: 0%'></div></div>";
+                                echo "<div class='text-xs text-gray-500 mt-1 progress-text font-bold'>0%</div>";
+                                echo "</div>";
+                                
+                                echo "<div class='uploaded-files-list mt-2 flex flex-col gap-2'>";
+                                if ($hasExisting) {
+                                    // Obsługa obu wariantów z historii (pojedynczy plik lub ich tablica)
+                                    $eFiles = isset($existingFiles[$fieldId]['original_name']) ? [$existingFiles[$fieldId]] : $existingFiles[$fieldId];
+                                    foreach ($eFiles as $eFile) {
+                                        if (empty($eFile['original_name']) || empty($eFile['storage_name'])) continue;
+                                        
+                                        $jsonVal = htmlspecialchars(json_encode($eFile), ENT_QUOTES, 'UTF-8');
+                                        
+                                        // Generowanie linku do pobrania
+                                        $origName = urlencode($eFile['original_name']);
+                                        $dlUrl = "/admin/forms/download?file=" . urlencode($eFile['storage_name']) . "&orig=" . $origName;
+
+                                        echo "<div class='flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 shadow-sm existing-file-item'>";
+                                        echo "<a href='{$dlUrl}' target='_blank' class='truncate flex-1 font-medium text-blue-600 hover:text-blue-800 hover:underline'>📎 " . htmlspecialchars($eFile['original_name']) . "</a>";
+                                        echo "<button type='button' class='text-red-500 hover:text-red-700 font-bold ml-3 px-2 remove-existing-file' title='Usuń plik'>✕</button>";
+                                        echo "<input type='hidden' name='async_files[{$fieldId}][]' value='{$jsonVal}'>";
+                                        echo "</div>";
+                                    }
+                                }
+                                echo "</div>";
+                                echo "</div>";
+                                continue;
+                            }
+                            // ------------------------------------
+
                             echo "<div class='$widthClass'><label class='block text-sm font-bold text-gray-700 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
-                            // ... Tu ładuje się Twój standardowy kod inputów (ukryty dla oszczędności znaków, po prostu go zostawiasz tak jak w poprzednim pliku)
-                            if ($type === 'textarea') {
+                            
+                            // LOGIKA DLA LIST: SELECT, RADIO, CHECKBOX
+                            if (in_array($type, ['select', 'radio', 'checkbox'])) {
+                                $optionsRaw = explode("\n", trim($field['options'] ?? ''));
+                                $options = [];
+                                foreach ($optionsRaw as $opt) {
+                                    if (!$opt) continue;
+                                    $parts = explode('|limit:', $opt);
+                                    $options[] = ['label' => trim($parts[0]), 'limit' => isset($parts[1]) ? (int)trim($parts[1]) : 0];
+                                }
+
+                                if ($type === 'select') {
+                                    echo "<select id='{$fieldId}' name='data[{$fieldId}]' class='w-full border p-2.5 rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white' {$reqAttr}>";
+                                    echo "<option value=''>-- Wybierz --</option>";
+                                    foreach ($options as $o) {
+                                        $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
+                                        $disabled = '';
+                                        $limitText = '';
+                                        if ($o['limit'] > 0) {
+                                            $left = $o['limit'] - $currentCount;
+                                            if ($left <= 0 && $val !== $o['label']) {
+                                                $disabled = 'disabled';
+                                                $limitText = " (Brak miejsc)";
+                                            } else {
+                                                $limitText = " (Zostało: {$left})";
+                                            }
+                                        }
+                                        $selected = ($val === $o['label']) ? 'selected' : '';
+                                        echo "<option value='".htmlspecialchars($o['label'])."' {$disabled} {$selected}>".htmlspecialchars($o['label']) . $limitText."</option>";
+                                    }
+                                    echo "</select>";
+                                } elseif ($type === 'radio') {
+                                    echo "<div class='space-y-2 mt-1'>";
+                                    foreach ($options as $idx => $o) {
+                                        $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
+                                        $disabled = '';
+                                        $limitText = '';
+                                        if ($o['limit'] > 0) {
+                                            $left = $o['limit'] - $currentCount;
+                                            if ($left <= 0 && $val !== $o['label']) {
+                                                $disabled = 'disabled';
+                                                $limitText = " <span class='text-xs text-red-500 font-bold'>(Brak miejsc)</span>";
+                                            } else {
+                                                $limitText = " <span class='text-xs text-gray-500 font-medium'>(Zostało: {$left})</span>";
+                                            }
+                                        }
+                                        $checked = ($val === $o['label']) ? 'checked' : '';
+                                        $optId = $fieldId . '_' . $idx;
+                                        
+                                        echo "<label class='flex items-center gap-2 cursor-pointer ".($disabled?'opacity-50':'')."' for='{$optId}'>";
+                                        echo "<input type='radio' id='{$optId}' name='data[{$fieldId}]' value='".htmlspecialchars($o['label'])."' class='w-4 h-4 text-blue-600 focus:ring-blue-500' {$disabled} {$checked} {$reqAttr}>";
+                                        echo "<span class='text-sm text-gray-700'>".htmlspecialchars($o['label']) . $limitText."</span>";
+                                        echo "</label>";
+                                    }
+                                    echo "</div>";
+                                } elseif ($type === 'checkbox') {
+                                    echo "<div class='space-y-2 mt-1'>";
+                                    $valArr = is_array($val) ? $val : (is_string($val) && strpos($val, ',') !== false ? explode(', ', $val) : [$val]);
+                                    foreach ($options as $idx => $o) {
+                                        $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
+                                        $disabled = '';
+                                        $limitText = '';
+                                        if ($o['limit'] > 0) {
+                                            $left = $o['limit'] - $currentCount;
+                                            if ($left <= 0 && !in_array($o['label'], $valArr)) {
+                                                $disabled = 'disabled';
+                                                $limitText = " <span class='text-xs text-red-500 font-bold'>(Brak miejsc)</span>";
+                                            } else {
+                                                $limitText = " <span class='text-xs text-gray-500 font-medium'>(Zostało: {$left})</span>";
+                                            }
+                                        }
+                                        $checked = in_array($o['label'], $valArr) ? 'checked' : '';
+                                        $optId = $fieldId . '_' . $idx;
+                                        
+                                        echo "<label class='flex items-center gap-2 cursor-pointer ".($disabled?'opacity-50':'')."' for='{$optId}'>";
+                                        echo "<input type='checkbox' id='{$optId}' name='data[{$fieldId}][]' value='".htmlspecialchars($o['label'])."' class='w-4 h-4 text-blue-600 rounded focus:ring-blue-500' {$disabled} {$checked}>";
+                                        echo "<span class='text-sm text-gray-700'>".htmlspecialchars($o['label']) . $limitText."</span>";
+                                        echo "</label>";
+                                    }
+                                    echo "</div>";
+                                }
+                            } elseif ($type === 'textarea') {
                                 echo "<textarea id='{$fieldId}' name='data[{$fieldId}]' class='w-full border p-2.5 rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none' rows='4' {$reqAttr}>".htmlspecialchars(is_array($val)?'':$val)."</textarea>";
                             } else {
                                 echo "<input type='{$type}' id='{$fieldId}' name='data[{$fieldId}]' value='".htmlspecialchars(is_array($val)?'':$val)."' class='w-full border p-2.5 rounded shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none' {$reqAttr}>";
@@ -275,14 +400,149 @@ class BlockRenderer {
                         }
 
                         $btnText = $isEditing ? 'Zaktualizuj dane' : 'Wyślij';
-                        echo '<div class="md:col-span-3 mt-4"><button class="w-full bg-primary hover:opacity-90 text-white font-bold py-3.5 rounded-lg transition shadow-md">'.$btnText.'</button>';
+                        echo '<div class="md:col-span-3 mt-4"><button class="w-full bg-primary hover:opacity-90 text-white font-bold py-3.5 rounded-lg transition shadow-md" type="submit">'.$btnText.'</button>';
                         if ($isEditing) echo '<div class="text-center mt-3"><a href="?" class="text-sm font-bold text-gray-500 hover:text-gray-800">Anuluj edycję</a></div>';
                         echo '</div></form>';
+
+                        // --- SKRYPT AJAX DLA PLIKÓW ---
+                        echo '<script>
+                        (function() {
+                            const formContainer = document.getElementById("form-container-' . $form['id'] . '");
+                            if (!formContainer) return;
+                            const form = formContainer.querySelector("form");
+                            if (!form) return;
+                            const submitBtn = form.querySelector("button[type=\"submit\"]");
+                            let activeUploads = 0;
+
+                            form.querySelectorAll(".async-file-upload").forEach(container => {
+                                const fileInput = container.querySelector(".file-input");
+                                const progressContainer = container.querySelector(".progress-container");
+                                const progressBar = container.querySelector(".progress-bar");
+                                const progressText = container.querySelector(".progress-text");
+                                const filesList = container.querySelector(".uploaded-files-list");
+                                const fieldId = container.dataset.fieldId;
+                                const isMultiple = fileInput.hasAttribute("multiple");
+
+                                if (fileInput.hasAttribute("required")) {
+                                    fileInput.setAttribute("data-required", "true");
+                                }
+
+                                filesList.querySelectorAll(".remove-existing-file").forEach(btn => {
+                                    btn.addEventListener("click", function() {
+                                        this.closest(".existing-file-item").remove();
+                                        if (filesList.children.length === 0 && container.querySelector(".original-required-flag")) {
+                                            fileInput.setAttribute("required", "required");
+                                        }
+                                    });
+                                });
+
+                                fileInput.addEventListener("change", function() {
+                                    const files = this.files;
+                                    if (files.length === 0) return;
+
+                                    if (!isMultiple) {
+                                        filesList.innerHTML = "";
+                                        form.querySelectorAll("input[name=\"async_files[" + fieldId + "][]\"]").forEach(el => el.remove());
+                                    }
+
+                                    Array.from(files).forEach(file => {
+                                        uploadFile(file);
+                                    });
+                                    this.value = "";
+                                });
+
+                                function uploadFile(file) {
+                                    activeUploads++;
+                                    submitBtn.disabled = true;
+                                    submitBtn.innerHTML = "⏳ Przesyłanie plików...";
+                                    submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+
+                                    progressContainer.classList.remove("hidden");
+                                    progressBar.style.width = "0%";
+                                    progressText.innerText = "0% - " + file.name;
+
+                                    const formData = new FormData();
+                                    formData.append("file", file);
+
+                                    const xhr = new XMLHttpRequest();
+                                    xhr.open("POST", "/form-upload", true);
+
+                                    xhr.upload.onprogress = function(e) {
+                                        if (e.lengthComputable) {
+                                            const percentComplete = Math.round((e.loaded / e.total) * 100);
+                                            progressBar.style.width = percentComplete + "%";
+                                            progressText.innerText = percentComplete + "% - " + file.name;
+                                        }
+                                    };
+
+                                    xhr.onload = function() {
+                                        activeUploads--;
+                                        if (xhr.status === 200) {
+                                            try {
+                                                const res = JSON.parse(xhr.responseText);
+                                                if (res.status === "success") {
+                                                    addUploadedFileUi(res.file, file.name);
+                                                } else {
+                                                    alert("Błąd przesyłania pliku: " + file.name);
+                                                }
+                                            } catch(e) {
+                                                alert("Błąd odpowiedzi serwera dla pliku: " + file.name);
+                                            }
+                                        } else {
+                                            alert("Błąd serwera podczas przesyłania pliku.");
+                                        }
+                                        checkUploadsFinished();
+                                    };
+
+                                    xhr.onerror = function() {
+                                        activeUploads--;
+                                        alert("Błąd sieci podczas przesyłania pliku.");
+                                        checkUploadsFinished();
+                                    };
+
+                                    xhr.send(formData);
+                                }
+
+                                function checkUploadsFinished() {
+                                    if (activeUploads === 0) {
+                                        progressContainer.classList.add("hidden");
+                                        submitBtn.disabled = false;
+                                        submitBtn.innerHTML = "' . $btnText . '";
+                                        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                                    }
+                                }
+
+                                function addUploadedFileUi(fileData, displayName) {
+                                    fileInput.removeAttribute("required");
+
+                                    const dlUrl = "/admin/forms/download?file=" + encodeURIComponent(fileData.storage_name) + "&orig=" + encodeURIComponent(displayName);
+
+                                    const item = document.createElement("div");
+                                    item.className = "flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 shadow-sm existing-file-item";
+                                    
+                                    const safeJson = JSON.stringify(fileData).replace(/\'/g, "&#39;");
+
+                                    item.innerHTML = "<a href=\"" + dlUrl + "\" target=\"_blank\" class=\"truncate flex-1 font-medium text-blue-600 hover:text-blue-800 hover:underline\">📎 " + displayName + "</a>" +
+                                        "<button type=\"button\" class=\"text-red-500 hover:text-red-700 font-bold ml-3 px-2 remove-existing-file\" title=\"Usuń plik\">✕</button>" +
+                                        "<input type=\"hidden\" name=\"async_files[" + fieldId + "][]\" value=\'" + safeJson + "\'>";
+                                    
+                                    item.querySelector(".remove-existing-file").addEventListener("click", function() {
+                                        item.remove();
+                                        if (filesList.children.length === 0 && container.querySelector(".original-required-flag")) {
+                                            fileInput.setAttribute("required", "required");
+                                        }
+                                    });
+
+                                    filesList.appendChild(item);
+                                }
+                            });
+                        })();
+                        </script>';
+                        // ------------------------------
                     }
                     echo '</div>';
                 }
             }
-
             // 11. LINKED IMAGE
             elseif ($block['type'] === 'linked_image') {
                 $img = $block['content']['url'] ?? '';
@@ -291,7 +551,6 @@ class BlockRenderer {
                     echo '<div class="mb-8"><a href="'.htmlspecialchars($link).'"><img src="'.htmlspecialchars($img).'" class="w-full rounded-xl shadow-md hover:opacity-90 transition transform hover:scale-[1.01]"></a></div>';
                 }
             }
-
             // 12. CAROUSEL (Taby)
             elseif ($block['type'] === 'carousel') {
                 $data = is_array($block['content']) ? $block['content'] : [];
@@ -327,8 +586,8 @@ class BlockRenderer {
                     if ($arrows) {
                         echo '<button onclick="moveCarousel(\''.$cid.'\', 1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow">&gt;</button>';
                     }
-
                     echo '</div>';
+
                     echo '<div class="bg-white p-6 md:p-10 rounded-xl shadow border-t-4 border-blue-900 relative">';
                     foreach ($tabs as $idx => $tab) {
                         $display = $idx === 0 ? 'block' : 'hidden';
@@ -344,8 +603,7 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
-
-            // 13. GALLERY 
+            // 13. GALLERY
             elseif ($block['type'] === 'gallery') {
                 $gal = $db->query("SELECT * FROM pa_galleries WHERE id = :id", ['id' => $block['content']])->fetch();
                 if ($gal) {
@@ -353,6 +611,7 @@ class BlockRenderer {
                     $settings = json_decode($gal['settings'] ?? '{}', true);
 
                     if (empty($imgs)) continue;
+
                     echo '<div class="mb-10">';
                     echo '<h3 class="text-2xl font-bold mb-6 text-gray-800">'.htmlspecialchars($gal['title']).'</h3>';
 
@@ -371,11 +630,13 @@ class BlockRenderer {
                         $maxVisible = 5;
                         $total = count($imgs);
                         echo '<div class="grid grid-cols-6 gap-2 md:gap-3 rounded-xl overflow-hidden shadow-sm">';
+                        
                         foreach ($imgs as $index => $img) {
                             if ($index >= $maxVisible) {
                                 echo "<a href='$img' class='glightbox hidden' data-gallery='gallery-{$gal['id']}'></a>";
                                 continue;
                             }
+                            
                             $classes = 'block relative overflow-hidden group bg-gray-100';
                             if ($total === 1) $classes .= ' col-span-6 aspect-video';
                             elseif ($total === 2) $classes .= ' col-span-3 aspect-[4/3] md:aspect-video';
@@ -385,6 +646,7 @@ class BlockRenderer {
 
                             echo "<a href='$img' class='glightbox $classes' data-gallery='gallery-{$gal['id']}'>";
                             echo "<img src='$img' class='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110'>";
+                            
                             if ($index === 4 && $total > 5) {
                                 $more = $total - 5;
                                 echo "<div class='absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-3xl md:text-5xl backdrop-blur-sm transition-colors group-hover:bg-black/50'>+{$more}</div>";
@@ -398,9 +660,9 @@ class BlockRenderer {
                         $showNav = !empty($settings['nav']);
                         $showPag = !empty($settings['pag']);
                         $autoplay = (!empty($settings['autoplay']) && $settings['autoplay'] > 0) ? "{ delay: {$settings['autoplay']}, disableOnInteraction: false }" : 'false';
-                        $effect = 'slide'; 
+                        $effect = 'slide';
                         $extraConfig = '';
-                        $containerClasses = 'rounded-xl shadow-sm relative'; 
+                        $containerClasses = 'rounded-xl shadow-sm relative';
                         $slideClasses = 'relative bg-gray-100 group rounded-xl overflow-hidden';
 
                         if ($gal['type'] === 'swiper_coverflow') {
@@ -415,7 +677,7 @@ class BlockRenderer {
                             $slideClasses .= ' aspect-[4/3] md:aspect-[16/9]';
                         } elseif ($gal['type'] === 'swiper_cards') {
                             $effect = 'cards';
-                            $extraConfig = "cardsEffect: { slideShadows: true }, grabCursor: true,"; 
+                            $extraConfig = "cardsEffect: { slideShadows: true }, grabCursor: true,";
                             $containerClasses .= ' !overflow-visible max-w-sm mx-auto mt-8 mb-12';
                             $slideClasses .= ' aspect-[3/4] shadow-lg';
                         } else {
@@ -433,7 +695,7 @@ class BlockRenderer {
                             echo '</div>';
                         }
                         echo '</div>';
-
+                        
                         $navNext = 'next_' . $swiperId;
                         $navPrev = 'prev_' . $swiperId;
                         $pagEl = 'pag_' . $swiperId;
@@ -447,7 +709,8 @@ class BlockRenderer {
 
                         $jsBreakpoints = "";
                         $jsSlidesPerView = "1";
-                        $imgCount = count($imgs); 
+                        $imgCount = count($imgs);
+
                         if ($effect === 'slide') {
                             $jsBreakpoints = "breakpoints: { 640: { slidesPerView: 1, spaceBetween: 16 }, 768: { slidesPerView: 2, spaceBetween: 20 }, 1024: { slidesPerView: 3, spaceBetween: 24 } }";
                         } elseif ($effect === 'coverflow') {
@@ -461,43 +724,38 @@ class BlockRenderer {
                         if ($imgCount <= 1) $isLoop = 'false';
                         if ($effect === 'cards' && $imgCount < 4) $isLoop = 'false';
                         if ($effect === 'fade' && $imgCount < 2) $isLoop = 'false';
-
+                        
                         $jsSpaceBetween = in_array($effect, ['fade', 'cards']) ? '0' : '12';
 
                         echo "<script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            new Swiper('.$swiperId', {
-                                effect: '{$effect}',
-                                {$extraConfig}
-                                loop: {$isLoop},
-                                autoplay: {$autoplay},
-                                observer: true,
-                                observeParents: true,
-                                ".($showPag ? "pagination: { el: '.{$pagEl}', clickable: true, dynamicBullets: true }," : "")."
-                                ".($showNav ? "navigation: { nextEl: '.{$navNext}', prevEl: '.{$navPrev}' }," : "")."
-                                slidesPerView: {$jsSlidesPerView},
-                                spaceBetween: {$jsSpaceBetween},
-                                {$jsBreakpoints}
-                                on: {
-                                    init: function () {
-                                        const swiperInstance = this;
-                                        requestAnimationFrame(() => {
-                                            swiperInstance.update();
-                                        });
-                                        setTimeout(() => {
-                                            swiperInstance.update();
-                                        }, 150);
+                            document.addEventListener('DOMContentLoaded', function() {
+                                new Swiper('.$swiperId', {
+                                    effect: '{$effect}',
+                                    {$extraConfig}
+                                    loop: {$isLoop},
+                                    autoplay: {$autoplay},
+                                    observer: true,
+                                    observeParents: true,
+                                    ".($showPag ? "pagination: { el: '.{$pagEl}', clickable: true, dynamicBullets: true }," : "")."
+                                    ".($showNav ? "navigation: { nextEl: '.{$navNext}', prevEl: '.{$navPrev}' }," : "")."
+                                    slidesPerView: {$jsSlidesPerView},
+                                    spaceBetween: {$jsSpaceBetween},
+                                    {$jsBreakpoints}
+                                    on: {
+                                        init: function () {
+                                            const swiperInstance = this;
+                                            requestAnimationFrame(() => { swiperInstance.update(); });
+                                            setTimeout(() => { swiperInstance.update(); }, 150);
+                                        }
                                     }
-                                }
+                                });
                             });
-                        });
                         </script>";
                     }
                     echo '</div>';
                 }
             }
-
-            // 14. IMAGE CARDS 
+            // 14. IMAGE CARDS
             elseif ($block['type'] === 'image_cards') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $cards = $data['cards'] ?? [];
@@ -528,7 +786,6 @@ class BlockRenderer {
                     echo '</div>';
                 }
             }
-
             // 15. BANNER
             elseif ($block['type'] === 'banner') {
                 $data = is_array($block['content']) ? $block['content'] : [];
@@ -539,7 +796,7 @@ class BlockRenderer {
                 echo '<div class="relative w-screen h-64 md:h-[500px] bg-cover bg-center mb-10" style="margin-left: calc(-50vw + 50%); background-image: url(\''.htmlspecialchars($bg).'\');">';
                 if (!empty($title)) {
                     echo '  <div class="absolute bottom-8 left-0 w-11/12 md:w-2/3 bg-white/90 p-6 md:pl-16 backdrop-blur-sm shadow-xl rounded-r-2xl">';
-                    echo '      <h1 class="text-3xl md:text-5xl font-extrabold text-orange-500 tracking-wide drop-shadow-sm">'.htmlspecialchars($title).'</h1>';
+                    echo '    <h1 class="text-3xl md:text-5xl font-extrabold text-orange-500 tracking-wide drop-shadow-sm">'.htmlspecialchars($title).'</h1>';
                     echo '  </div>';
                 }
                 echo '</div>';
@@ -548,12 +805,10 @@ class BlockRenderer {
                     echo '<div class="text-gray-800 font-medium mb-10 text-lg md:text-xl max-w-4xl border-l-4 border-orange-500 pl-5 leading-relaxed">'.nl2br(htmlspecialchars($subtitle)).'</div>';
                 }
             }
-
             // 16. RAW HTML
             elseif ($block['type'] === 'raw_html') {
                 echo $block['content'];
             }
-
             // 17. MAPA LEAFLET
             elseif ($block['type'] === 'map') {
                 $data = is_array($block['content']) ? $block['content'] : [];
@@ -574,7 +829,6 @@ class BlockRenderer {
                     });
                 </script>";
             }
-
             // 18. ODLICZANIE
             elseif ($block['type'] === 'countdown') {
                 $data = is_array($block['content']) ? $block['content'] : [];
@@ -596,26 +850,22 @@ class BlockRenderer {
                     echo '</div></div>';
 
                     echo "<script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        var target = new Date('{$targetDate}').getTime();
-                        var el = document.getElementById('{$cdId}');
-                        var interval = setInterval(function() {
-                            var now = new Date().getTime();
-                            var distance = target - now;
-                            if (distance < 0) {
-                                clearInterval(interval);
-                                return;
-                            }
-                            el.querySelector('.days').innerText = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
-                            el.querySelector('.hours').innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-                            el.querySelector('.minutes').innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                            el.querySelector('.seconds').innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                        }, 1000);
-                    });
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var target = new Date('{$targetDate}').getTime();
+                            var el = document.getElementById('{$cdId}');
+                            var interval = setInterval(function() {
+                                var now = new Date().getTime();
+                                var distance = target - now;
+                                if (distance < 0) { clearInterval(interval); return; }
+                                el.querySelector('.days').innerText = Math.floor(distance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+                                el.querySelector('.hours').innerText = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+                                el.querySelector('.minutes').innerText = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                                el.querySelector('.seconds').innerText = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                            }, 1000);
+                        });
                     </script>";
                 }
             }
-
             // 19. TABELA
             elseif ($block['type'] === 'table') {
                 $raw = $block['content'] ?? '';
@@ -642,7 +892,6 @@ class BlockRenderer {
                     echo '</tbody></table></div>';
                 }
             }
-
             // 20. PRZELOT
             elseif ($block['type'] === 'flight') {
                 echo '<div class="flight-container mb-8">';
@@ -653,13 +902,12 @@ class BlockRenderer {
                 }
                 echo '</div>';
             }
-
             // 21. SYSTEM: LOGOWANIE
             elseif ($block['type'] === 'system_login') {
                 $flash = \CMS\Core\Session::getFlash();
                 $oldLogin = \CMS\Core\Session::get('old_login');
                 \CMS\Core\Session::remove('old_login');
-
+                
                 $setRows = $db->query("SELECT setting_key, setting_value FROM pa_settings")->fetchAll();
                 $s = []; foreach($setRows as $r) $s[$r['setting_key']] = $r['setting_value'];
 
@@ -681,7 +929,6 @@ class BlockRenderer {
                 }
                 echo '</div>';
             }
-
             // 22. SYSTEM: REJESTRACJA
             elseif ($block['type'] === 'system_register') {
                 $flash = \CMS\Core\Session::getFlash();
@@ -701,7 +948,6 @@ class BlockRenderer {
                 echo '<p class="text-center mt-4 text-sm text-gray-500">Masz już konto? <a href="/login" class="text-blue-600 font-bold hover:underline">Zaloguj</a></p>';
                 echo '</div>';
             }
-
             // 23. SYSTEM: ZMIANA HASŁA
             elseif ($block['type'] === 'system_change_password') {
                 $flash = \CMS\Core\Session::getFlash();
@@ -715,7 +961,6 @@ class BlockRenderer {
                 echo '<button class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded w-full shadow transition" type="submit">Zaktualizuj Hasło</button>';
                 echo '</form></div>';
             }
-
             // 24. SYSTEM: LOCKDOWN
             elseif ($block['type'] === 'system_lockdown') {
                 echo '<div class="max-w-md w-full mx-auto bg-gray-900 p-8 rounded-xl shadow-2xl border border-gray-700 text-center">';

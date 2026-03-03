@@ -84,6 +84,37 @@ class FormController {
         require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
+    public function asyncUpload() {
+        \CMS\Core\Session::init();
+        $vault = new \CMS\Core\Vault();
+        
+        if (!empty($_FILES['file'])) {
+            $file = $_FILES['file'];
+            if ($file['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = __DIR__ . '/../../public/uploads/secure/';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                
+                $tmpName = $file['tmp_name'];
+                $filename = $file['name'];
+                $encryptedContent = $vault->encrypt(file_get_contents($tmpName));
+                $safeName = bin2hex(random_bytes(16)) . '.enc';
+                
+                file_put_contents($uploadDir . $safeName, $encryptedContent);
+                
+                echo json_encode([
+                    'status' => 'success', 
+                    'file' => [
+                        'original_name' => $filename,
+                        'storage_name' => $safeName
+                    ]
+                ]);
+                exit;
+            }
+        }
+        echo json_encode(['status' => 'error']);
+        exit;
+    }
+
     public function deleteSubmission() {
         Session::init();
         if (!Session::isLoggedIn()) { header('Location: /login'); exit; }

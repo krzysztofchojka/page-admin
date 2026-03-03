@@ -76,6 +76,7 @@ $router->get('/admin/forms/create', [CMS\Controllers\FormController::class, 'cre
 $router->get('/admin/forms/builder', [CMS\Controllers\FormController::class, 'builder']);
 $router->post('/admin/forms/save', [CMS\Controllers\FormController::class, 'save']);
 $router->post('/submit-form', [CMS\Controllers\FormController::class, 'submit']); // Public submission
+$router->post('/form-upload', [CMS\Controllers\FormController::class, 'asyncUpload']);
 $router->get('/admin/forms/submissions/delete', [CMS\Controllers\FormController::class, 'deleteSubmission']);
 $router->post('/admin/templates/delete', [CMS\Controllers\TemplateController::class, 'delete']);
 

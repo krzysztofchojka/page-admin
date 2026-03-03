@@ -75,6 +75,7 @@ class FormSubmissionService {
         $encryptedData = $vault->encrypt(json_encode($formData));
         $savedFiles = [];
 
+        // Pobranie ewentualnych starych plików w przypadku edycji zgłoszenia
         if ($submissionId && $userId) {
             $oldSub = $db->query("SELECT files_json FROM pa_submissions WHERE id = :id AND user_id = :uid", [
                 'id' => $submissionId,
@@ -85,21 +86,32 @@ class FormSubmissionService {
             }
         }
 
-        if (!empty($files['name']) && is_array($files['name'])) {
-            $uploadDir = __DIR__ . '/../../public/uploads/secure/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-            
-            foreach ($files['name'] as $fieldKey => $filename) {
-                if ($files['error'][$fieldKey] === UPLOAD_ERR_OK) {
-                    $tmpName = $files['tmp_name'][$fieldKey];
-                    $encryptedContent = $vault->encrypt(file_get_contents($tmpName));
-                    $safeName = bin2hex(random_bytes(16)) . '.enc';
-                    file_put_contents($uploadDir . $safeName, $encryptedContent);
-
-                    $savedFiles[$fieldKey] = [
-                        'original_name' => $filename,
-                        'storage_name' => $safeName
-                    ];
+        // NOWE ZARZĄDZANIE ASYNCHRONICZNYMI PLIKAMI (Zastępuje dotychczasowe przetwarzanie $_FILES)
+        foreach ($fields as $f) {
+            if (($f['type'] ?? '') === 'file') {
+                $fieldKey = $f['custom_id'] ?? $f['id'] ?? null;
+                if ($fieldKey) {
+                    if (isset($_POST['async_files'][$fieldKey]) && is_array($_POST['async_files'][$fieldKey])) {
+                        $parsedFiles = [];
+                        foreach ($_POST['async_files'][$fieldKey] as $jsonStr) {
+                            $fData = json_decode($jsonStr, true);
+                            if (is_array($fData) && !empty($fData['storage_name'])) {
+                                $parsedFiles[] = $fData;
+                            }
+                        }
+                        
+                        $formSettings = json_decode($formDef['settings'] ?? '{}', true);
+                        $allowMultiple = !empty($formSettings['allowMultipleFiles']);
+                        
+                        if (!empty($parsedFiles)) {
+                            $savedFiles[$fieldKey] = $allowMultiple ? $parsedFiles : end($parsedFiles);
+                        } else {
+                            unset($savedFiles[$fieldKey]);
+                        }
+                    } else {
+                        // Pola nie było w POST, więc pliki zostały usunięte
+                        unset($savedFiles[$fieldKey]);
+                    }
                 }
             }
         }
@@ -109,11 +121,19 @@ class FormSubmissionService {
 
         if ($submissionId && $userId) {
             $db->query("UPDATE pa_submissions SET data_json = :d, files_json = :f, user_ip = :ip WHERE id = :id AND user_id = :uid", [
-                'd' => $encryptedData, 'f' => $filesJson, 'ip' => $userIp, 'id' => $submissionId, 'uid' => $userId
+                'd' => $encryptedData,
+                'f' => $filesJson,
+                'ip' => $userIp,
+                'id' => $submissionId,
+                'uid' => $userId
             ]);
         } else {
             $db->query("INSERT INTO pa_submissions (form_id, user_id, user_ip, data_json, files_json) VALUES (:fid, :uid, :ip, :d, :f)", [
-                'fid' => $formId, 'uid' => $userId, 'ip' => $userIp, 'd' => $encryptedData, 'f' => $filesJson
+                'fid' => $formId,
+                'uid' => $userId,
+                'ip' => $userIp,
+                'd' => $encryptedData,
+                'f' => $filesJson
             ]);
             $this->sendEmailNotifications($formId, $formData, $userId);
         }
