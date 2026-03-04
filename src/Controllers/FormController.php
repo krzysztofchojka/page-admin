@@ -115,6 +115,125 @@ class FormController {
         exit;
     }
 
+    public function exportFiles() {
+        \CMS\Core\Session::init();
+        if (!\CMS\Core\Session::isLoggedIn()) die("Access Denied");
+
+        $formId = $_POST['form_id'] ?? 0;
+        // Domyślny wzorzec nazwy, jeśli użytkownik wyczyści pole
+        $namePattern = !empty($_POST['name_pattern']) ? $_POST['name_pattern'] : '{{sys_id}}_{{original_name}}';
+
+        $db = Database::getInstance();
+        $vault = new \CMS\Core\Vault();
+
+        $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $formId])->fetch();
+        if (!$form) die("Formularz nie istnieje");
+
+        $formFields = json_decode($form['form_json'], true) ?? [];
+        $rows = $db->query("SELECT s.*, u.email as user_email FROM pa_submissions s LEFT JOIN pa_users u ON s.user_id = u.id WHERE form_id = :id ORDER BY id DESC", ['id' => $formId])->fetchAll();
+
+        $zipName = 'zalaczniki_formularz_' . $formId . '_' . date('Y-m-d_H-i') . '.zip';
+        $zipPath = sys_get_temp_dir() . '/' . $zipName;
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            \CMS\Core\Session::setFlash('Nie można utworzyć pliku ZIP na serwerze.', 'error');
+            header("Location: /admin/forms/submissions?id=" . $formId);
+            exit;
+        }
+
+        $hasFiles = false;
+        $fileNamesUsed = []; // Ochrona przed plikami o tej samej nazwie wewnątrz archiwum ZIP
+
+        foreach ($rows as $row) {
+            $decryptedData = json_decode($vault->decrypt($row['data_json']), true) ?? [];
+            $filesData = json_decode($row['files_json'], true) ?? [];
+
+            if (empty($filesData)) continue;
+
+            // Przygotowanie tagów systemowych dla tego konkretnego zgłoszenia
+            $replacements = [
+                '{{sys_id}}' => $row['id'],
+                '{{sys_date}}' => date('Y-m-d', strtotime($row['created_at'])),
+                '{{sys_email}}' => $row['user_email'] ?? 'Gosc',
+                '{{sys_ip}}' => $row['user_ip']
+            ];
+
+            // Przygotowanie tagów z wartościami pól wpisanymi przez użytkownika
+            foreach ($formFields as $f) {
+                if (($f['type'] ?? '') === 'html' || ($f['type'] ?? '') === 'file') continue;
+                $key = $f['custom_id'] ?? $f['id'] ?? md5($f['label']);
+                $val = $decryptedData[$key] ?? '';
+                // Spłaszczamy tablice (np. z checkboxów) do stringa łączonego myślnikiem
+                $replacements['{{' . $key . '}}'] = is_array($val) ? implode('_', $val) : (string)$val;
+            }
+
+            // Przechodzimy przez wszystkie załączniki z tego zgłoszenia
+            foreach ($filesData as $fieldKey => $fieldFiles) {
+                $fArray = isset($fieldFiles['original_name']) ? [$fieldFiles] : $fieldFiles;
+                
+                foreach ($fArray as $fIndex => $file) {
+                    if (empty($file['storage_name'])) continue;
+
+                    $storagePath = __DIR__ . '/../../public/uploads/secure/' . $file['storage_name'];
+                    if (file_exists($storagePath)) {
+                        // Odszyfrowujemy plik z dysku do pamięci
+                        $encryptedContent = file_get_contents($storagePath);
+                        $decryptedContent = $vault->decrypt($encryptedContent);
+
+                        // Rozdzielamy oryginalną nazwę na rdzeń i rozszerzenie
+                        $originalName = $file['original_name'];
+                        $ext = pathinfo($originalName, PATHINFO_EXTENSION);
+                        $baseName = pathinfo($originalName, PATHINFO_FILENAME);
+
+                        $itemReplacements = $replacements;
+                        $itemReplacements['{{original_name}}'] = $baseName;
+
+                        $newName = $namePattern;
+                        $newName = str_replace(array_keys($itemReplacements), array_values($itemReplacements), $newName);
+                        
+                        // Czyścimy nazwę z niebezpiecznych znaków zostawiając litery, cyfry, spacje, myślniki i polskie znaki
+                        $newName = preg_replace('/[^a-zA-Z0-9_\-\. ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/u', '_', $newName);
+                        $newName = trim(preg_replace('/_+/', '_', $newName), '_');
+                        
+                        // Zawsze dodajemy poprawne rozszerzenie na sam koniec
+                        $finalName = $newName . '.' . $ext;
+
+                        // Zapobiegamy nadpisywaniu plików o tej samej nazwie (np. Jan_Kowalski_plik.jpg, Jan_Kowalski_plik_1.jpg)
+                        $counter = 1;
+                        $checkName = $finalName;
+                        while (isset($fileNamesUsed[$checkName])) {
+                            $checkName = $newName . '_' . $counter . '.' . $ext;
+                            $counter++;
+                        }
+                        $fileNamesUsed[$checkName] = true;
+                        $finalName = $checkName;
+
+                        // Pakujemy odszyfrowany plik wprost do ZIPa
+                        $zip->addFromString($finalName, $decryptedContent);
+                        $hasFiles = true;
+                    }
+                }
+            }
+        }
+
+        $zip->close();
+
+        if ($hasFiles && file_exists($zipPath)) {
+            header('Content-Type: application/zip');
+            header('Content-disposition: attachment; filename="' . $zipName . '"');
+            header('Content-Length: ' . filesize($zipPath));
+            readfile($zipPath);
+            unlink($zipPath); // Usuwamy plik tymczasowy z serwera po pobraniu
+            exit;
+        } else {
+            if (file_exists($zipPath)) unlink($zipPath);
+            \CMS\Core\Session::setFlash('Brak załączonych plików w tym formularzu do pobrania.', 'error');
+            header("Location: /admin/forms/submissions?id=" . $formId);
+            exit;
+        }
+    }
+
     public function deleteSubmission() {
         Session::init();
         if (!Session::isLoggedIn()) { header('Location: /login'); exit; }
@@ -136,6 +255,138 @@ class FormController {
         }
         header("Location: /admin/forms/submissions?id=" . $formId);
         exit;
+    }
+
+    public function exportSubmissions() {
+        \CMS\Core\Session::init();
+        if (!\CMS\Core\Session::isLoggedIn()) die("Access Denied");
+
+        $formId = $_POST['form_id'] ?? 0;
+        $format = $_POST['format'] ?? 'csv';
+        $selectedFields = $_POST['export_fields'] ?? [];
+
+        if (empty($selectedFields)) {
+            \CMS\Core\Session::setFlash('Wybierz przynajmniej jedno pole do eksportu.', 'error');
+            header("Location: /admin/forms/submissions?id=" . $formId);
+            exit;
+        }
+
+        $db = Database::getInstance();
+        $vault = new \CMS\Core\Vault();
+
+        $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $formId])->fetch();
+        if (!$form) die("Formularz nie istnieje");
+
+        $formFields = json_decode($form['form_json'], true) ?? [];
+        $rows = $db->query("SELECT s.*, u.email as user_email FROM pa_submissions s LEFT JOIN pa_users u ON s.user_id = u.id WHERE form_id = :id ORDER BY id DESC", ['id' => $formId])->fetchAll();
+
+        $headers = [];
+        $systemFields = [
+            'sys_id' => 'ID Zgłoszenia',
+            'sys_date' => 'Data Wysłania',
+            'sys_email' => 'Email Konta (System)',
+            'sys_ip' => 'Adres IP'
+        ];
+
+        foreach ($systemFields as $key => $label) {
+            if (in_array($key, $selectedFields)) $headers[] = $label;
+        }
+
+        foreach ($formFields as $f) {
+            if (($f['type'] ?? '') === 'html') continue;
+            $key = $f['custom_id'] ?? $f['id'] ?? md5($f['label']);
+            if (in_array($key, $selectedFields)) {
+                $headers[] = $f['label'];
+            }
+        }
+
+        if ($format === 'csv') {
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="export_formularz_' . $formId . '_' . date('Y-m-d_H-i') . '.csv"');
+            
+            $output = fopen('php://output', 'w');
+            // Zapisujemy BOM (Byte Order Mark), aby Excel poprawnie czytał polskie znaki w UTF-8
+            fputs($output, $bom = (chr(0xEF) . chr(0xBB) . chr(0xBF)));
+            
+            // Excel w Polsce i Europie do oddzielania kolumn domyślnie używa średnika (;)
+            fputcsv($output, $headers, ';');
+
+            foreach ($rows as $row) {
+                $decryptedData = json_decode($vault->decrypt($row['data_json']), true) ?? [];
+                $filesData = json_decode($row['files_json'], true) ?? [];
+                
+                $csvRow = [];
+                
+                if (in_array('sys_id', $selectedFields)) $csvRow[] = $row['id'];
+                if (in_array('sys_date', $selectedFields)) $csvRow[] = $row['created_at'];
+                if (in_array('sys_email', $selectedFields)) $csvRow[] = $row['user_email'] ?? 'Gość';
+                if (in_array('sys_ip', $selectedFields)) $csvRow[] = $row['user_ip'];
+
+                foreach ($formFields as $f) {
+                    if (($f['type'] ?? '') === 'html') continue;
+                    $key = $f['custom_id'] ?? $f['id'] ?? md5($f['label']);
+                    
+                    if (in_array($key, $selectedFields)) {
+                        if (($f['type'] ?? '') === 'file') {
+                            $fileNames = [];
+                            if (!empty($filesData[$key])) {
+                                $files = isset($filesData[$key]['original_name']) ? [$filesData[$key]] : $filesData[$key];
+                                foreach ($files as $file) {
+                                    if (!empty($file['original_name'])) $fileNames[] = $file['original_name'];
+                                }
+                            }
+                            $csvRow[] = implode(', ', $fileNames);
+                        } else {
+                            $val = $decryptedData[$key] ?? '';
+                            $csvRow[] = is_array($val) ? implode(', ', $val) : (string)$val;
+                        }
+                    }
+                }
+                fputcsv($output, $csvRow, ';');
+            }
+            fclose($output);
+            exit;
+
+        } elseif ($format === 'json') {
+            header('Content-Type: application/json; charset=utf-8');
+            header('Content-Disposition: attachment; filename="export_formularz_' . $formId . '_' . date('Y-m-d_H-i') . '.json"');
+            
+            $jsonOutput = [];
+            foreach ($rows as $row) {
+                $decryptedData = json_decode($vault->decrypt($row['data_json']), true) ?? [];
+                $filesData = json_decode($row['files_json'], true) ?? [];
+                $rowAssoc = [];
+
+                if (in_array('sys_id', $selectedFields)) $rowAssoc['ID Zgłoszenia'] = $row['id'];
+                if (in_array('sys_date', $selectedFields)) $rowAssoc['Data Wysłania'] = $row['created_at'];
+                if (in_array('sys_email', $selectedFields)) $rowAssoc['Email Konta (System)'] = $row['user_email'] ?? 'Gość';
+                if (in_array('sys_ip', $selectedFields)) $rowAssoc['Adres IP'] = $row['user_ip'];
+
+                foreach ($formFields as $f) {
+                    if (($f['type'] ?? '') === 'html') continue;
+                    $key = $f['custom_id'] ?? $f['id'] ?? md5($f['label']);
+                    
+                    if (in_array($key, $selectedFields)) {
+                        if (($f['type'] ?? '') === 'file') {
+                            $fileNames = [];
+                            if (!empty($filesData[$key])) {
+                                $files = isset($filesData[$key]['original_name']) ? [$filesData[$key]] : $filesData[$key];
+                                foreach ($files as $file) {
+                                    if (!empty($file['original_name'])) $fileNames[] = $file['original_name'];
+                                }
+                            }
+                            $rowAssoc[$f['label']] = $fileNames;
+                        } else {
+                            $val = $decryptedData[$key] ?? '';
+                            $rowAssoc[$f['label']] = is_array($val) ? implode(', ', $val) : (string)$val;
+                        }
+                    }
+                }
+                $jsonOutput[] = $rowAssoc;
+            }
+            echo json_encode($jsonOutput, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            exit;
+        }
     }
 
     public function downloadFile() {

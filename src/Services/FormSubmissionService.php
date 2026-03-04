@@ -8,14 +8,17 @@ class FormSubmissionService {
     public function handleSubmission($formId, $submissionId, $formData, $files, $userId) {
         $vault = new Vault();
         $db = Database::getInstance();
-        
-        // --- 1. WERYFIKACJA ANTY-SPAMOWA ---
-        $formDef = $db->query("SELECT form_json FROM pa_forms WHERE id = :id", ['id' => $formId])->fetch();
+
+        // --- 1. WERYFIKACJA ANTY-SPAMOWA I ODCZYT USTAWIEŃ ---
+        // NAPRAWA: Dodano pobieranie kolumny 'settings' w SQL, aby system wiedział o limicie plików
+        $formDef = $db->query("SELECT form_json, settings FROM pa_forms WHERE id = :id", ['id' => $formId])->fetch();
         $fields = json_decode($formDef['form_json'] ?? '[]', true);
+        $formSettings = json_decode($formDef['settings'] ?? '{}', true);
+        $allowMultiple = !empty($formSettings['allowMultipleFiles']);
 
         foreach ($fields as $f) {
             $type = $f['type'] ?? '';
-            
+
             // A. Honeypot
             if ($type === 'honeypot') {
                 $hpId = $f['custom_id'] ?? $f['id'] ?? null;
@@ -25,13 +28,11 @@ class FormSubmissionService {
                     }
                 }
             }
-            
+
             // B. Captcha Obrazkowa (Gregwar)
             if ($type === 'captcha_image') {
                 $expected = \CMS\Core\Session::get('captcha_img_' . $formId);
                 $provided = $_POST['captcha_answer'] ?? '';
-                
-                // Porównujemy bez względu na wielkość liter
                 if (!$expected || strtolower(trim($provided)) !== strtolower($expected)) {
                     return ['status' => 'error', 'msg' => 'Błędny kod z obrazka. Spróbuj ponownie.'];
                 }
@@ -42,20 +43,18 @@ class FormSubmissionService {
             if ($type === 'captcha_turnstile') {
                 $secretKey = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'turnstile_secret_key'")->fetch()['setting_value'] ?? '';
                 $token = $_POST['cf-turnstile-response'] ?? '';
-                
+
                 if (empty($token)) {
                     return ['status' => 'error', 'msg' => 'Zaznacz pole zabezpieczające "Nie jestem robotem".'];
                 }
-
                 if (empty($secretKey)) {
                     return ['status' => 'error', 'msg' => 'Błąd systemu: Brak klucza Secret Key dla Turnstile.'];
                 }
 
-                // Weryfikacja tokenu w API Cloudflare
                 $verify = file_get_contents("https://challenges.cloudflare.com/turnstile/v0/siteverify", false, stream_context_create([
                     'http' => [
-                        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                        'method'  => 'POST',
+                        'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+                        'method' => 'POST',
                         'content' => http_build_query([
                             'secret' => $secretKey,
                             'response' => $token,
@@ -75,18 +74,19 @@ class FormSubmissionService {
         $encryptedData = $vault->encrypt(json_encode($formData));
         $savedFiles = [];
 
-        // Pobranie ewentualnych starych plików w przypadku edycji zgłoszenia
+        // Odzyskanie historii plików podczas edycji wpisu
         if ($submissionId && $userId) {
             $oldSub = $db->query("SELECT files_json FROM pa_submissions WHERE id = :id AND user_id = :uid", [
                 'id' => $submissionId,
                 'uid' => $userId
             ])->fetch();
+
             if ($oldSub && $oldSub['files_json']) {
                 $savedFiles = json_decode($oldSub['files_json'], true) ?? [];
             }
         }
 
-        // NOWE ZARZĄDZANIE ASYNCHRONICZNYMI PLIKAMI (Zastępuje dotychczasowe przetwarzanie $_FILES)
+        // --- 2. ZARZĄDZANIE ASYNCHRONICZNYMI PLIKAMI ---
         foreach ($fields as $f) {
             if (($f['type'] ?? '') === 'file') {
                 $fieldKey = $f['custom_id'] ?? $f['id'] ?? null;
@@ -94,22 +94,28 @@ class FormSubmissionService {
                     if (isset($_POST['async_files'][$fieldKey]) && is_array($_POST['async_files'][$fieldKey])) {
                         $parsedFiles = [];
                         foreach ($_POST['async_files'][$fieldKey] as $jsonStr) {
-                            $fData = json_decode($jsonStr, true);
+                            // Dekodujemy encje HTML z JSONA, by poprawnie przeczytać apostrofy i znaki specjalne 
+                            $cleanJson = html_entity_decode($jsonStr, ENT_QUOTES, 'UTF-8');
+                            $fData = json_decode($cleanJson, true);
+                            
+                            // Bezpieczeństwo - jakby dekodowanie zawiodło
+                            if (!$fData) $fData = json_decode($jsonStr, true);
+
                             if (is_array($fData) && !empty($fData['storage_name'])) {
-                                $parsedFiles[] = $fData;
+                                $parsedFiles[$fData['storage_name']] = $fData;
                             }
                         }
-                        
-                        $formSettings = json_decode($formDef['settings'] ?? '{}', true);
-                        $allowMultiple = !empty($formSettings['allowMultipleFiles']);
+
+                        $parsedFiles = array_values($parsedFiles);
                         
                         if (!empty($parsedFiles)) {
+                            // Jeśli $allowMultiple jest true, przypisze całą tablicę. Jeśli nie, przypisze tylko ostatni plik.
                             $savedFiles[$fieldKey] = $allowMultiple ? $parsedFiles : end($parsedFiles);
                         } else {
                             unset($savedFiles[$fieldKey]);
                         }
                     } else {
-                        // Pola nie było w POST, więc pliki zostały usunięte
+                        // Pola nie było w POST - to oznacza, że użytkownik usunął wszystkie pliki
                         unset($savedFiles[$fieldKey]);
                     }
                 }
@@ -168,14 +174,12 @@ class FormSubmissionService {
         // ADMIN
         if (!empty($emailSettings['sendAdmin']) && !empty($emailSettings['adminTemplate']) && !empty($emailSettings['adminList'])) {
             $template = $db->query("SELECT * FROM pa_email_templates WHERE id = ?", [$emailSettings['adminTemplate']])->fetch();
-            
             if ($template) {
                 $body = str_replace(array_keys($replacements), array_values($replacements), $template['body']);
                 $subject = str_replace(array_keys($replacements), array_values($replacements), $template['subject']);
-
                 $listId = $emailSettings['adminList'];
+                
                 $recipients = [];
-
                 if ($listId === 'admins') {
                     $users = $db->query("SELECT email FROM pa_users WHERE admin = 1 AND email IS NOT NULL AND email != ''")->fetchAll();
                     foreach ($users as $u) $recipients[] = $u['email'];
@@ -215,9 +219,9 @@ class FormSubmissionService {
                 if ($template) {
                     $body = str_replace(array_keys($replacements), array_values($replacements), $template['body']);
                     $subject = str_replace(array_keys($replacements), array_values($replacements), $template['subject']);
-
                     $finalBody = str_replace('{{email}}', $userEmail, $body);
                     $finalSubject = str_replace('{{email}}', $userEmail, $subject);
+                    
                     $mailer->send($userEmail, $finalSubject, $finalBody);
                 }
             }
