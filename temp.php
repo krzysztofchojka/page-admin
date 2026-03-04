@@ -10,9 +10,6 @@ class BlockRenderer {
         if (empty($blocks)) return;
 
         foreach ($blocks as $block) {
-            $bType = $block['type'] ?? ''; // Bezpieczne pobranie typu (zapobiega PHP Warning)
-            if (empty($bType)) continue;
-
             $set = $block['settings'] ?? [];
             $idAttr = !empty($set['id']) ? ' id="'.htmlspecialchars($set['id']).'"' : '';
             $clsAttr = !empty($set['css']) ? ' ' . htmlspecialchars($set['css']) : '';
@@ -21,14 +18,14 @@ class BlockRenderer {
             echo "<div{$idAttr} class=\"block-wrapper mb-0{$clsAttr}\"{$styleAttr}>";
 
             // 1. COLUMNS 2
-            if ($bType === 'columns_2') {
+            if ($block['type'] === 'columns_2') {
                 echo '<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">';
                 echo '<div>'; if(!empty($block['children']['left'])) self::render($block['children']['left'], $db); echo '</div>';
                 echo '<div>'; if(!empty($block['children']['right'])) self::render($block['children']['right'], $db); echo '</div>';
                 echo '</div>';
             }
             // 2. COLUMNS 3
-            elseif ($bType === 'columns_3') {
+            elseif ($block['type'] === 'columns_3') {
                 echo '<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">';
                 echo '<div>'; if(!empty($block['children']['left'])) self::render($block['children']['left'], $db); echo '</div>';
                 echo '<div>'; if(!empty($block['children']['center'])) self::render($block['children']['center'], $db); echo '</div>';
@@ -36,17 +33,17 @@ class BlockRenderer {
                 echo '</div>';
             }
             // 3. TEXT
-            elseif ($bType === 'text') {
+            elseif ($block['type'] === 'text') {
                 echo '<div class="prose max-w-none mb-0">' . $block['content'] . '</div>';
             }
             // 4. IMAGE
-            elseif ($bType === 'image') {
+            elseif ($block['type'] === 'image') {
                 if (!empty($block['content'])) {
                     echo '<div class="mb-6"><img src="' . htmlspecialchars($block['content']) . '" class="w-full rounded-xl shadow-lg"></div>';
                 }
             }
             // 5. WIDEO
-            elseif ($bType === 'video') {
+            elseif ($block['type'] === 'video') {
                 $url = $block['content'] ?? '';
                 if ($url) {
                     echo '<div class="w-full aspect-video mb-8 overflow-hidden rounded-xl shadow-lg bg-black">';
@@ -64,7 +61,7 @@ class BlockRenderer {
                 }
             }
             // 6. PRZYCISK
-            elseif ($bType === 'button') {
+            elseif ($block['type'] === 'button') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $label = $data['label'] ?? 'Kliknij tutaj';
                 $url = $data['url'] ?? '#';
@@ -82,13 +79,13 @@ class BlockRenderer {
                 echo '</div>';
             }
             // 7. SEPARATOR
-            elseif ($bType === 'divider') {
+            elseif ($block['type'] === 'divider') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $height = $data['height'] ?? '8';
                 echo '<hr class="border-t border-gray-200 my-'.htmlspecialchars($height).' w-full">';
             }
             // 8. CYTAT
-            elseif ($bType === 'quote') {
+            elseif ($block['type'] === 'quote') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $text = $data['text'] ?? '';
                 $author = $data['author'] ?? '';
@@ -100,7 +97,7 @@ class BlockRenderer {
                 echo '</blockquote>';
             }
             // 9. AKORDEON
-            elseif ($bType === 'accordion') {
+            elseif ($block['type'] === 'accordion') {
                 $title = $block['content']['title'] ?? 'Kliknij, aby rozwinąć';
                 echo '<details class="group mb-4 bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer overflow-hidden transition-all">';
                 echo '<summary class="p-5 font-bold text-lg text-purple-800 bg-purple-50 list-none flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-purple-300">';
@@ -115,13 +112,7 @@ class BlockRenderer {
                 echo '</details>';
             }
             // 10. FORMULARZ
-            elseif ($bType === 'form') {
-                
-                // AUTOMATYCZNA MIGRACJA W TLE - ZAPOBIEGA BŁĘDOWI "Unknown column 'status'"
-                try {
-                    $db->query("ALTER TABLE pa_submissions ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'submitted' AFTER user_ip");
-                } catch (\Exception $e) { /* Zignoruj jeśli kolumna już istnieje */ }
-
+            elseif ($block['type'] === 'form') {
                 $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $block['content']])->fetch();
                 if ($form) {
                     $formSettings = json_decode($form['settings'] ?? '{}', true);
@@ -138,16 +129,9 @@ class BlockRenderer {
                     $isSubmittedNow = isset($_GET['submitted']) && $_GET['submitted'] == $form['id'];
                     $isEditing = isset($_GET['edit']) && $_GET['edit'] == $form['id'];
                     $existingSubmission = null;
-                    $draftSubmission = null;
 
                     if ($userId) {
-                        $existingSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? AND status = 'submitted' ORDER BY id DESC LIMIT 1", [$form['id'], $userId])->fetch();
-                        $draftSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? AND status = 'draft' ORDER BY id DESC LIMIT 1", [$form['id'], $userId])->fetch();
-                    } else {
-                        $guestDraftId = \CMS\Core\Session::get('draft_' . $form['id']);
-                        if ($guestDraftId) {
-                            $draftSubmission = $db->query("SELECT * FROM pa_submissions WHERE id = ? AND status = 'draft'", [$guestDraftId])->fetch();
-                        }
+                        $existingSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1", [$form['id'], $userId])->fetch();
                     }
 
                     $flash = \CMS\Core\Session::getFlash();
@@ -178,17 +162,10 @@ class BlockRenderer {
                         $prefill = [];
                         $existingFiles = [];
                         $vault = new \CMS\Core\Vault();
-                        
-                        $activeSubmissionToLoad = null;
-                        if ($draftSubmission && !$isEditing) {
-                            $activeSubmissionToLoad = $draftSubmission;
-                        } elseif ($isEditing && $existingSubmission) {
-                            $activeSubmissionToLoad = $existingSubmission;
-                        }
 
-                        if ($activeSubmissionToLoad) {
-                            $prefill = json_decode($vault->decrypt($activeSubmissionToLoad['data_json']), true) ?? [];
-                            $existingFiles = json_decode($activeSubmissionToLoad['files_json'] ?? '{}', true) ?? [];
+                        if ($isEditing && $existingSubmission) {
+                            $prefill = json_decode($vault->decrypt($existingSubmission['data_json']), true) ?? [];
+                            $existingFiles = json_decode($existingSubmission['files_json'] ?? '{}', true) ?? [];
                         }
 
                         $subs = $db->query("SELECT data_json FROM pa_submissions WHERE form_id = :id", ['id' => $form['id']])->fetchAll();
@@ -196,8 +173,11 @@ class BlockRenderer {
                         foreach ($subs as $s) {
                             $d = json_decode($vault->decrypt($s['data_json']), true) ?? [];
                             foreach ($d as $fk => $fv) {
-                                if (is_array($fv)) foreach ($fv as $v) $optionCounts[$fk][$v] = ($optionCounts[$fk][$v] ?? 0) + 1;
-                                else $optionCounts[$fk][$fv] = ($optionCounts[$fk][$fv] ?? 0) + 1;
+                                if (is_array($fv)) {
+                                    foreach ($fv as $v) $optionCounts[$fk][$v] = ($optionCounts[$fk][$v] ?? 0) + 1;
+                                } else {
+                                    $optionCounts[$fk][$fv] = ($optionCounts[$fk][$fv] ?? 0) + 1;
+                                }
                             }
                         }
 
@@ -207,8 +187,8 @@ class BlockRenderer {
                         echo '<input type="hidden" name="form_id" value="'.$form['id'].'">';
                         echo '<input type="hidden" name="return_url" value="'.htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/').'">';
                         
-                        if ($activeSubmissionToLoad) {
-                            echo '<input type="hidden" name="submission_id" value="'.$activeSubmissionToLoad['id'].'">';
+                        if ($isEditing && $existingSubmission) {
+                            echo '<input type="hidden" name="submission_id" value="'.$existingSubmission['id'].'">';
                         }
 
                         $fields = json_decode($form['form_json'], true) ?? [];
@@ -327,6 +307,7 @@ class BlockRenderer {
 
                             echo "<div class='$widthClass'><label class='block text-sm font-bold text-gray-800 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
                             
+                            // LISTY (JEDNA POD DRUGĄ)
                             if (in_array($type, ['select', 'radio', 'checkbox'])) {
                                 $optionsRaw = explode("\n", trim($field['options'] ?? ''));
                                 $options = [];
@@ -426,131 +407,80 @@ class BlockRenderer {
                         }
 
                         $btnText = $isEditing ? 'Zaktualizuj formularz' : 'Wyślij formularz';
-                        echo '<div class="md:col-span-3 mt-6 pt-6 border-t border-gray-200 relative">';
-                        
-                        if (!$isEditing) {
-                            echo "<div id='autosave-status-{$form['id']}' class='text-sm font-bold text-gray-500 mb-3 hidden transition-all flex items-center gap-2'></div>";
-                        }
-
+                        echo '<div class="md:col-span-3 mt-6 pt-6 border-t border-gray-200">';
                         echo '<button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all focus:outline-none focus:ring-4 focus:ring-blue-300" type="submit">'.$btnText.'</button>';
                         if ($isEditing) echo '<div class="text-center mt-4"><a href="?" class="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors">Anuluj edycję</a></div>';
                         echo '</div></form>';
 
-                        echo "<script>
+                        echo '<script>
                         (function() {
-                            const formContainer = document.getElementById('form-container-{$form['id']}');
+                            const formContainer = document.getElementById("form-container-' . $form['id'] . '");
                             if (!formContainer) return;
-                            const form = formContainer.querySelector('form');
+                            const form = formContainer.querySelector("form");
                             if (!form) return;
-                            const submitBtn = form.querySelector('button[type=\"submit\"]');
+                            const submitBtn = form.querySelector("button[type=\"submit\"]");
                             let activeUploads = 0;
 
-                            let autosaveTimeout;
-                            const statusEl = document.getElementById('autosave-status-{$form['id']}');
-
-                            function triggerAutosave() {
-                                if (!statusEl) return;
-                                statusEl.innerHTML = '⏳ Wersja robocza: Zapisywanie...';
-                                statusEl.classList.remove('hidden');
-                                
-                                clearTimeout(autosaveTimeout);
-                                autosaveTimeout = setTimeout(() => {
-                                    const formData = new FormData(form);
-                                    fetch('/form-autosave', {
-                                        method: 'POST',
-                                        body: formData
-                                    })
-                                    .then(r => r.json())
-                                    .then(data => {
-                                        if (data.status === 'success') {
-                                            const d = new Date();
-                                            statusEl.innerHTML = '✅ Wersja robocza: Zapisano (' + d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ')';
-                                            
-                                            if (data.submission_id) {
-                                                let subInput = form.querySelector('input[name=\"submission_id\"]');
-                                                if (!subInput) {
-                                                    subInput = document.createElement('input');
-                                                    subInput.type = 'hidden';
-                                                    subInput.name = 'submission_id';
-                                                    form.appendChild(subInput);
-                                                }
-                                                subInput.value = data.submission_id;
-                                            }
-                                        }
-                                    }).catch(() => {
-                                        statusEl.innerHTML = '❌ Błąd zapisu roboczego';
-                                    });
-                                }, 1500);
-                            }
-
-                            if (statusEl) {
-                                form.addEventListener('input', function(e) {
-                                    if (e.target.name === 'captcha_answer' || e.target.type === 'password' || e.target.type === 'file') return;
-                                    triggerAutosave();
-                                });
-                            }
-
-                            form.querySelectorAll('.async-file-upload').forEach(container => {
-                                const fileInput = container.querySelector('.file-input');
-                                const progressContainer = container.querySelector('.progress-container');
-                                const progressBar = container.querySelector('.progress-bar');
-                                const progressTextName = container.querySelector('.progress-text-name');
-                                const progressTextPct = container.querySelector('.progress-text-pct');
-                                const filesList = container.querySelector('.uploaded-files-list');
+                            form.querySelectorAll(".async-file-upload").forEach(container => {
+                                const fileInput = container.querySelector(".file-input");
+                                const progressContainer = container.querySelector(".progress-container");
+                                const progressBar = container.querySelector(".progress-bar");
+                                const progressTextName = container.querySelector(".progress-text-name");
+                                const progressTextPct = container.querySelector(".progress-text-pct");
+                                const filesList = container.querySelector(".uploaded-files-list");
                                 const fieldId = container.dataset.fieldId;
-                                const isMultiple = fileInput.hasAttribute('multiple');
+                                const isMultiple = fileInput.hasAttribute("multiple");
 
-                                if (fileInput.hasAttribute('required')) {
-                                    fileInput.setAttribute('data-required', 'true');
+                                if (fileInput.hasAttribute("required")) {
+                                    fileInput.setAttribute("data-required", "true");
                                 }
 
-                                filesList.querySelectorAll('.remove-existing-file').forEach(btn => {
-                                    btn.addEventListener('click', function() {
-                                        this.closest('.existing-file-item').remove();
-                                        if (filesList.children.length === 0 && container.querySelector('.original-required-flag')) {
-                                            fileInput.setAttribute('required', 'required');
+                                filesList.querySelectorAll(".remove-existing-file").forEach(btn => {
+                                    btn.addEventListener("click", function() {
+                                        this.closest(".existing-file-item").remove();
+                                        if (filesList.children.length === 0 && container.querySelector(".original-required-flag")) {
+                                            fileInput.setAttribute("required", "required");
                                         }
-                                        if (statusEl) triggerAutosave();
                                     });
                                 });
 
-                                fileInput.addEventListener('change', function() {
+                                fileInput.addEventListener("change", function() {
                                     const files = this.files;
                                     if (files.length === 0) return;
 
                                     if (!isMultiple) {
-                                        filesList.innerHTML = '';
-                                        form.querySelectorAll('input[name=\"async_files[' + fieldId + '][]\"]').forEach(el => el.remove());
+                                        filesList.innerHTML = "";
+                                        form.querySelectorAll("input[name=\"async_files[" + fieldId + "][]\"]").forEach(el => el.remove());
                                     }
 
                                     Array.from(files).forEach(file => {
                                         uploadFile(file);
                                     });
-                                    this.value = '';
+                                    this.value = "";
                                 });
 
                                 function uploadFile(file) {
                                     activeUploads++;
                                     submitBtn.disabled = true;
-                                    submitBtn.innerHTML = '⏳ Przesyłanie plików...';
-                                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                                    submitBtn.innerHTML = "⏳ Przesyłanie plików...";
+                                    submitBtn.classList.add("opacity-50", "cursor-not-allowed");
 
-                                    progressContainer.classList.remove('hidden');
-                                    progressBar.style.width = '0%';
+                                    progressContainer.classList.remove("hidden");
+                                    progressBar.style.width = "0%";
                                     progressTextName.innerText = file.name;
-                                    progressTextPct.innerText = '0%';
+                                    progressTextPct.innerText = "0%";
 
                                     const formData = new FormData();
-                                    formData.append('file', file);
+                                    formData.append("file", file);
 
                                     const xhr = new XMLHttpRequest();
-                                    xhr.open('POST', '/form-upload', true);
+                                    xhr.open("POST", "/form-upload", true);
 
                                     xhr.upload.onprogress = function(e) {
                                         if (e.lengthComputable) {
                                             const percentComplete = Math.round((e.loaded / e.total) * 100);
-                                            progressBar.style.width = percentComplete + '%';
-                                            progressTextPct.innerText = percentComplete + '%';
+                                            progressBar.style.width = percentComplete + "%";
+                                            progressTextPct.innerText = percentComplete + "%";
                                         }
                                     };
 
@@ -559,24 +489,23 @@ class BlockRenderer {
                                         if (xhr.status === 200) {
                                             try {
                                                 const res = JSON.parse(xhr.responseText);
-                                                if (res.status === 'success') {
+                                                if (res.status === "success") {
                                                     addUploadedFileUi(res.file, file.name);
-                                                    if (statusEl) triggerAutosave();
                                                 } else {
-                                                    alert('Błąd przesyłania pliku: ' + file.name);
+                                                    alert("Błąd przesyłania pliku: " + file.name);
                                                 }
                                             } catch(e) {
-                                                alert('Błąd odpowiedzi serwera dla pliku: ' + file.name);
+                                                alert("Błąd odpowiedzi serwera dla pliku: " + file.name);
                                             }
                                         } else {
-                                            alert('Błąd serwera podczas przesyłania pliku.');
+                                            alert("Błąd serwera podczas przesyłania pliku.");
                                         }
                                         checkUploadsFinished();
                                     };
 
                                     xhr.onerror = function() {
                                         activeUploads--;
-                                        alert('Błąd sieci podczas przesyłania pliku.');
+                                        alert("Błąd sieci podczas przesyłania pliku.");
                                         checkUploadsFinished();
                                     };
 
@@ -585,51 +514,50 @@ class BlockRenderer {
 
                                 function checkUploadsFinished() {
                                     if (activeUploads === 0) {
-                                        progressContainer.classList.add('hidden');
+                                        progressContainer.classList.add("hidden");
                                         submitBtn.disabled = false;
-                                        submitBtn.innerHTML = '{$btnText}';
-                                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                        submitBtn.innerHTML = "' . $btnText . '";
+                                        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
                                     }
                                 }
 
                                 function addUploadedFileUi(fileData, displayName) {
-                                    fileInput.removeAttribute('required');
+                                    fileInput.removeAttribute("required");
 
-                                    const dlUrl = '/admin/forms/download?file=' + encodeURIComponent(fileData.storage_name) + '&orig=' + encodeURIComponent(displayName);
+                                    const dlUrl = "/admin/forms/download?file=" + encodeURIComponent(fileData.storage_name) + "&orig=" + encodeURIComponent(displayName);
 
-                                    const item = document.createElement('div');
-                                    item.className = 'flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item animate-fade-in';
+                                    const item = document.createElement("div");
+                                    item.className = "flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item animate-fade-in";
                                     
-                                    const safeJson = JSON.stringify(fileData).replace(/'/g, '&#39;');
+                                    const safeJson = JSON.stringify(fileData).replace(/\'/g, "&#39;");
 
-                                    item.innerHTML = '<div class=\"flex items-center gap-3 overflow-hidden\">' + 
-                                        '<div class=\"bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0\"><svg class=\"w-4 h-4\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z\" clip-rule=\"evenodd\"></path></svg></div>' + 
-                                        '<a href=\"' + dlUrl + '\" target=\"_blank\" class=\"truncate font-medium hover:text-blue-600 transition-colors\">' + displayName + '</a>' +
-                                        '</div>' +
-                                        '<button type=\"button\" class=\"text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file\" title=\"Usuń plik\">' + 
-                                        '<svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg>' + 
-                                        '</button>' +
-                                        '<input type=\"hidden\" name=\"async_files[' + fieldId + '][]\" value=\'' + safeJson + '\'>';
+                                    item.innerHTML = "<div class=\"flex items-center gap-3 overflow-hidden\">" + 
+                                        "<div class=\"bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0\"><svg class=\"w-4 h-4\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z\" clip-rule=\"evenodd\"></path></svg></div>" + 
+                                        "<a href=\"" + dlUrl + "\" target=\"_blank\" class=\"truncate font-medium hover:text-blue-600 transition-colors\">" + displayName + "</a>" +
+                                        "</div>" +
+                                        "<button type=\"button\" class=\"text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file\" title=\"Usuń plik\">" + 
+                                        "<svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg>" + 
+                                        "</button>" +
+                                        "<input type=\"hidden\" name=\"async_files[" + fieldId + "][]\" value=\'" + safeJson + "\'>";
                                     
-                                    item.querySelector('.remove-existing-file').addEventListener('click', function() {
+                                    item.querySelector(".remove-existing-file").addEventListener("click", function() {
                                         item.remove();
-                                        if (filesList.children.length === 0 && container.querySelector('.original-required-flag')) {
-                                            fileInput.setAttribute('required', 'required');
+                                        if (filesList.children.length === 0 && container.querySelector(".original-required-flag")) {
+                                            fileInput.setAttribute("required", "required");
                                         }
-                                        if (statusEl) triggerAutosave();
                                     });
 
                                     filesList.appendChild(item);
                                 }
                             });
                         })();
-                        </script>";
+                        </script>';
                     }
                     echo '</div>';
                 }
             }
             // 11. LINKED IMAGE
-            elseif ($bType === 'linked_image') {
+            elseif ($block['type'] === 'linked_image') {
                 $img = $block['content']['url'] ?? '';
                 $link = $block['content']['link'] ?? '#';
                 if ($img) {
@@ -637,7 +565,7 @@ class BlockRenderer {
                 }
             }
             // 12. CAROUSEL (Przewijany efekt Slide)
-            elseif ($bType === 'carousel') {
+            elseif ($block['type'] === 'carousel') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $tabs = $data['tabs'] ?? [];
                 $arrows = $data['arrows'] ?? false;
@@ -646,10 +574,10 @@ class BlockRenderer {
                 if (!empty($tabs)) {
                     echo '<div class="mb-10 carousel-wrapper mt-10" id="'.$cid.'">';
                     
-                    // Przyciski do przełączania (Strzałki przeniesione pod klasę i event listenery)
+                    // Przyciski do przełączania (Zmienione na ładne ikony strzałek)
                     echo '<div class="flex flex-wrap gap-3 justify-center mb-8 items-center">';
                     if ($arrows) {
-                        echo '<button class="c-arrow-'.$cid.' bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow flex items-center justify-center" data-dir="-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>';
+                        echo '<button onclick="moveSlide_'.$cid.'(-1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>';
                     }
 
                     foreach ($tabs as $idx => $tab) {
@@ -659,7 +587,7 @@ class BlockRenderer {
                         $tCls = !empty($tSet['css']) ? ' ' . htmlspecialchars($tSet['css']) : '';
                         $tStyle = !empty($tSet['style']) ? ' style="'.htmlspecialchars($tSet['style']).'"' : '';
 
-                        echo '<button'.$tId.' data-index="'.$idx.'" class="c-btn-'.$cid.' flex flex-col items-center justify-center p-4 rounded-xl w-32 md:w-40 text-white shadow-lg transition-all duration-300 transform '.$activeClass.$tCls.'"'.$tStyle.'>';
+                        echo '<button'.$tId.' onclick="goToSlide_'.$cid.'('.$idx.')" data-index="'.$idx.'" class="c-btn-'.$cid.' flex flex-col items-center justify-center p-4 rounded-xl w-32 md:w-40 text-white shadow-lg transition-all duration-300 transform '.$activeClass.$tCls.'"'.$tStyle.'>';
                         if (strpos($tab['icon'], 'http') === 0 || strpos($tab['icon'], '/') === 0) {
                             echo '<img src="'.htmlspecialchars($tab['icon']).'" class="h-8 w-8 mb-2 invert">';
                         } else {
@@ -670,16 +598,18 @@ class BlockRenderer {
                     }
 
                     if ($arrows) {
-                        echo '<button class="c-arrow-'.$cid.' bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow flex items-center justify-center" data-dir="1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>';
+                        echo '<button onclick="moveSlide_'.$cid.'(1)" class="bg-blue-900 text-white w-10 h-10 rounded-lg font-bold hover:bg-blue-800 transition shadow flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>';
                     }
                     echo '</div>';
 
-                    // GŁÓWNY KONTENER EKRANU
+                    // GŁÓWNY KONTENER EKRANU (overflow-hidden ucina sąsiednie slajdy)
                     echo '<div class="bg-white rounded-xl shadow border-t-4 border-blue-900 relative overflow-hidden">';
                     
-                    // TAŚMA ZE SLAJDAMI
+                    // TAŚMA ZE SLAJDAMI (Wszystkie taby ustawione w rzędzie przez flex)
+                    // Usunięta klasa duration na starcie, aby zapobiec usterce animacji podczas ładowania
                     echo '<div id="track-'.$cid.'" class="flex" style="transform: translateX(0%);">';
                     foreach ($tabs as $idx => $tab) {
+                        // Każdy tab musi być sztywno trzymany na 100% szerokości
                         echo '<div class="p-6 md:p-10 shrink-0" style="flex: 0 0 100%; max-width: 100%; width: 100%;">';
                         if (!empty($tab['children'])) {
                             self::render($tab['children'], $db);
@@ -691,19 +621,17 @@ class BlockRenderer {
                     echo '</div>'; // Zakończenie track
                     echo '</div>'; // Zakończenie okna bg-white
 
-                    // ZAMKNIĘTY SKRYPT JS (Zero zanieczyszczania zasięgu globalnego "window.")
+                    // SKRYPT TYLKO DLA TEJ KARUZELI
                     echo "<script>
-                    (function() {
-                        const cid = '{$cid}';
-                        const track = document.getElementById('track-' + cid);
-                        const buttons = document.querySelectorAll('.c-btn-' + cid);
-                        const arrows = document.querySelectorAll('.c-arrow-' + cid);
-                        const total = " . count($tabs) . ";
-                        
-                        function goToSlide(index) {
+                        window.goToSlide_{$cid} = function(index) {
+                            const track = document.getElementById('track-{$cid}');
+                            const buttons = document.querySelectorAll('.c-btn-{$cid}');
+                            
                             if (track) {
+                                // Przesunięcie całego flex tracka w lewo o wielokrotność 100%
                                 track.style.transform = 'translateX(-' + (index * 100) + '%)';
                             }
+                            
                             buttons.forEach(btn => {
                                 if (parseInt(btn.dataset.index) === index) {
                                     btn.classList.remove('bg-blue-700', 'hover:bg-blue-800');
@@ -713,53 +641,53 @@ class BlockRenderer {
                                     btn.classList.remove('bg-blue-900', 'scale-105');
                                 }
                             });
-                            localStorage.setItem('active_tab_' + cid, index);
-                        }
+                            
+                            localStorage.setItem('active_tab_{$cid}', index);
+                        };
 
-                        buttons.forEach(btn => {
-                            btn.addEventListener('click', function() {
-                                goToSlide(parseInt(this.dataset.index));
+                        window.moveSlide_{$cid} = function(direction) {
+                            const buttons = document.querySelectorAll('.c-btn-{$cid}');
+                            let currentIndex = 0;
+                            const total = " . count($tabs) . ";
+                            
+                            buttons.forEach(btn => {
+                                if (btn.classList.contains('bg-blue-900')) {
+                                    currentIndex = parseInt(btn.dataset.index);
+                                }
                             });
-                        });
+                            
+                            let newIndex = currentIndex + direction;
+                            if (newIndex < 0) newIndex = total - 1;
+                            if (newIndex >= total) newIndex = 0;
+                            
+                            window.goToSlide_{$cid}(newIndex);
+                        };
 
-                        arrows.forEach(arrow => {
-                            arrow.addEventListener('click', function() {
-                                let currentIndex = 0;
-                                buttons.forEach(btn => {
-                                    if (btn.classList.contains('bg-blue-900')) {
-                                        currentIndex = parseInt(btn.dataset.index);
-                                    }
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const track = document.getElementById('track-{$cid}');
+                            const savedIndex = localStorage.getItem('active_tab_{$cid}');
+                            
+                            if (track) {
+                                // Ustaw pozycję OD RAZU bez animacji
+                                if (savedIndex !== null) {
+                                    window.goToSlide_{$cid}(parseInt(savedIndex));
+                                }
+                                
+                                // Oczekaj jedną klatkę przeglądarki, zanim podepniemy CSS odpowiadający za płynny tranzyt (usuwa glitch podczas ładowania)
+                                requestAnimationFrame(() => {
+                                    setTimeout(() => {
+                                        track.classList.add('transition-transform', 'duration-500', 'ease-in-out');
+                                    }, 50);
                                 });
-                                
-                                let dir = parseInt(this.dataset.dir);
-                                let newIndex = currentIndex + dir;
-                                if (newIndex < 0) newIndex = total - 1;
-                                if (newIndex >= total) newIndex = 0;
-                                
-                                goToSlide(newIndex);
-                            });
+                            }
                         });
-
-                        const savedIndex = localStorage.getItem('active_tab_' + cid);
-                        if (savedIndex !== null) {
-                            goToSlide(parseInt(savedIndex));
-                        }
-                        
-                        if (track) {
-                            requestAnimationFrame(() => {
-                                setTimeout(() => {
-                                    track.classList.add('transition-transform', 'duration-500', 'ease-in-out');
-                                }, 50);
-                            });
-                        }
-                    })();
                     </script>";
 
                     echo '</div>'; // Zakończenie carousel-wrapper
                 }
             }
             // 13. GALLERY
-            elseif ($bType === 'gallery') {
+            elseif ($block['type'] === 'gallery') {
                 $gal = $db->query("SELECT * FROM pa_galleries WHERE id = :id", ['id' => $block['content']])->fetch();
                 if ($gal) {
                     $imgs = json_decode($gal['images_json'], true);
@@ -915,7 +843,7 @@ class BlockRenderer {
                 }
             }
             // 14. IMAGE CARDS
-            elseif ($bType === 'image_cards') {
+            elseif ($block['type'] === 'image_cards') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $cards = $data['cards'] ?? [];
 
@@ -946,7 +874,7 @@ class BlockRenderer {
                 }
             }
             // 15. BANNER
-            elseif ($bType === 'banner') {
+            elseif ($block['type'] === 'banner') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $bg = $data['bg'] ?? '';
                 $title = $data['title'] ?? '';
@@ -965,11 +893,11 @@ class BlockRenderer {
                 }
             }
             // 16. RAW HTML
-            elseif ($bType === 'raw_html') {
+            elseif ($block['type'] === 'raw_html') {
                 echo $block['content'];
             }
             // 17. MAPA LEAFLET
-            elseif ($bType === 'map') {
+            elseif ($block['type'] === 'map') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $lat = $data['lat'] ?? '52.2297';
                 $lng = $data['lng'] ?? '21.0122';
@@ -989,7 +917,7 @@ class BlockRenderer {
                 </script>";
             }
             // 18. ODLICZANIE
-            elseif ($bType === 'countdown') {
+            elseif ($block['type'] === 'countdown') {
                 $data = is_array($block['content']) ? $block['content'] : [];
                 $targetDate = $data['date'] ?? '';
                 $title = htmlspecialchars($data['title'] ?? '');
@@ -1026,7 +954,7 @@ class BlockRenderer {
                 }
             }
             // 19. TABELA
-            elseif ($bType === 'table') {
+            elseif ($block['type'] === 'table') {
                 $raw = $block['content'] ?? '';
                 if ($raw) {
                     $rows = explode("\n", trim($raw));
@@ -1052,7 +980,7 @@ class BlockRenderer {
                 }
             }
             // 20. PRZELOT
-            elseif ($bType === 'flight') {
+            elseif ($block['type'] === 'flight') {
                 echo '<div class="flight-container mb-8">';
                 if (is_array($block['content']) && isset($block['content']['html'])) {
                     echo $block['content']['html'];
@@ -1062,7 +990,7 @@ class BlockRenderer {
                 echo '</div>';
             }
             // 21. SYSTEM: LOGOWANIE
-            elseif ($bType === 'system_login') {
+            elseif ($block['type'] === 'system_login') {
                 $flash = \CMS\Core\Session::getFlash();
                 $oldLogin = \CMS\Core\Session::get('old_login');
                 \CMS\Core\Session::remove('old_login');
@@ -1089,7 +1017,7 @@ class BlockRenderer {
                 echo '</div>';
             }
             // 22. SYSTEM: REJESTRACJA
-            elseif ($bType === 'system_register') {
+            elseif ($block['type'] === 'system_register') {
                 $flash = \CMS\Core\Session::getFlash();
                 $oldEmail = \CMS\Core\Session::get('old_email');
                 \CMS\Core\Session::remove('old_email');
@@ -1108,7 +1036,7 @@ class BlockRenderer {
                 echo '</div>';
             }
             // 23. SYSTEM: ZMIANA HASŁA
-            elseif ($bType === 'system_change_password') {
+            elseif ($block['type'] === 'system_change_password') {
                 $flash = \CMS\Core\Session::getFlash();
                 echo '<div class="max-w-sm w-full mx-auto bg-white p-8 rounded-lg shadow-lg border-t-4 border-yellow-500">';
                 echo '<h2 class="text-2xl font-bold mb-2 text-center text-gray-800">Zmiana Hasła</h2>';
@@ -1121,7 +1049,7 @@ class BlockRenderer {
                 echo '</form></div>';
             }
             // 24. SYSTEM: LOCKDOWN
-            elseif ($bType === 'system_lockdown') {
+            elseif ($block['type'] === 'system_lockdown') {
                 echo '<div class="max-w-md w-full mx-auto bg-gray-900 p-8 rounded-xl shadow-2xl border border-gray-700 text-center">';
                 echo '<h1 class="text-3xl font-bold mb-4 text-white">Strona Zabezpieczona</h1>';
                 echo '<p class="mb-6 text-gray-400">Podaj kod dostępu, aby kontynuować.</p>';

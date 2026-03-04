@@ -1,7 +1,17 @@
+<?php
+$showDrafts = isset($_GET['drafts']) && $_GET['drafts'] == '1';
+$draftsUrl = $showDrafts ? "/admin/forms/submissions?id={$form['id']}" : "/admin/forms/submissions?id={$form['id']}&drafts=1";
+$draftsText = $showDrafts ? "Ukryj Wersje Robocze" : "Pokaż Wersje Robocze";
+$draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
+?>
 <div class="max-w-7xl mx-auto" style="max-width:100rem">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Zgłoszenia: <?= htmlspecialchars($form['title']) ?></h1>
         <div class="flex gap-3">
+            <a href="<?= $draftsUrl ?>" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 font-bold py-2 px-4 rounded-lg shadow-sm transition flex items-center gap-2">
+                <span><?= $draftsIcon ?></span> <?= $draftsText ?>
+            </a>
+            
             <button onclick="document.getElementById('export-files-modal').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition flex items-center gap-2" title="Pobierz wszystkie załączniki jako ZIP">
                 <span>📦</span> Pobierz Pliki (ZIP)
             </button>
@@ -11,6 +21,8 @@
             <a href="/admin/forms" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg shadow-sm transition">Wróć do formularzy</a>
         </div>
     </div>
+    
+  
 
     <?php $flash = \CMS\Core\Session::getFlash(); if ($flash): ?>
         <div class="bg-<?= $flash['type'] === 'error' ? 'red' : 'green' ?>-100 border border-<?= $flash['type'] === 'error' ? 'red' : 'green' ?>-400 text-<?= $flash['type'] === 'error' ? 'red' : 'green' ?>-700 px-4 py-3 rounded mb-6 font-bold shadow-sm">

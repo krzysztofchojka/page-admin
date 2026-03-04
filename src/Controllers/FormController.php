@@ -53,14 +53,24 @@ class FormController {
         if (!Session::isLoggedIn()) header('Location: /login');
 
         $formId = $_GET['id'] ?? 0;
+        $showDrafts = isset($_GET['drafts']) && $_GET['drafts'] == '1'; // Flaga sterująca
+
         $db = Database::getInstance();
         $vault = new \CMS\Core\Vault();
+        
+        try { // Zapewnienie, że admin nie wywali się bez migracji
+            $db->query("ALTER TABLE pa_submissions ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'submitted' AFTER user_ip");
+        } catch (\Exception $e) {}
 
         $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $formId])->fetch();
         if (!$form) die("Form not found");
-        $fields = json_decode($form['form_json'], true);
 
-        $rows = $db->query("SELECT s.*, u.email as user_email FROM pa_submissions s LEFT JOIN pa_users u ON s.user_id = u.id WHERE form_id = :id ORDER BY id DESC", ['id' => $formId])->fetchAll();
+        $fields = json_decode($form['form_json'], true);
+        
+        // Zależnie od filtra pobieramy wszystkie lub tylko przesłane
+        $statusCondition = $showDrafts ? "1=1" : "s.status = 'submitted'";
+
+        $rows = $db->query("SELECT s.*, u.email as user_email FROM pa_submissions s LEFT JOIN pa_users u ON s.user_id = u.id WHERE s.form_id = :id AND $statusCondition ORDER BY s.id DESC", ['id' => $formId])->fetchAll();
 
         $decryptedRows = [];
         foreach ($rows as $row) {
@@ -72,6 +82,7 @@ class FormController {
                 'id' => $row['id'],
                 'date' => $row['created_at'],
                 'ip' => $row['user_ip'],
+                'status' => $row['status'] ?? 'submitted',
                 'data' => $data,
                 'files' => $files,
                 'user_email' => $row['user_email'] ?? 'Guest'
@@ -254,6 +265,20 @@ class FormController {
             $db->query("DELETE FROM pa_submissions WHERE id = :id", ['id' => $subId]);
         }
         header("Location: /admin/forms/submissions?id=" . $formId);
+        exit;
+    }
+
+    public function autosave() {
+        \CMS\Core\Session::init();
+        $userId = \CMS\Core\Session::get('user_id') ?: null;
+        $formId = $_POST['form_id'] ?? null;
+        $submissionId = $_POST['submission_id'] ?? null;
+        $formData = $_POST['data'] ?? [];
+
+        $service = new \CMS\Services\FormSubmissionService();
+        $result = $service->handleAutosave($formId, $submissionId, $formData, $userId);
+        
+        echo json_encode($result);
         exit;
     }
 

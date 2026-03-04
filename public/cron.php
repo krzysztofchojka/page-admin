@@ -21,6 +21,52 @@ use CMS\Core\Database;
 use CMS\Services\MailerService;
 
 $db = Database::getInstance();
+
+// ========================================================================
+// 1. CZYSZCZENIE STARYCH WERSJI ROBOCZYCH (RODO / GDPR COMPLIANCE)
+// Usuwamy szkice (draft) starsze niż 48 godzin oraz ich załączniki z dysku
+// ========================================================================
+try {
+    // Sprawdzamy czy tabela ma już kolumnę status, żeby CRON się nie zawiesił u starych instancji
+    $oldDrafts = $db->query("SELECT id, files_json FROM pa_submissions WHERE status = 'draft' AND created_at < DATE_SUB(NOW(), INTERVAL 48 HOUR)")->fetchAll();
+    
+    $deletedDraftsCount = 0;
+    $deletedFilesCount = 0;
+
+    foreach ($oldDrafts as $draft) {
+        // Usuwanie fizycznych plików z dysku
+        $filesData = json_decode($draft['files_json'], true) ?? [];
+        foreach ($filesData as $fieldFiles) {
+            $fArray = isset($fieldFiles['original_name']) ? [$fieldFiles] : $fieldFiles;
+            foreach ($fArray as $file) {
+                if (!empty($file['storage_name'])) {
+                    // Ponieważ jesteśmy w folderze public, ścieżka to bezpośrednio __DIR__ . '/uploads/secure/...'
+                    $filePath = __DIR__ . '/uploads/secure/' . $file['storage_name'];
+                    if (file_exists($filePath)) {
+                        unlink($filePath);
+                        $deletedFilesCount++;
+                    }
+                }
+            }
+        }
+        
+        // Usunięcie wpisu szkicu z bazy
+        $db->query("DELETE FROM pa_submissions WHERE id = ?", [$draft['id']]);
+        $deletedDraftsCount++;
+    }
+
+    if ($deletedDraftsCount > 0) {
+        echo "RODO Cleanup: Usunieto stare szkice formularzy: {$deletedDraftsCount} (w tym usunieto plikow: {$deletedFilesCount})\n";
+    }
+
+} catch (\Exception $e) {
+    // Ignoruj błąd jeśli kolumna status jeszcze nie istnieje w bazie (np. brak wcześniejszej migracji)
+}
+
+
+// ========================================================================
+// 2. OBSŁUGA KOLEJKI MAILINGOWEJ
+// ========================================================================
 $mailer = new MailerService();
 
 // Pobierz maile do wysłania, dla których minął czas harmonogramu
@@ -40,7 +86,7 @@ foreach ($queue as $task) {
     if ($task['list_id'] == 1) { // 1 = Domyślna wpisana przez nas w SQL
         $users = $db->query("SELECT uname as name, email FROM pa_users WHERE admin = 0")->fetchAll();
         foreach ($users as $u) $recipients[] = $u;
-    } 
+    }
     // Dodaj z innej listy
     else if ($task['list_id'] > 1) {
         $subs = $db->query("SELECT name, email FROM pa_mailing_subscribers WHERE list_id = ?", [$task['list_id']])->fetchAll();
@@ -55,7 +101,7 @@ foreach ($queue as $task) {
         }
     }
 
-    // 5. Pętla wysyłki z dynamicznym wstrzykiwaniem danych!
+    // 5. Pętla wysyłki z dynamicznym wstrzykiwaniem danych
     foreach ($recipients as $recipient) {
         $body = str_replace(
             ['{{uname}}', '{{email}}'], 
@@ -63,10 +109,10 @@ foreach ($queue as $task) {
             $template['body']
         );
         $subject = str_replace('{{uname}}', $recipient['name'], $template['subject']);
-
+        
         $sendResult = $mailer->send($recipient['email'], $subject, $body);
 
-        // 6. Logowanie historii i błędów (widok podejrzenia dostarczenia)
+        // 6. Logowanie historii i błędów
         if ($sendResult === true) {
             $db->query("INSERT INTO pa_email_logs (queue_id, user_email, status) VALUES (?, ?, 'sent')", [$task['id'], $recipient['email']]);
         } else {
