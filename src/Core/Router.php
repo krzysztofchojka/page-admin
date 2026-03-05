@@ -3,66 +3,65 @@ namespace CMS\Core;
 
 class Router {
     protected $routes = [];
-    protected $notFoundCallback = null; // Stores the fallback controller
+    protected $notFoundCallback = null;
 
-    public function get($path, $callback) {
-        $this->routes['GET'][$path] = $callback;
+    public function get($path, $callback, $middlewares = []) {
+        $this->routes['GET'][$path] = ['callback' => $callback, 'middlewares' => $middlewares];
     }
 
-    public function post($path, $callback) {
-        $this->routes['POST'][$path] = $callback;
+    public function post($path, $callback, $middlewares = []) {
+        $this->routes['POST'][$path] = ['callback' => $callback, 'middlewares' => $middlewares];
     }
 
-    // This was the missing method causing the crash
     public function setNotFoundHandler($callback) {
         $this->notFoundCallback = $callback;
     }
 
     public function resolve() {
-        // 1. Get Path
         $path = $_SERVER['REQUEST_URI'] ?? '/';
-
-        // 2. Remove Query String
         $position = strpos($path, '?');
-        if ($position !== false) {
-            $path = substr($path, 0, $position);
-        }
+        if ($position !== false) $path = substr($path, 0, $position);
 
-        // 3. Subdirectory Fix
         $scriptDir = dirname($_SERVER['SCRIPT_NAME']);
         if ($scriptDir !== '/' && $scriptDir !== '\\' && strpos($path, $scriptDir) === 0) {
             $path = substr($path, strlen($scriptDir));
         }
-
-        // 4. Clean Path
         $path = '/' . ltrim($path, '/');
-
         $method = $_SERVER['REQUEST_METHOD'];
-        $callback = $this->routes[$method][$path] ?? false;
 
-        // 5. Route Not Found Logic
-        if ($callback === false) {
-            // Check if we have a fallback (for dynamic slugs like /incentive-trip)
+        // Traktuj zapytania HEAD (np. z testów lub botów) tak samo jak GET
+        if ($method === 'HEAD') {
+            $method = 'GET';
+        }
+        
+        $route = $this->routes[$method][$path] ?? false;
+
+        if ($route === false) {
             if ($this->notFoundCallback) {
                 if (is_array($this->notFoundCallback)) {
                     $controller = new $this->notFoundCallback[0]();
-                    $method = $this->notFoundCallback[1];
-                    // Pass the path (slug) to the controller
-                    return $controller->$method($path);
+                    $m = $this->notFoundCallback[1];
+                    return $controller->$m($path);
                 }
             }
-            
-            // Real 404 if no fallback handles it
             http_response_code(404);
             echo "404 - Not Found";
             return;
         }
 
-        // 6. Execute Route
+        // Uruchomienie Middlewares
+        if (!empty($route['middlewares'])) {
+            foreach ($route['middlewares'] as $middlewareClass) {
+                $middleware = new $middlewareClass();
+                $middleware->handle();
+            }
+        }
+
+        $callback = $route['callback'];
         if (is_array($callback)) {
             $controller = new $callback[0]();
-            $method = $callback[1];
-            return $controller->$method();
+            $m = $callback[1];
+            return $controller->$m();
         }
 
         echo call_user_func($callback);

@@ -17,16 +17,18 @@ class UserController {
     }
 
     public function create() {
+        Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
+    
         $u = trim($_POST['username']);
         $e = trim($_POST['email'] ?? '');
         $p = password_hash($_POST['password'], PASSWORD_DEFAULT);
         
         Database::getInstance()->query(
-            "INSERT INTO pa_users (uname, email, pass, admin) VALUES (?, ?, ?, 1)", 
+            "INSERT INTO pa_users (uname, email, pass, admin) VALUES (?, ?, ?, 1)",
             [$u, $e, $p]
         );
         
-        Session::init();
         Session::setFlash('Administrator został utworzony.', 'success');
         header('Location: /admin/users');
     }
@@ -65,12 +67,14 @@ class UserController {
         }
 
         Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         Session::setFlash('Użytkownik został zaktualizowany.', 'success');
         header('Location: /admin/users');
     }
 
     public function delete() {
         Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $id = $_GET['id'];
         
         if ($id != Session::get('user_id')) { // Zapobiega usunięciu samego siebie

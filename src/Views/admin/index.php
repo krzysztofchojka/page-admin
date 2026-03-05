@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         #sidebar { transition: width 0.3s ease; }
         .collapsed { width: 4rem !important; }

@@ -1,0 +1,71 @@
+name: CMS CI/CD Tests
+
+on:
+  push:
+    branches: ["main", "master", "test-ci"]
+  pull_request:
+    branches: ["main", "master", "test-ci"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: cms_test
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4 # Zaktualizowano do v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          extensions: mbstring, pdo, pdo_mysql, zip
+          tools: composer
+
+      - name: Install Dependencies
+        run: |
+          composer validate --strict
+          composer install --prefer-dist --no-progress
+
+      - name: Check PHP Syntax (Linting)
+        run: find src/ public/ -name "*.php" -print0 | xargs -0 -n1 php -l
+
+      - name: Static Analysis (PHPStan)
+        run: vendor/bin/phpstan analyse -c phpstan.neon --memory-limit=512M
+
+      - name: Start PHP Built-in Server & Setup DB
+        env:
+          DB_PASSWORD: root
+        run: |
+          cat <<EOF > .env
+          DB_HOST=127.0.0.1
+          DB_NAME=cms_test
+          DB_USER=root
+          DB_PASS=root
+          APP_ENV=testing
+          APP_KEY="base64:testkey123456789012345678901234="
+          EOF
+
+          # Czekamy na MySQL
+          while ! mysqladmin ping -h 127.0.0.1 -uroot -p${DB_PASSWORD} --silent; do
+              echo "Czekam na MySQL..."
+              sleep 2
+          done
+
+          php -S 127.0.0.1:8000 -t public public/index.php > /dev/null 2>&1 &
+          sleep 3
+
+          echo "Budowanie tabel bazy..."
+          curl -s http://127.0.0.1:8000/install
+
+      - name: Run E2E Security Tests
+        run: php tests/e2e.php

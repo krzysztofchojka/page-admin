@@ -37,8 +37,10 @@ class FormController {
     }
 
     public function save() {
+        // Przywrócone definicje $data i $db, które zjedliśmy!
         $data = json_decode(file_get_contents('php://input'), true);
         $db = Database::getInstance();
+        
         $db->query("UPDATE pa_forms SET title = :title, form_json = :json, settings = :settings WHERE id = :id", [
             'title' => $data['title'],
             'json' => json_encode($data['fields']),
@@ -46,6 +48,21 @@ class FormController {
             'id' => $data['id']
         ]);
         echo json_encode(['status' => 'success']);
+    }
+
+    public function autosave() {
+        \CMS\Core\Session::init();
+        // Przywrócone pobieranie ID usera, którego brakowało!
+        $userId = \CMS\Core\Session::get('user_id') ?: null; 
+        $formId = $_POST['form_id'] ?? null;
+        $submissionId = $_POST['submission_id'] ?? null;
+        $formData = $_POST['data'] ?? [];
+        
+        $service = new \CMS\Services\FormSubmissionService();
+        $result = $service->handleAutosave($formId, $submissionId, $formData, $userId);
+        
+        echo json_encode($result);
+        exit;
     }
 
     public function submissions() {
@@ -129,7 +146,8 @@ class FormController {
     public function exportFiles() {
         \CMS\Core\Session::init();
         if (!\CMS\Core\Session::isLoggedIn()) die("Access Denied");
-
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? ''); // <-- DODANE
+        
         $formId = $_POST['form_id'] ?? 0;
         // Domyślny wzorzec nazwy, jeśli użytkownik wyczyści pole
         $namePattern = !empty($_POST['name_pattern']) ? $_POST['name_pattern'] : '{{sys_id}}_{{original_name}}';
@@ -268,24 +286,11 @@ class FormController {
         exit;
     }
 
-    public function autosave() {
-        \CMS\Core\Session::init();
-        $userId = \CMS\Core\Session::get('user_id') ?: null;
-        $formId = $_POST['form_id'] ?? null;
-        $submissionId = $_POST['submission_id'] ?? null;
-        $formData = $_POST['data'] ?? [];
-
-        $service = new \CMS\Services\FormSubmissionService();
-        $result = $service->handleAutosave($formId, $submissionId, $formData, $userId);
-        
-        echo json_encode($result);
-        exit;
-    }
-
     public function exportSubmissions() {
         \CMS\Core\Session::init();
         if (!\CMS\Core\Session::isLoggedIn()) die("Access Denied");
-
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? ''); // <-- DODANE
+        
         $formId = $_POST['form_id'] ?? 0;
         $format = $_POST['format'] ?? 'csv';
         $selectedFields = $_POST['export_fields'] ?? [];
@@ -415,6 +420,7 @@ class FormController {
     }
     public function delete() {
         \CMS\Core\Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $id = $_GET['id'] ?? 0;
         $db = \CMS\Core\Database::getInstance();
 

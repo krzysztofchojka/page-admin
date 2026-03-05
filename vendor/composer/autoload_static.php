@@ -6,14 +6,26 @@ namespace Composer\Autoload;
 
 class ComposerStaticInit3f5202e72cb555db2c5e8158b2d382f6
 {
+    public static $files = array (
+        '9b38cf48e83f5d8f60375221cd213eee' => __DIR__ . '/..' . '/phpstan/phpstan/bootstrap.php',
+    );
+
     public static $prefixLengthsPsr4 = array (
         'S' => 
         array (
             'Symfony\\Component\\Finder\\' => 25,
         ),
+        'P' => 
+        array (
+            'PHPMailer\\PHPMailer\\' => 20,
+        ),
         'G' => 
         array (
             'Gregwar\\' => 8,
+        ),
+        'C' => 
+        array (
+            'CMS\\' => 4,
         ),
     );
 
@@ -22,9 +34,17 @@ class ComposerStaticInit3f5202e72cb555db2c5e8158b2d382f6
         array (
             0 => __DIR__ . '/..' . '/symfony/finder',
         ),
+        'PHPMailer\\PHPMailer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
+        ),
         'Gregwar\\' => 
         array (
             0 => __DIR__ . '/..' . '/gregwar/captcha/src/Gregwar',
+        ),
+        'CMS\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src',
         ),
     );
 

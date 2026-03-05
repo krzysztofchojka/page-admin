@@ -5,6 +5,7 @@
     </div>
 
     <form action="/admin/email/templates/save" method="POST" id="emailForm" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
         <?php if(isset($template)): ?>
             <input type="hidden" name="id" value="<?= $template['id'] ?>">
         <?php endif; ?>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Change Password</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body class="bg-yellow-50 flex items-center justify-center h-screen">
 
@@ -20,6 +20,7 @@
         <?php endif; ?>
 
         <form action="/change-password" method="POST">
+        <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
         <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2">New Password</label>
                 <div class="relative">

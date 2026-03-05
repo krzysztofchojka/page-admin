@@ -71,6 +71,7 @@ class EmailController {
 
     public function deleteTemplate() {
         \CMS\Core\Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $id = $_GET['id'] ?? 0;
         $db = \CMS\Core\Database::getInstance();
 
@@ -199,6 +200,8 @@ class EmailController {
     }
 
     public function saveTemplate() {
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? ''); // <-- DODANE
+        
         $db = Database::getInstance();
         if (!empty($_POST['id'])) {
             // Aktualizacja
@@ -224,6 +227,8 @@ class EmailController {
     }
 
     public function createList() {
+        \CMS\Core\Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $name = trim($_POST['name'] ?? 'Nowa lista');
         Database::getInstance()->query("INSERT INTO pa_mailing_lists (name, is_default) VALUES (?, 0)", [$name]);
         Session::setFlash("Lista utworzona!", "success");
@@ -242,6 +247,8 @@ class EmailController {
     }
 
     public function addSubscriber() {
+        \CMS\Core\Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $listId = $_POST['list_id'];
         $email = trim($_POST['email']);
         $name = trim($_POST['name'] ?? '');
@@ -295,6 +302,7 @@ class EmailController {
         ]);
 
         \CMS\Core\Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         \CMS\Core\Session::setFlash("Zadanie dodane do kolejki.", "success");
         header('Location: /admin/email/queue');
         exit;
@@ -302,6 +310,7 @@ class EmailController {
 
     public function triggerJob() {
         \CMS\Core\Session::init(); // Zawsze na początku by uniknąć błędu 500 (headers already sent)
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $id = $_GET['id'] ?? 0;
         if (!$id) { header('Location: /admin/email/queue'); exit; }
 

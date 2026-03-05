@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Menu Manager</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         .sub-menu-list {

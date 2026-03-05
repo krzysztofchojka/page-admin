@@ -7,6 +7,7 @@
     <div class="flex flex-col md:flex-row gap-6">
         <div class="w-full md:w-1/3">
             <form action="/admin/categories/save" method="POST" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
                 <h2 class="font-bold mb-4">Dodaj kategorię</h2>
                 <input type="text" name="name" placeholder="Nazwa kategorii" required class="w-full border p-2 rounded mb-4 focus:ring-2 focus:ring-blue-500">
                 <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded">Zapisz</button>

@@ -52,6 +52,7 @@ public function loginForm() {
 
     public function login() {
         Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $settings = $this->getSettings();
 
         // 1. Oczyszczanie wejścia
@@ -162,6 +163,7 @@ public function loginForm() {
 
     public function register() {
         Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $settings = $this->getSettings();
         $regMode = $settings['reg_mode'] ?? 'disabled';
 
@@ -219,6 +221,7 @@ public function loginForm() {
 
     public function changePasswordForm() {
         Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         
         // Sprawdzenie, czy użytkownik ma uprawnienia do przebywania na tej stronie
         if (!Session::get('temp_user_id')) {
@@ -257,12 +260,13 @@ public function loginForm() {
 
     public function changePassword() {
         Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? ''); // <-- DODANE
+        
         $userId = Session::get('temp_user_id');
         if (!$userId) {
             header('Location: /login');
             exit;
         }
-
         $pass1 = $_POST['pass1'] ?? '';
         $pass2 = $_POST['pass2'] ?? '';
 

@@ -2,6 +2,7 @@
 <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Listy Mailingowe</h1>
         <form action="/admin/email/lists/create" method="POST" class="flex gap-2">
+        <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
             <input type="text" name="name" placeholder="Nazwa nowej listy..." required class="border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500">
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">+ Dodaj</button>
         </form>

@@ -2,6 +2,7 @@
     <h1 class="text-2xl font-bold mb-6 text-gray-800">Kreator Nowej Strony</h1>
     
     <form action="/admin/pages/create" method="POST">
+    <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
         <div class="mb-5">
             <label class="block font-bold text-gray-700 mb-2 text-sm">Tytuł strony</label>
             <input type="text" name="title" required class="w-full border border-gray-300 p-2.5 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="np. O nas">

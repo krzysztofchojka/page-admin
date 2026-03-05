@@ -25,6 +25,8 @@ class PostController {
     }
 
     public function saveCategory() {
+        Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $db = Database::getInstance();
         $name = trim($_POST['name'] ?? '');
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));

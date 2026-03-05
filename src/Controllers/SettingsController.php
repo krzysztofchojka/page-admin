@@ -23,10 +23,16 @@ class SettingsController {
     }
 
     public function save() {
+        // 1. Sprawdzamy token
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
+        // 2. Usuwamy token z POST, żeby nie zapisał się do bazy jako ustawienie!
+        unset($_POST['csrf_token']); 
+
         $db = Database::getInstance();
         foreach ($_POST as $key => $value) {
             $db->query("REPLACE INTO pa_settings (setting_key, setting_value) VALUES (:key, :val)", [
-                'key' => $key, 'val' => $value
+                'key' => $key,
+                'val' => $value
             ]);
         }
         header('Location: /admin/settings?success=1');
@@ -80,6 +86,7 @@ class SettingsController {
 
     public function restore() {
         Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         if (!Session::isLoggedIn()) die("Odmowa dostępu");
 
         // 1. Sprawdź czy plik w ogóle dotarł

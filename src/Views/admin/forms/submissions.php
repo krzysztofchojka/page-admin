@@ -138,6 +138,7 @@ $draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
         </div>
         
         <form action="/admin/forms/submissions/export" method="POST" class="flex-1 overflow-y-auto p-6">
+        <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
             <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
             
             <div class="mb-6">
@@ -226,6 +227,7 @@ $draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
         </div>
         
         <form action="/admin/forms/submissions/export-files" method="POST" class="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
             <input type="hidden" name="form_id" value="<?= $form['id'] ?>">
             
             <div class="bg-white p-5 border border-gray-200 rounded-xl shadow-sm mb-6">

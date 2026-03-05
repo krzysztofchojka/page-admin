@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Register</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
@@ -19,6 +19,7 @@
         <?php endif; ?>
 
         <form action="/register" method="POST">
+        <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
             <div class="mb-4">
                 <label class="block text-sm font-bold mb-1">Email</label>
                 <input type="email" name="email" value="<?= htmlspecialchars($oldEmail ?? '') ?>" required class="w-full border p-2 rounded">

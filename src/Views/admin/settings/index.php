@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Site Settings</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body class="bg-gray-100 p-10">
     <div class="max-w-2xl mx-auto bg-white p-8 rounded shadow">
@@ -16,6 +16,7 @@
             </div>
         <?php endif; ?>
         <form action="/admin/settings/save" method="POST">
+        <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
             <h3 class="font-bold text-gray-500 uppercase text-xs mb-4 border-b pb-2">Identity</h3>
             <div class="mb-4">
                 <label class="block font-bold">Site Title</label>
@@ -268,6 +269,7 @@ function toggleVisibility(id) {
                 <strong class="uppercase">Uwaga:</strong> Ta operacja nadpisze obecną bazę danych! Używaj ostrożnie.
             </p>
             <form action="/admin/settings/restore" method="POST" enctype="multipart/form-data" class="flex flex-col gap-2" onsubmit="return confirm('Czy na pewno chcesz nadpisać bazę danych? Tej operacji nie można cofnąć!');">
+            <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
                 <input type="file" name="backup_file" accept=".sql" required class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 border border-red-200 rounded cursor-pointer bg-white">
                 <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow transition text-sm">
                     Wgraj i Przywróć

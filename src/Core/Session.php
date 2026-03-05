@@ -4,76 +4,41 @@ namespace CMS\Core;
 class Session {
     public static function init() {
         if (session_status() === PHP_SESSION_NONE) {
-            
-            // Rejestracja naszego handlera opartego o bazę danych
             $handler = new DatabaseSessionHandler();
             session_set_save_handler($handler, true);
-
-            // Informujemy przeglądarkę, aby zatrzymała ciastko na 1 rok
             session_set_cookie_params(31536000);
             ini_set('session.cookie_httponly', 1);
             ini_set('session.use_only_cookies', 1);
-            
-            // PHP GC usunie z bazy stare sesje po 7 dniach (lub innej wartości, jeśli wolisz)
-            // Możemy tu zostawić wartość z ustawień lub bezpieczny rok, bo metoda checkLifetime() i tak robi swoje
-            ini_set('session.gc_maxlifetime', 31536000); 
-            
             session_start();
-            
-            // Sprawdzanie wygasania według ustawień CMS
             self::checkLifetime();
         }
     }
 
     private static function checkLifetime() {
-        // Only check if we are actually logged in/unlocked
         if (!empty($_SESSION)) {
             $lastActivity = $_SESSION['last_activity'] ?? time();
-            
-            // Fetch setting (default 7 days)
-            // We use a raw PDO call here to avoid circular dependency loops if Database uses Session
-            $days = 7; 
+            $days = 7;
             try {
-                $db = \CMS\Core\Database::getInstance();
+                $db = Database::getInstance();
                 $row = $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'session_days'")->fetch();
                 if ($row) $days = (int)$row['setting_value'];
             } catch (\Exception $e) {}
-
+            
             $lifetimeSeconds = $days * 24 * 60 * 60;
-
             if (time() - $lastActivity > $lifetimeSeconds) {
-                // Session expired
                 self::destroy();
-                // Optional: header('Location: /'); exit; 
+                exit;
             } else {
-                // Update activity timestamp
                 $_SESSION['last_activity'] = time();
             }
         }
     }
 
-    public static function set($key, $value) {
-        $_SESSION[$key] = $value;
-    }
-
-    public static function get($key) {
-        return $_SESSION[$key] ?? null;
-    }
-
-    public static function remove($key) {
-        unset($_SESSION[$key]);
-    }
-
-    public static function destroy() {
-        session_destroy();
-        $_SESSION = [];
-    }
-
-    // Flash Messages (e.g., "Invalid Password")
-    public static function setFlash($message, $type = 'error') {
-        $_SESSION['flash'] = ['msg' => $message, 'type' => $type];
-    }
-
+    public static function set($key, $value) { $_SESSION[$key] = $value; }
+    public static function get($key) { return $_SESSION[$key] ?? null; }
+    public static function remove($key) { unset($_SESSION[$key]); }
+    public static function destroy() { session_destroy(); $_SESSION = []; }
+    public static function setFlash($message, $type = 'error') { $_SESSION['flash'] = ['msg' => $message, 'type' => $type]; }
     public static function getFlash() {
         if (isset($_SESSION['flash'])) {
             $flash = $_SESSION['flash'];
@@ -82,8 +47,20 @@ class Session {
         }
         return null;
     }
+    public static function isLoggedIn() { return isset($_SESSION['user_id']); }
 
-    public static function isLoggedIn() {
-        return isset($_SESSION['user_id']);
+    // --- OCHRONA CSRF ---
+    public static function generateCsrfToken() {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+
+    public static function verifyCsrfToken($token) {
+        if (empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+            http_response_code(403);
+            die('Błąd CSRF (Cross-Site Request Forgery). Żądanie odrzucone dla Twojego bezpieczeństwa.');
+        }
     }
 }

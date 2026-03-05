@@ -3,6 +3,8 @@ function getTemplatePreviewHtml($rawHtml) {
     $html = preg_replace('/\{\{(navigator|admin_navigator|menu)\}\}/', '<div style="background:#1e293b; color:#fff; padding:10px; text-align:center; font-family:sans-serif; margin:0; display:block; width:100%; font-size:12px; font-weight:bold;">[ Element Nawigacyjny ]</div>', $rawHtml);
     $html = preg_replace('/\{\{zone:([a-zA-Z0-9_]+)\}\}/', '<div style="border:2px dashed #cbd5e1; background:#f8fafc; padding:20px; text-align:center; color:#64748b; border-radius:8px; font-family:sans-serif; margin:10px 0; font-weight:bold;">Strefa: $1</div>', $html);
     $html = str_replace('{{global_footer}}', '<div style="background:#f1f5f9; padding:20px; text-align:center; color:#64748b; font-size:12px; margin:0; display:block; font-family:sans-serif;">[ Globalna Stopka ]</div>', $html);
+    
+    // ZWRACAMY CDN TAILWINDA SPECJALNIE DLA IFRAME
     return '<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"></script><style>body { margin: 0; padding: 0; }</style></head><body class="bg-white antialiased text-gray-800">' . $html . '</body></html>';
 }
 ?>
@@ -11,7 +13,7 @@ function getTemplatePreviewHtml($rawHtml) {
 <head>
     <meta charset="UTF-8">
     <title>Zarządzaj Szablonami</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         .preview-iframe {
             width: 400%; height: 400%; transform: scale(0.25); transform-origin: top left; pointer-events: none;

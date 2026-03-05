@@ -1,39 +1,23 @@
 <?php
-// Załaduj zewnętrzne biblioteki z Composera (np. Gregwar/Captcha)
+
+// 1. Załaduj zewnętrzne biblioteki z Composera (np. Gregwar/Captcha)
 $composerAutoload = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($composerAutoload)) {
     require_once $composerAutoload;
 }
 
-// 1. Simple Autoloader (Loads classes automatically)
+// 2. Prosty Autoloader (ładuje nasze klasy automatycznie z folderu src)
 spl_autoload_register(function ($class) {
     $prefix = 'CMS\\';
     $base_dir = __DIR__ . '/../src/';
     $len = strlen($prefix);
-    
     if (strncmp($prefix, $class, $len) !== 0) return;
-    
     $relative_class = substr($class, $len);
     $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
-    
     if (file_exists($file)) require $file;
 });
 
-// 1. Simple Autoloader (Loads classes automatically)
-spl_autoload_register(function ($class) {
-    $prefix = 'CMS\\';
-    $base_dir = __DIR__ . '/../src/';
-    $len = strlen($prefix);
-    
-    if (strncmp($prefix, $class, $len) !== 0) return;
-    
-    $relative_class = substr($class, $len);
-    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
-    
-    if (file_exists($file)) require $file;
-});
-
-//Ładowanie zmiennych środowiskowych do globalnej tablicy $_ENV
+// 3. Ładowanie zmiennych środowiskowych do globalnej tablicy $_ENV
 $envPath = __DIR__ . '/../.env';
 if (file_exists($envPath)) {
     $env = parse_ini_file($envPath);
@@ -42,161 +26,164 @@ if (file_exists($envPath)) {
     }
 }
 
-// 2. Initialize Router
+// 4. Inicjalizacja Routera i import klas
 use CMS\Core\Router;
+use CMS\Middleware\AuthMiddleware;
+use CMS\Middleware\AdminMiddleware;
+
 use CMS\Controllers\HomeController;
+use CMS\Controllers\PublicController;
+use CMS\Controllers\AuthController;
+use CMS\Controllers\AdminController;
+use CMS\Controllers\InstallController;
+use CMS\Controllers\PageController;
+use CMS\Controllers\FormController;
+use CMS\Controllers\TemplateController;
+use CMS\Controllers\MenuController;
+use CMS\Controllers\GalleryController;
+use CMS\Controllers\SettingsController;
+use CMS\Controllers\MediaController;
+use CMS\Controllers\UserController;
+use CMS\Controllers\EmailController;
+use CMS\Controllers\PostController;
+use CMS\Controllers\HelpController;
 
-$router = new CMS\Core\Router();
+$router = new Router();
 
-// Public Routes
-//$router->get('/', [CMS\Controllers\HomeController::class, 'index']);
-$router->get('/', [CMS\Controllers\PublicController::class, 'show']);
-$router->get('/test-db', [CMS\Controllers\HomeController::class, 'testDb']);
+// =========================================================================
+// TRASY PUBLICZNE (Dostępne dla każdego)
+// =========================================================================
+$router->get('/', [PublicController::class, 'show']);
+$router->get('/page', [PublicController::class, 'show']);
+$router->get('/post', [PublicController::class, 'showPost']);
+$router->get('/test-db', [HomeController::class, 'testDb']);
+$router->get('/install', [InstallController::class, 'index']); // Instalator
 
-// Auth Routes
-$router->get('/login', [CMS\Controllers\AuthController::class, 'loginForm']); // Show Form
-$router->post('/login', [CMS\Controllers\AuthController::class, 'login']);    // Process Login
-$router->get('/logout', [CMS\Controllers\AuthController::class, 'logout']);
+// Logowanie i Rejestracja
+$router->get('/login', [AuthController::class, 'loginForm']);
+$router->post('/login', [AuthController::class, 'login']);
+$router->get('/logout', [AuthController::class, 'logout']);
+$router->get('/register', [AuthController::class, 'registerForm']);
+$router->post('/register', [AuthController::class, 'register']);
 
-// Protected Admin Routes
-$router->get('/admin', [CMS\Controllers\AdminController::class, 'index']);
-$router->get('/install', [CMS\Controllers\InstallController::class, 'index']);
-$router->get('/change-password', [CMS\Controllers\AuthController::class, 'changePasswordForm']);
-$router->post('/change-password', [CMS\Controllers\AuthController::class, 'changePassword']);
+// Formularze od strony klienta
+$router->post('/submit-form', [FormController::class, 'submit']);
+$router->post('/form-upload', [FormController::class, 'asyncUpload']);
+$router->post('/form-autosave', [FormController::class, 'autosave']);
 
-$router->get('/admin/pages', [CMS\Controllers\PageController::class, 'index']);       // List pages
-$router->get('/admin/pages/create', [CMS\Controllers\PageController::class, 'create']); // Create new
-$router->post('/admin/pages/create', [CMS\Controllers\PageController::class, 'store']);
-$router->get('/admin/pages/edit', [CMS\Controllers\PageController::class, 'edit']);     // Edit specific page
-$router->post('/admin/pages/save', [CMS\Controllers\PageController::class, 'save']);    // AJAX Save
-$router->get('/admin/pages/delete', [CMS\Controllers\PageController::class, 'delete']); // Delete
 
-$router->get('/admin/forms', [CMS\Controllers\FormController::class, 'index']);
-$router->get('/admin/forms/create', [CMS\Controllers\FormController::class, 'create']);
-$router->get('/admin/forms/builder', [CMS\Controllers\FormController::class, 'builder']);
-$router->post('/admin/forms/save', [CMS\Controllers\FormController::class, 'save']);
-$router->post('/submit-form', [CMS\Controllers\FormController::class, 'submit']); // Public submission
-$router->post('/form-upload', [CMS\Controllers\FormController::class, 'asyncUpload']);
-$router->post('/form-autosave', [CMS\Controllers\FormController::class, 'autosave']);
-$router->post('/admin/forms/submissions/export', [CMS\Controllers\FormController::class, 'exportSubmissions']);
-$router->get('/admin/forms/submissions/delete', [CMS\Controllers\FormController::class, 'deleteSubmission']);
-$router->post('/admin/templates/delete', [CMS\Controllers\TemplateController::class, 'delete']);
-$router->post('/admin/forms/submissions/export', [CMS\Controllers\FormController::class, 'exportSubmissions']); 
-$router->post('/admin/forms/submissions/export-files', [CMS\Controllers\FormController::class, 'exportFiles']);
+// =========================================================================
+// TRASY ZALOGOWANEGO UŻYTKOWNIKA (Wymagają AuthMiddleware)
+// =========================================================================
+$router->get('/change-password', [AuthController::class, 'changePasswordForm'], [AuthMiddleware::class]);
+$router->post('/change-password', [AuthController::class, 'changePassword'], [AuthMiddleware::class]);
 
-$router->get('/admin/forms/delete', [CMS\Controllers\FormController::class, 'delete']);
-$router->get('/admin/galleries/delete', [CMS\Controllers\GalleryController::class, 'delete']);
-$router->get('/admin/email/templates/delete', [CMS\Controllers\EmailController::class, 'deleteTemplate']);
+
+// =========================================================================
+// TRASY ADMINISTRATORA (Wymagają AdminMiddleware)
+// =========================================================================
+
+// Dashboard
+$router->get('/admin', [AdminController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/help', [HelpController::class, 'index'], [AdminMiddleware::class]);
+
+// Strony (Pages)
+$router->get('/admin/pages', [PageController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/pages/create', [PageController::class, 'create'], [AdminMiddleware::class]);
+$router->post('/admin/pages/create', [PageController::class, 'store'], [AdminMiddleware::class]);
+$router->get('/admin/pages/edit', [PageController::class, 'edit'], [AdminMiddleware::class]);
+$router->post('/admin/pages/save', [PageController::class, 'save'], [AdminMiddleware::class]);
+$router->get('/admin/pages/delete', [PageController::class, 'delete'], [AdminMiddleware::class]);
+
+// Szablony (Templates)
+$router->get('/admin/templates', [TemplateController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/templates/create', [TemplateController::class, 'create'], [AdminMiddleware::class]);
+$router->get('/admin/templates/edit', [TemplateController::class, 'edit'], [AdminMiddleware::class]);
+$router->post('/admin/templates/save', [TemplateController::class, 'save'], [AdminMiddleware::class]);
+$router->post('/admin/templates/delete', [TemplateController::class, 'delete'], [AdminMiddleware::class]);
+$router->post('/admin/templates/toggleActive', [TemplateController::class, 'toggleActive'], [AdminMiddleware::class]);
+
+// Formularze
+$router->get('/admin/forms', [FormController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/forms/create', [FormController::class, 'create'], [AdminMiddleware::class]);
+$router->get('/admin/forms/builder', [FormController::class, 'builder'], [AdminMiddleware::class]);
+$router->post('/admin/forms/save', [FormController::class, 'save'], [AdminMiddleware::class]);
+$router->get('/admin/forms/delete', [FormController::class, 'delete'], [AdminMiddleware::class]);
+$router->get('/admin/forms/submissions', [FormController::class, 'submissions'], [AdminMiddleware::class]);
+$router->get('/admin/forms/submissions/delete', [FormController::class, 'deleteSubmission'], [AdminMiddleware::class]);
+$router->post('/admin/forms/submissions/export', [FormController::class, 'exportSubmissions'], [AdminMiddleware::class]);
+$router->post('/admin/forms/submissions/export-files', [FormController::class, 'exportFiles'], [AdminMiddleware::class]);
+$router->get('/admin/forms/download', [FormController::class, 'downloadFile'], [AdminMiddleware::class]);
+
+// Galerie
+$router->get('/admin/galleries', [GalleryController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/galleries/create', [GalleryController::class, 'create'], [AdminMiddleware::class]);
+$router->get('/admin/galleries/edit', [GalleryController::class, 'edit'], [AdminMiddleware::class]);
+$router->post('/admin/galleries/save', [GalleryController::class, 'save'], [AdminMiddleware::class]);
+$router->get('/admin/galleries/delete', [GalleryController::class, 'delete'], [AdminMiddleware::class]);
+
+// Wpisy (Posty/Blog)
+$router->get('/admin/categories', [PostController::class, 'categories'], [AdminMiddleware::class]);
+$router->post('/admin/categories/save', [PostController::class, 'saveCategory'], [AdminMiddleware::class]);
+$router->get('/admin/categories/delete', [PostController::class, 'deleteCategory'], [AdminMiddleware::class]);
+$router->get('/admin/posts', [PostController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/posts/create', [PostController::class, 'create'], [AdminMiddleware::class]);
+$router->post('/admin/posts/store', [PostController::class, 'store'], [AdminMiddleware::class]);
+$router->get('/admin/posts/edit', [PostController::class, 'edit'], [AdminMiddleware::class]);
+$router->post('/admin/posts/save', [PostController::class, 'save'], [AdminMiddleware::class]);
+$router->get('/admin/posts/delete', [PostController::class, 'delete'], [AdminMiddleware::class]);
+
+// Menu
+$router->get('/admin/menu', [MenuController::class, 'index'], [AdminMiddleware::class]);
+$router->post('/admin/menu/save', [MenuController::class, 'save'], [AdminMiddleware::class]);
+
+// Pliki (Media Manager)
+$router->get('/admin/media', [MediaController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/media/downloadZip', [MediaController::class, 'downloadZip'], [AdminMiddleware::class]);
+$router->post('/admin/media/upload', [MediaController::class, 'upload'], [AdminMiddleware::class]);
+$router->post('/admin/media/delete', [MediaController::class, 'delete'], [AdminMiddleware::class]);
+$router->post('/admin/media/createFolder', [MediaController::class, 'createFolder'], [AdminMiddleware::class]);
+$router->post('/admin/media/rename', [MediaController::class, 'rename'], [AdminMiddleware::class]);
+$router->post('/admin/media/move', [MediaController::class, 'move'], [AdminMiddleware::class]);
+
+// Użytkownicy
+$router->get('/admin/users', [UserController::class, 'index'], [AdminMiddleware::class]);
+$router->post('/admin/users/create', [UserController::class, 'create'], [AdminMiddleware::class]);
+$router->get('/admin/users/delete', [UserController::class, 'delete'], [AdminMiddleware::class]);
+$router->get('/admin/users/edit', [UserController::class, 'edit'], [AdminMiddleware::class]);
+$router->post('/admin/users/update', [UserController::class, 'update'], [AdminMiddleware::class]);
 
 // Ustawienia & Backup
-$router->get('/admin/settings/backup', [CMS\Controllers\SettingsController::class, 'backup']);
+$router->get('/admin/settings', [SettingsController::class, 'index'], [AdminMiddleware::class]);
+$router->post('/admin/settings/save', [SettingsController::class, 'save'], [AdminMiddleware::class]);
+$router->get('/admin/settings/backup', [SettingsController::class, 'backup'], [AdminMiddleware::class]);
+$router->post('/admin/settings/restore', [SettingsController::class, 'restore'], [AdminMiddleware::class]);
 
-// Pomoc
-$router->get('/admin/help', [CMS\Controllers\HelpController::class, 'index']);
+// System Email / IMAP / SMTP
+$router->get('/admin/email', [EmailController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/email/queue', [EmailController::class, 'queue'], [AdminMiddleware::class]);
+$router->post('/admin/email/schedule', [EmailController::class, 'schedule'], [AdminMiddleware::class]);
+$router->get('/admin/email/trigger', [EmailController::class, 'triggerJob'], [AdminMiddleware::class]);
+$router->get('/admin/email/fetch-imap', [EmailController::class, 'fetchEmails'], [AdminMiddleware::class]);
+$router->get('/admin/email/read', [EmailController::class, 'readEmail'], [AdminMiddleware::class]);
+$router->post('/admin/email/send-direct', [EmailController::class, 'sendDirect'], [AdminMiddleware::class]);
+$router->get('/admin/email/fetch-sent', [EmailController::class, 'fetchSentEmails'], [AdminMiddleware::class]);
+$router->get('/admin/email/templates', [EmailController::class, 'templates'], [AdminMiddleware::class]);
+$router->get('/admin/email/templates/create', [EmailController::class, 'createTemplate'], [AdminMiddleware::class]);
+$router->get('/admin/email/templates/edit', [EmailController::class, 'editTemplate'], [AdminMiddleware::class]);
+$router->post('/admin/email/templates/save', [EmailController::class, 'saveTemplate'], [AdminMiddleware::class]);
+$router->get('/admin/email/templates/delete', [EmailController::class, 'deleteTemplate'], [AdminMiddleware::class]);
+$router->get('/admin/email/lists', [EmailController::class, 'lists'], [AdminMiddleware::class]);
+$router->post('/admin/email/lists/create', [EmailController::class, 'createList'], [AdminMiddleware::class]);
+$router->get('/admin/email/lists/manage', [EmailController::class, 'manageList'], [AdminMiddleware::class]);
+$router->post('/admin/email/lists/add-subscriber', [EmailController::class, 'addSubscriber'], [AdminMiddleware::class]);
+$router->get('/admin/email/lists/remove-subscriber', [EmailController::class, 'removeSubscriber'], [AdminMiddleware::class]);
 
-$router->get('/admin/forms/submissions', [CMS\Controllers\FormController::class, 'submissions']);
-$router->get('/admin/forms/download', [CMS\Controllers\FormController::class, 'downloadFile']);
 
-// Add a specific route for fetching pages by ID explicitly
-$router->get('/page', [CMS\Controllers\PublicController::class, 'show']);
+// =========================================================================
+// FALLBACK (Błąd 404 lub aliasy z bazy)
+// =========================================================================
+$router->setNotFoundHandler([PublicController::class, 'show']);
 
-$router->post('/admin/media/upload', [CMS\Controllers\MediaController::class, 'upload']);
-$router->get('/admin/menu', [CMS\Controllers\MenuController::class, 'index']);
-$router->post('/admin/menu/save', [CMS\Controllers\MenuController::class, 'save']);
-
-$router->get('/admin/galleries', [CMS\Controllers\GalleryController::class, 'index']);
-$router->get('/admin/galleries/create', [CMS\Controllers\GalleryController::class, 'create']);
-$router->get('/admin/galleries/edit', [CMS\Controllers\GalleryController::class, 'edit']);
-$router->post('/admin/galleries/save', [CMS\Controllers\GalleryController::class, 'save']);
-
-// Settings
-$router->get('/admin/settings', [CMS\Controllers\SettingsController::class, 'index']);
-$router->post('/admin/settings/restore', [CMS\Controllers\SettingsController::class, 'restore']);
-$router->post('/admin/settings/save', [CMS\Controllers\SettingsController::class, 'save']);
-
-// Media Manager
-$router->get('/admin/media', [CMS\Controllers\MediaController::class, 'index']);
-$router->post('/admin/media/delete', [CMS\Controllers\MediaController::class, 'delete']);
-$router->post('/admin/media/createFolder', [CMS\Controllers\MediaController::class, 'createFolder']);
-$router->post('/admin/media/rename', [CMS\Controllers\MediaController::class, 'rename']);
-$router->post('/admin/media/move', [CMS\Controllers\MediaController::class, 'move']);
-
-// User Manager
-$router->get('/admin/users', [CMS\Controllers\UserController::class, 'index']);
-$router->post('/admin/users/create', [CMS\Controllers\UserController::class, 'create']);
-$router->get('/admin/users/delete', [CMS\Controllers\UserController::class, 'delete']);
-$router->get('/admin/users/edit', [CMS\Controllers\UserController::class, 'edit']);
-$router->post('/admin/users/update', [CMS\Controllers\UserController::class, 'update']);
-
-$router->get('/register', [CMS\Controllers\AuthController::class, 'registerForm']);
-$router->post('/register', [CMS\Controllers\AuthController::class, 'register']);
-$router->get('/admin/media/downloadZip', [CMS\Controllers\MediaController::class, 'downloadZip']);
-$router->get('/admin/templates', [CMS\Controllers\TemplateController::class, 'index']);
-$router->get('/admin/templates/create', [CMS\Controllers\TemplateController::class, 'create']);
-$router->get('/admin/templates/edit', [CMS\Controllers\TemplateController::class, 'edit']);
-$router->post('/admin/templates/save', [CMS\Controllers\TemplateController::class, 'save']);
-
-// --- MODUŁ EMAIL ---
-$router->get('/admin/email', [CMS\Controllers\EmailController::class, 'index']);
-$router->get('/admin/email/queue', [CMS\Controllers\EmailController::class, 'queue']);
-$router->post('/admin/email/schedule', [CMS\Controllers\EmailController::class, 'schedule']);
-$router->get('/admin/email/trigger', [CMS\Controllers\EmailController::class, 'triggerJob']);
-
-// Szablony
-$router->get('/admin/email/templates', [CMS\Controllers\EmailController::class, 'templates']);
-$router->get('/admin/email/templates/create', [CMS\Controllers\EmailController::class, 'createTemplate']);
-$router->get('/admin/email/templates/edit', [CMS\Controllers\EmailController::class, 'editTemplate']);
-$router->post('/admin/email/templates/save', [CMS\Controllers\EmailController::class, 'saveTemplate']);
-
-// Listy
-$router->get('/admin/email/lists', [CMS\Controllers\EmailController::class, 'lists']);
-$router->post('/admin/email/lists/create', [CMS\Controllers\EmailController::class, 'createList']);
-$router->get('/admin/email/lists/manage', [CMS\Controllers\EmailController::class, 'manageList']);
-$router->post('/admin/email/lists/add-subscriber', [CMS\Controllers\EmailController::class, 'addSubscriber']);
-$router->get('/admin/email/lists/remove-subscriber', [CMS\Controllers\EmailController::class, 'removeSubscriber']);
-
-$router->get('/admin/email/fetch-imap', [CMS\Controllers\EmailController::class, 'fetchEmails']);
-
-$router->get('/admin/email', [CMS\Controllers\EmailController::class, 'index']);
-$router->get('/admin/email/read', [CMS\Controllers\EmailController::class, 'readEmail']);
-$router->post('/admin/email/send-direct', [CMS\Controllers\EmailController::class, 'sendDirect']);
-$router->get('/admin/email/queue', [CMS\Controllers\EmailController::class, 'queue']);
-$router->get('/admin/email/fetch-sent', [CMS\Controllers\EmailController::class, 'fetchSentEmails']);
-$router->get('/admin/email/queue', [CMS\Controllers\EmailController::class, 'queue']);
-
-// --- MODUŁ POSTÓW (BLOG) ---
-$router->get('/admin/categories', [CMS\Controllers\PostController::class, 'categories']);
-$router->post('/admin/categories/save', [CMS\Controllers\PostController::class, 'saveCategory']);
-$router->get('/admin/categories/delete', [CMS\Controllers\PostController::class, 'deleteCategory']);
-
-$router->get('/admin/posts', [CMS\Controllers\PostController::class, 'index']);
-$router->get('/admin/posts/create', [CMS\Controllers\PostController::class, 'create']);
-$router->post('/admin/posts/store', [CMS\Controllers\PostController::class, 'store']);
-$router->get('/admin/posts/edit', [CMS\Controllers\PostController::class, 'edit']);
-$router->post('/admin/posts/save', [CMS\Controllers\PostController::class, 'save']);
-$router->get('/admin/posts/delete', [CMS\Controllers\PostController::class, 'delete']);
-
-// Publiczna ścieżka dla czytania postów
-$router->get('/post', [CMS\Controllers\PublicController::class, 'showPost']);
-
-$router->post('/admin/templates/toggleActive', [CMS\Controllers\TemplateController::class, 'toggleActive']);
-
-$router->setNotFoundHandler([CMS\Controllers\PublicController::class, 'show']);
-
-// --- GLOBALNA BLOKADA DOSTĘPU DO CMS DLA ZWYKŁYCH UŻYTKOWNIKÓW ---
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-if (strpos($uri, '/admin') === 0) {
-    \CMS\Core\Session::init();
-    if (!\CMS\Core\Session::isLoggedIn()) {
-        header('Location: /login');
-        exit;
-    }
-    // Jeśli jest zalogowany, ale nie jest adminem -> wyrzuć na stronę główną
-    if (\CMS\Core\Session::get('is_admin') != 1) {
-        header('Location: /');
-        exit;
-    }
-}
-// ---------------------------------------------------------------
-
+// Rozwiązanie Requestu
 $router->resolve();

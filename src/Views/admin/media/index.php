@@ -8,7 +8,7 @@ $jsCurrentPath = htmlspecialchars($currentPath, ENT_QUOTES, 'UTF-8');
 <head>
     <meta charset="UTF-8">
     <title>Menedżer Mediów</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
@@ -247,6 +247,7 @@ $jsCurrentPath = htmlspecialchars($currentPath, ENT_QUOTES, 'UTF-8');
 </div>
 
 <form id="delete-form" method="POST" action="/admin/media/delete" class="hidden">
+<input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
     <input type="hidden" name="file" id="delete-file-input">
 </form>
 

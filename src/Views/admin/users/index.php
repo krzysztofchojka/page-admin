@@ -15,6 +15,7 @@
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <h2 class="text-lg font-bold mb-4 text-gray-800">Nowy Administrator</h2>
                 <form action="/admin/users/create" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
                     <div class="mb-4">
                         <label class="block text-xs font-bold mb-2 text-gray-500 uppercase">Login</label>
                         <input type="text" name="username" required class="w-full border border-gray-300 p-2.5 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">

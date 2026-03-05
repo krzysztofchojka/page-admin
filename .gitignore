@@ -4,3 +4,4 @@ dump_files.sh
 .env
 sessions/
 public/uploads/*
+node_modules

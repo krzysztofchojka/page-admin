@@ -83,7 +83,7 @@ class TemplateController {
                     <textarea id="html_content" class="hidden"><?= $safeHtml ?></textarea>
                 </div>
 
-                <div id="sidebar-legend" class="w-80 bg-gray-50 border-l flex flex-col transition-all duration-300 transform translate-x-0 shrink-0">
+                <div id="sidebar-legend" class="w-80 bg-gray-50 border-l border-gray-200 flex flex-col transition-all duration-300 shrink-0 overflow-hidden" style="width: 20rem;">
                     <div class="p-5 flex-1 overflow-y-auto">
                         <p class="text-xs text-gray-500 mb-4 font-medium uppercase tracking-wider text-center border-b pb-2">Kliknij, aby skopiować 📋</p>
                         
@@ -265,14 +265,16 @@ class TemplateController {
             document.getElementById('btn-toggle-sidebar').addEventListener('click', function() {
                 const sidebar = document.getElementById('sidebar-legend');
                 sidebarVisible = !sidebarVisible;
+                
                 if(sidebarVisible) {
-                    sidebar.classList.remove('w-0', 'border-none', 'opacity-0');
-                    sidebar.classList.add('w-80', 'border-l');
+                    sidebar.style.width = '20rem'; // 320px (odpowiednik w-80)
+                    sidebar.classList.add('border-l');
                 } else {
-                    sidebar.classList.remove('w-80', 'border-l');
-                    sidebar.classList.add('w-0', 'border-none', 'opacity-0');
+                    sidebar.style.width = '0px';
+                    sidebar.classList.remove('border-l');
                 }
-                // Dajemy edytorowi znać, że zmienił się rozmiar okna
+                
+                // Dajemy edytorowi znać, że zmienił się rozmiar okna, żeby dopasował kod
                 setTimeout(() => editor.resize(), 300);
             });
 
@@ -350,7 +352,8 @@ OPIS SZABLONU DO WYGENEROWANIA:
                 html = html.replace(/\{\{current_year\}\}/g, new Date().getFullYear());
                 html = html.replace(/\{\{color_primary\}\}/g, `#f97316`);
                 html = html.replace(/\{\{color_secondary\}\}/g, `#1e3a8a`);
-
+                
+                // ZWRACAMY CDN TAILWINDA SPECJALNIE DLA PODGLĄDU NA ŻYWO
                 if (!html.includes("<head") && !html.includes("tailwindcss")) {
                     html = `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"><\/script></head><body class="antialiased text-gray-800">` + html + `</body></html>`;
                 }

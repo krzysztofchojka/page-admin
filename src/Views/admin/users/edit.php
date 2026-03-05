@@ -5,6 +5,7 @@
     </div>
 
     <form action="/admin/users/update" method="POST" class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 border-t-4 border-t-blue-600">
+    <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
         <input type="hidden" name="id" value="<?= $user['id'] ?>">
 
         <div class="mb-5">

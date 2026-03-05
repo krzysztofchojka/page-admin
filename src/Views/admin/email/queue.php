@@ -12,6 +12,7 @@
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
         <h2 class="font-bold mb-4">Zaplanuj nową wysyłkę</h2>
         <form action="/admin/email/schedule" method="POST" class="flex flex-wrap md:flex-nowrap gap-4 items-end">
+        <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
             <div class="flex-1 w-full">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Szablon</label>
                 <select name="template_id" class="w-full border p-2 rounded bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" required>

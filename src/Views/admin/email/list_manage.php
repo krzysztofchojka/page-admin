@@ -12,6 +12,7 @@
 
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
         <form action="/admin/email/lists/add-subscriber" method="POST" class="flex flex-wrap md:flex-nowrap gap-4 items-end">
+        <input type="hidden" name="csrf_token" value="<?= \CMS\Core\Session::generateCsrfToken() ?>">
             <input type="hidden" name="list_id" value="<?= $list['id'] ?>">
             <div class="flex-1 w-full">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Imię (Opcjonalnie)</label>
