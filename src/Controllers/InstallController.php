@@ -48,6 +48,16 @@ class InstallController {
                 ]);
                 echo "Użytkownik 'admin' utworzony.<br>";
             }
+
+            $checkUser = $db->query("SELECT id FROM pa_users WHERE uname = 'user'");
+            if (!$checkUser->fetch()) {
+                $userPass = password_hash('user123', PASSWORD_DEFAULT);
+                $db->query("INSERT INTO pa_users (uname, pass, email, admin, pass_expired) VALUES (:uname, :pass, :email, 0, 0)", [
+                    'uname' => 'user', 
+                    'pass' => $userPass, 
+                    'email' => 'user@localhost'
+                ]);
+            }
             
             echo "<hr><strong style='color:green'>Instalacja bazy kompletna!</strong>";
         } catch (\Exception $e) {
