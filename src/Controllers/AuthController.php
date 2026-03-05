@@ -221,7 +221,6 @@ public function loginForm() {
 
     public function changePasswordForm() {
         Session::init();
-        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         
         // Sprawdzenie, czy użytkownik ma uprawnienia do przebywania na tej stronie
         if (!Session::get('temp_user_id')) {

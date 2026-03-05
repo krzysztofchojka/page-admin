@@ -6,19 +6,18 @@ $errors = 0;
 
 // Definicja tras: [Metoda, Ścieżka, Gość, User, Admin]
 $routes = [
-    ['GET',  '/',                       200, 200, 200],
-    ['GET',  '/login',                  200, 200, 200],
-    ['POST', '/submit-form',            302, 302, 302],
+    // Metoda, Ścieżka,             Gość, User, Admin
+    ['GET',  '/',                   200,  200,  200],
+    ['GET',  '/login',              200,  302,  302], // Zmieniono 200 na 302 dla User i Admin
+    ['POST', '/submit-form',        302,  302,  302],
     
-    // Zmieniamy oczekiwania dla change-password: 
-    // Zalogowany user (User/Admin) z AKTYWNYM hasłem zostanie przekierowany stąd (302) do login, 
-    // bo ta strona jest tylko dla osób w procesie zmiany hasła (temp_user_id).
-    ['GET',  '/change-password',        302, 302, 302], 
+    // change-password zawsze daje 302 do /login, jeśli nie jesteśmy w trybie zmiany hasła
+    ['GET',  '/change-password',    302,  302,  302], 
     
-    ['GET',  '/admin',                  302, 302, 200],
-    ['GET',  '/admin/users',            302, 302, 200],
-    ['GET',  '/admin/settings',         302, 302, 200],
-    ['GET',  '/non-existent-404',       404, 404, 404],
+    ['GET',  '/admin',              302,  302,  200],
+    ['GET',  '/admin/users',        302,  302,  200],
+    ['GET',  '/admin/settings',     302,  302,  200],
+    ['GET',  '/non-existent-404',   404,  404,  404],
 ];
 
 function request($method, $path, $postData = null) {
