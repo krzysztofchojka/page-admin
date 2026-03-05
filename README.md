@@ -1,3 +1,5 @@
+[![CMS CI/CD Tests](https://github.com/krzysztofchojka/page-admin/actions/workflows/ci.yml/badge.svg)](https://github.com/krzysztofchojka/page-admin/actions/workflows/ci.yml)
+
 # page-admin 2.0
 
 Lekki, autorski system CMS oparty na architekturze **MVC**.  
