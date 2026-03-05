@@ -75,8 +75,8 @@ $router->post('/form-autosave', [FormController::class, 'autosave']);
 // =========================================================================
 // TRASY ZALOGOWANEGO UŻYTKOWNIKA (Wymagają AuthMiddleware)
 // =========================================================================
-$router->get('/change-password', [AuthController::class, 'changePasswordForm'], [AuthMiddleware::class]);
-$router->post('/change-password', [AuthController::class, 'changePassword'], [AuthMiddleware::class]);
+$router->get('/change-password', [AuthController::class, 'changePasswordForm']);
+$router->post('/change-password', [AuthController::class, 'changePassword']);
 
 
 // =========================================================================

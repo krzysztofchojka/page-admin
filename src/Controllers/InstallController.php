@@ -41,7 +41,7 @@ class InstallController {
             $check = $db->query("SELECT id FROM pa_users WHERE uname = 'admin'");
             if (!$check->fetch()) {
                 $password = password_hash('admin', PASSWORD_DEFAULT);
-                $db->query("INSERT INTO pa_users (uname, pass, email, admin, pass_expired) VALUES (:uname, :pass, :email, 1, 1)", [
+                $db->query("INSERT INTO pa_users (uname, pass, email, admin, pass_expired) VALUES (:uname, :pass, :email, 1, 0)", [
                     'uname' => 'admin', 
                     'pass' => $password, 
                     'email' => 'admin@localhost'
