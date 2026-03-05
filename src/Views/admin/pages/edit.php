@@ -35,14 +35,13 @@
   box-sizing: border-box;
   border: 1px solid #ccc;
 }
-        /* To wymusi czarny kolor dla każdego elementu wewnątrz bloku edytora, 
-   niezależnie od tego, co mówi szablon */
-.block-item, 
-.block-item *, 
+/* Wymuszenie czarnego koloru, ale z BEZWZGLĘDNYM WYKLUCZENIEM edytora Ace */
+.block-item *:not(.ace_editor):not(.ace_editor *), 
 .ql-editor, 
-.ql-editor * {
-    color: #1a1a1a !important;
+.ql-editor * { 
+    color: #1a1a1a !important; 
 }
+.block-item span, .block-item label { color: inherit !important; }
 
 /* Naprawa koloru ikon i małych napisów technicznych w edytorze, 
    które mogły zniknąć */
@@ -144,6 +143,7 @@
 
     <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Złożone Treści</div>
     <div class="sidebar-block border bg-white hover:border-pink-500 hover:bg-pink-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="gallery"><span class="text-lg text-pink-500">📷</span>Galeria</div>
+    <div class="sidebar-block border bg-white hover:border-purple-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="posts_grid"><span class="text-lg text-purple-500">📰</span>Posty / Blog</div>
     <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="carousel"><span class="text-lg text-blue-400">🎠</span>Karuzela</div>
     <div class="sidebar-block border bg-white hover:border-orange-500 hover:bg-orange-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="image_cards"><span class="text-lg text-orange-500">🗂</span>Siatka Kart</div>
     <div class="sidebar-block border bg-white hover:border-teal-500 hover:bg-teal-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="form"><span class="text-lg text-teal-500">📝</span>Formularz</div>
@@ -184,7 +184,8 @@
             pageId: <?= $page['id'] ?>,
             savedContent: JSON.parse(decodeURIComponent('<?= rawurlencode($page['contents'] ?: '[]') ?>')),
             availableForms: <?= json_encode($forms ?? []) ?>,
-            availableGalleries: <?= json_encode($galleries ?? []) ?>
+            availableGalleries: <?= json_encode($galleries ?? []) ?>,
+            availableCategories: <?= json_encode($postCategories ?? []) ?> // <-- DODANA ZMIENNA
         };
     </script>
     <script src="<?= \CMS\Helpers\Asset::url('/assets/js/admin/page-builder.js') ?>"></script>

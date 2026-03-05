@@ -39,6 +39,9 @@
             <a href="/admin/menu" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>🍔</span> <span class="menu-text">Menu Strony</span>
             </a>
+            <a href="/admin/posts" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
+                <span>📰</span> <span class="menu-text">Wpisy (Blog)</span>
+            </a>
             <a href="/admin/users" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>👥</span> <span class="menu-text">Użytkownicy</span>
             </a>

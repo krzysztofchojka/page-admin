@@ -2,11 +2,14 @@ const pageId = window.CMS_CONFIG.pageId;
 const savedContent = window.CMS_CONFIG.savedContent;
 const availableForms = window.CMS_CONFIG.availableForms;
 const availableGalleries = window.CMS_CONFIG.availableGalleries;
+const availableCategories = window.CMS_CONFIG.availableCategories || [];
 
-const blockIcons = { text: 'T', image: '🖼', video: '▶️', button: '🔘', divider: '➖', quote: '❝', columns_2: '◫', columns_3: '☰', banner: '🏔', image_cards: '🗂', carousel: '🎠', accordion: '⇕', map: '📍', countdown: '⏳', table: '🗄️', flight: '✈️', form: '📝', gallery: '📷', raw_html: '</>', system_login: '🔐', system_register: '📝', system_change_password: '🔑', system_lockdown: '🚧' };
-const blockNames = { text: 'Tekst', image: 'Obrazek', video: 'Wideo', button: 'Przycisk', divider: 'Odstęp', quote: 'Cytat', columns_2: '2 Kolumny', columns_3: '3 Kolumny', banner: 'Baner', image_cards: 'Siatka Kart', carousel: 'Karuzela', accordion: 'Akordeon', map: 'Mapa', countdown: 'Odliczanie', table: 'Tabela', flight: 'Loty', form: 'Formularz', gallery: 'Galeria', raw_html: 'HTML', system_login: 'Logowanie', system_register: 'Rejestracja', system_change_password: 'Zmień Hasło', system_lockdown: 'Lockdown' };
+// Definicja obrazka zastępczego
+const defaultPlaceholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect width='100%25' height='100%25' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239ca3af'%3EWybierz lub wgraj obraz%3C/text%3E%3C/svg%3E";
 
-const quillRegistry = {};
+const blockIcons = { text: 'T', image: '🖼', video: '▶️', button: '🔘', divider: '➖', quote: '❝', columns_2: '◫', columns_3: '☰', banner: '🏔', image_cards: '🗂', carousel: '🎠', accordion: '⇕', map: '📍', countdown: '⏳', table: '🗄️', flight: '✈️', form: '📝', gallery: '📷', raw_html: '</>', system_login: '🔐', system_register: '📝', system_change_password: '🔑', system_lockdown: '🚧', posts_grid: '📰' };
+const blockNames = { text: 'Tekst', image: 'Obrazek', video: 'Wideo', button: 'Przycisk', divider: 'Odstęp', quote: 'Cytat', columns_2: '2 Kolumny', columns_3: '3 Kolumny', banner: 'Baner', image_cards: 'Siatka Kart', carousel: 'Karuzela', accordion: 'Akordeon', map: 'Mapa', countdown: 'Odliczanie', table: 'Tabela', flight: 'Loty', form: 'Formularz', gallery: 'Galeria', raw_html: 'HTML', system_login: 'Logowanie', system_register: 'Rejestracja', system_change_password: 'Zmień Hasło', system_lockdown: 'Lockdown', posts_grid: 'Posty' };
+
 let navSortables = [];
 
 // ==========================================
@@ -15,15 +18,14 @@ let navSortables = [];
 
 function updateNavigator() {
     const navTree = document.getElementById('navigator-tree');
+    if (!navTree) return; // Zabezpieczenie dla edytora postów (gdzie nie ma nawigatora)
+    
     navTree.innerHTML = '';
     
-    // Szukamy TYLKO głównych stref w edytorze (odfiltrowujemy te zagnieżdżone wewnątrz klocków .block-item)
-    // To naprawia błąd podwójnego renderowania zawartości kolumn!
     const rootZones = Array.from(document.querySelectorAll('.drop-zone[data-zone-uid]')).filter(z => !z.closest('.block-item'));
 
     if (rootZones.length > 0) {
         rootZones.forEach(zone => {
-            // Nagłówek strefy w nawigatorze
             if(rootZones.length > 1) {
                 const zoneTitle = document.createElement('div');
                 zoneTitle.className = "text-[10px] font-bold uppercase text-gray-500 mt-3 mb-1 pl-1";
@@ -31,8 +33,6 @@ function updateNavigator() {
                 navTree.appendChild(zoneTitle);
             }
 
-            // Każda główna strefa dostaje własną listę <ul> z poprawnym targetem (data-ref-zone)
-            // To naprawia przeciąganie elementów na głównym poziomie nawigatora!
             const ul = document.createElement('ul');
             ul.className = 'nav-drop-zone min-h-[30px] pb-4 space-y-1';
             ul.dataset.refZone = zone.dataset.zoneUid;
@@ -41,7 +41,6 @@ function updateNavigator() {
             navTree.appendChild(ul);
         });
     } else {
-        // Fallback dla bardzo starych wersji bez jakichkolwiek atrybutów
         const editor = document.getElementById('editor');
         if(editor) {
             const ul = document.createElement('ul');
@@ -70,7 +69,7 @@ function buildNavTree(domContainer, navContainer) {
         li.dataset.refUid = uid;
 
         let html = `
-            <div class="flex items-center justify-between p-2 hover:bg-blue-50 transition cursor-pointer border border-transparent hover:border-blue-200 rounded" onclick="scrollToBlock('${uid}')">
+            <div class="flex items-center justify-between p-2 hover:bg-blue-50 transition cursor-pointer border border-transparent hover:border-blue-200 rounded" onclick="window.scrollToBlock('${uid}')">
                 <div class="flex items-center gap-2 pointer-events-none">
                     <span class="text-gray-400 w-5 text-center text-lg">${icon}</span>
                     <span class="text-gray-700 font-bold text-xs truncate max-w-[140px]">${name}</span>
@@ -119,7 +118,6 @@ function initNavSortables() {
     navSortables.forEach(s => s.destroy());
     navSortables = [];
     
-    // Szukamy już tylko poprawnie oznaczonych stref .nav-drop-zone
     document.querySelectorAll('.nav-drop-zone').forEach(el => {
         navSortables.push(Sortable.create(el, {
             group: 'navigator',
@@ -136,9 +134,7 @@ function initNavSortables() {
                 const refUid = itemEl.dataset.refUid;
                 const refZoneUid = toList.dataset.refZone; 
                 
-                // Znajdź prawdziwy blok w edytorze
                 const realBlock = document.querySelector(`[data-uid="${refUid}"]`);
-                // Znajdź prawdziwą strefę w edytorze
                 const realZone = document.querySelector(`[data-zone-uid="${refZoneUid}"]`);
 
                 if (realBlock && realZone) {
@@ -155,12 +151,13 @@ function initNavSortables() {
     });
 }
 
-function scrollToBlock(uid) {
+window.scrollToBlock = function(uid) {
     const el = document.querySelector(`[data-uid="${uid}"]`);
-    if (el) {
+    const scrollContainer = document.getElementById('main-editor-scroll');
+    if (el && scrollContainer) {
         document.querySelectorAll('.ring-4').forEach(e => e.classList.remove('ring-4', 'ring-blue-500', 'ring-offset-2', 'z-50'));
-        const y = el.getBoundingClientRect().top + document.getElementById('main-editor-scroll').scrollTop - 40;
-        document.getElementById('main-editor-scroll').scrollTo({top: y-80, behavior: 'smooth'});
+        const y = el.getBoundingClientRect().top + scrollContainer.scrollTop - 40;
+        scrollContainer.scrollTo({top: y-80, behavior: 'smooth'});
         el.classList.add('ring-4', 'ring-blue-500', 'ring-offset-2', 'z-50');
         setTimeout(() => el.classList.remove('ring-4', 'ring-blue-500', 'ring-offset-2', 'z-50'), 1500);
     }
@@ -203,18 +200,17 @@ function initSortable(el) {
 
     el.addEventListener('click', (e) => {
         if(e.target === el) {
-            highlightContainer(el);
-            e.stopPropagation();
+            window.setActive(el, e);
         }
     });
 }
 
-function highlightContainer(el) {
+window.setActive = function(el, e) {
     document.querySelectorAll('.ring-2').forEach(d => d.classList.remove('ring-2', 'ring-blue-300'));
-    if(!el.id.includes('editor')) el.classList.add('ring-2', 'ring-blue-300');
+    if(el && !el.id.includes('editor')) el.classList.add('ring-2', 'ring-blue-300');
+    if(e) e.stopPropagation();
 }
 
-// Rekurencyjne renderowanie bloków
 function renderRecursive(blocks, container) {
     if (!blocks || !container) return;
     
@@ -250,50 +246,46 @@ function renderRecursive(blocks, container) {
 // ==========================================
 // 2. RENDEROWANIE BLOKÓW (HTML/JS)
 // ==========================================
-// 1. Register style-based alignment (Optional: Use this if you want inline styles)
-// 1. Setup Attributors (Run once at top of file)
-const Size = Quill.import('attributors/style/size');
-Size.whitelist = ['12px', '16px', '20px', '24px', '32px'];
-Quill.register(Size, true);
-
-const Align = Quill.import('attributors/style/align');
-Quill.register(Align, true);
+const Size = typeof Quill !== 'undefined' ? Quill.import('attributors/style/size') : null;
+if(Size) {
+    Size.whitelist = ['12px', '16px', '20px', '24px', '32px'];
+    Quill.register(Size, true);
+}
+const Align = typeof Quill !== 'undefined' ? Quill.import('attributors/style/align') : null;
+if(Align) Quill.register(Align, true);
 
 function initQuill(element, content) {
-    const id = 'quill_' + Math.random().toString(36).substr(2, 9);
-    element.id = id;
-
-    // Create the hidden textarea for HTML editing
+    if (!element) return;
+    
     const container = element.parentElement;
     const txtArea = document.createElement('textarea');
     txtArea.className = 'quill-source-area';
     txtArea.style.display = 'none';
     container.appendChild(txtArea);
 
-    const quill = new Quill('#' + id, {
+    // Zamiast szukać po ID, przekazujemy bezpośrednio element DOM!
+    const quill = new Quill(element, {
         theme: 'snow',
         modules: {
             toolbar: {
                 container: [
                     [{ 'header': [1, 2, 3, false] }],
-                    [{ 'size': Size.whitelist }],
+                    [{ 'size': Size ? Size.whitelist : [] }],
                     [{ 'color': [] }, { 'background': [] }],
                     ['bold', 'italic', 'underline', 'strike'],
                     [{ 'align': [] }],
                     [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    ['link', 'code-block'], // 'code-block' acts as our HTML toggle
+                    ['link', 'code-block'],
                     ['clean']
                 ],
                 handlers: {
                     'code-block': function() {
                         const isSourceMode = txtArea.style.display === 'block';
                         if (!isSourceMode) {
-                            // Moving to Source: Show HTML
                             txtArea.value = quill.root.innerHTML;
                             quill.container.style.display = 'none';
                             txtArea.style.display = 'block';
                         } else {
-                            // Moving to Visual: Save HTML
                             quill.root.innerHTML = txtArea.value;
                             txtArea.style.display = 'none';
                             quill.container.style.display = 'block';
@@ -305,7 +297,8 @@ function initQuill(element, content) {
     });
 
     if (content) quill.root.innerHTML = content;
-    quillRegistry[id] = quill;
+    // Zapisujemy instancję bezpośrednio w elemencie DOM, żeby ułatwić pobieranie
+    element.__quill = quill; 
 }
 
 function renderBlock(type, content = '', blockSettings = null) {
@@ -320,8 +313,8 @@ function renderBlock(type, content = '', blockSettings = null) {
     const controls = `
     <div class="absolute -top-3 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-50">
         <span class="drag-handle text-gray-600 hover:text-blue-600 p-1.5 bg-gray-100 border border-gray-300 rounded shadow cursor-move" title="Przeciągnij (Drag & Drop)">✥ Przesuń</span>
-        <button onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')" class="text-gray-600 hover:text-gray-800 p-1.5 bg-gray-100 border border-gray-300 rounded shadow" title="Ustawienia (ID, Klasy CSS)">⚙️</button>
-        <button onclick="if(confirm('Na pewno usunąć ten blok?')) { this.closest('.block-item').remove(); updateNavigator(); }" class="text-red-500 hover:text-red-700 p-1.5 bg-gray-100 border border-gray-300 rounded shadow" title="Usuń blok">🗑</button>
+        <button type="button" onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')" class="text-gray-600 hover:text-gray-800 p-1.5 bg-gray-100 border border-gray-300 rounded shadow" title="Ustawienia (ID, Klasy CSS)">⚙️</button>
+        <button type="button" onclick="if(confirm('Na pewno usunąć ten blok?')) { this.closest('.block-item').remove(); window.updateNavigator(); }" class="text-red-500 hover:text-red-700 p-1.5 bg-gray-100 border border-gray-300 rounded shadow" title="Usuń blok">🗑</button>
     </div>
     <div class="block-settings-panel hidden bg-blue-50 p-4 mt-6 mb-4 border border-blue-200 rounded text-sm shadow-inner">
         <div class="grid grid-cols-3 gap-4">
@@ -338,41 +331,71 @@ function renderBlock(type, content = '', blockSettings = null) {
         <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-blue-500 uppercase">T Tekst / Edytor Wizualny</span></div>
         <div class="bg-gray-50 border rounded-lg no-drag"><div class="quill-editor"></div></div>`;
     } 
+    else if (type === 'posts_grid') {
+        div.className += " border-2 border-dashed border-purple-200 bg-purple-50/20";
+        const data = typeof content === 'object' && content !== null ? content : { limit: 6, category: '' };
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-purple-600 uppercase">📰 Siatka Postów (Blog)</span></div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Kategoria</label>
+                <select class="p-category w-full border p-2 rounded bg-white focus:ring-2 focus:ring-purple-500">
+                    ${buildOptions(availableCategories, data.category)}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Limit postów do wyświetlenia</label>
+                <input type="number" class="p-limit w-full border p-2 rounded bg-white focus:ring-2 focus:ring-purple-500" placeholder="6" value="${data.limit || 6}">
+            </div>
+        </div>`;
+    }
     else if (type === 'raw_html') {
-        const aceId = 'ace_' + Math.random().toString(36).substr(2, 9);
-        const safeContent = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safeContent = (typeof content === 'string' ? content : '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         
         innerHTML = `
         <div class="bg-gray-900 rounded p-3 no-drag border border-gray-700">
             <div class="flex justify-between items-center mb-2">
                 <label class="text-xs font-mono text-gray-400">&lt;/&gt; ZAAWANSOWANY KOD HTML</label>
-                <button type="button" onclick="let el = document.getElementById('${aceId}'); el.style.height = (el.style.height === '500px' ? '150px' : '500px'); ace.edit('${aceId}').resize();" class="text-[10px] bg-gray-700 text-gray-300 px-2 py-1 rounded hover:text-white border border-gray-600 transition shadow">Rozszerz / Zwiń okno</button>
+                <button type="button" class="toggle-ace-btn text-[10px] bg-gray-700 text-gray-300 px-2 py-1 rounded hover:text-white border border-gray-600 transition shadow">Rozszerz / Zwiń okno</button>
             </div>
-            <div id="${aceId}" class="w-full rounded border border-gray-800" style="height: 150px; transition: height 0.3s;"></div>
+            <div class="ace-editor-container w-full rounded border border-gray-800" style="height: 150px; transition: height 0.3s;"></div>
             <textarea class="block-content hidden">${safeContent}</textarea>
         </div>`;
         
+        // Zamiast szukać po ID używamy referencji bezpośredniej querySelector na wygenerowanym kontenerze
         setTimeout(() => {
-            const editor = ace.edit(aceId);
-            editor.setTheme("ace/theme/monokai");
-            editor.session.setMode("ace/mode/html");
-            editor.setOptions({ fontSize: "13px", showPrintMargin: false, wrap: true });
+            const aceContainer = div.querySelector('.ace-editor-container');
+            const hiddenTextarea = div.querySelector('.block-content');
+            const toggleBtn = div.querySelector('.toggle-ace-btn');
             
-            const hiddenTextarea = document.querySelector(`#${aceId}`).nextElementSibling;
-            editor.session.setValue(hiddenTextarea.value);
-            
-            editor.session.on('change', () => {
-                hiddenTextarea.value = editor.getValue();
-            });
-        }, 50);
+            if(aceContainer && hiddenTextarea && typeof ace !== 'undefined') {
+                const editor = ace.edit(aceContainer);
+                editor.setTheme("ace/theme/monokai");
+                editor.session.setMode("ace/mode/html");
+                editor.setOptions({ fontSize: "13px", showPrintMargin: false, wrap: true });
+                
+                editor.session.setValue(hiddenTextarea.value);
+                
+                editor.session.on('change', () => {
+                    hiddenTextarea.value = editor.getValue();
+                });
+                
+                if (toggleBtn) {
+                    toggleBtn.onclick = () => {
+                        aceContainer.style.height = (aceContainer.style.height === '500px' ? '150px' : '500px');
+                        setTimeout(() => editor.resize(), 300);
+                    };
+                }
+            }
+        }, 100);
     }
     else if (type === 'columns_2') {
         div.className += " border-2 border-dashed border-indigo-200 bg-indigo-50/20";
         innerHTML = `
         <div class="flex gap-2 mb-3"><span class="text-xs font-bold text-indigo-500 uppercase tracking-wider">◫ Układ: 2 Kolumny</span></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="col-left drop-zone bg-white border border-indigo-100 rounded-lg p-4 min-h-[120px]" onclick="setActive(this, event)"></div>
-            <div class="col-right drop-zone bg-white border border-indigo-100 rounded-lg p-4 min-h-[120px]" onclick="setActive(this, event)"></div>
+            <div class="col-left drop-zone bg-white border border-indigo-100 rounded-lg p-4 min-h-[120px]"></div>
+            <div class="col-right drop-zone bg-white border border-indigo-100 rounded-lg p-4 min-h-[120px]"></div>
         </div>`;
         setTimeout(() => {
             initSortable(div.querySelector('.col-left'));
@@ -384,9 +407,9 @@ function renderBlock(type, content = '', blockSettings = null) {
         innerHTML = `
         <div class="flex gap-2 mb-3"><span class="text-xs font-bold text-emerald-500 uppercase tracking-wider">☰ Układ: 3 Kolumny</span></div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="col-left drop-zone bg-white border border-emerald-100 rounded-lg p-4 min-h-[120px]" onclick="setActive(this, event)"></div>
-            <div class="col-center drop-zone bg-white border border-emerald-100 rounded-lg p-4 min-h-[120px]" onclick="setActive(this, event)"></div>
-            <div class="col-right drop-zone bg-white border border-emerald-100 rounded-lg p-4 min-h-[120px]" onclick="setActive(this, event)"></div>
+            <div class="col-left drop-zone bg-white border border-emerald-100 rounded-lg p-4 min-h-[120px]"></div>
+            <div class="col-center drop-zone bg-white border border-emerald-100 rounded-lg p-4 min-h-[120px]"></div>
+            <div class="col-right drop-zone bg-white border border-emerald-100 rounded-lg p-4 min-h-[120px]"></div>
         </div>`;
         setTimeout(() => {
             initSortable(div.querySelector('.col-left'));
@@ -395,19 +418,20 @@ function renderBlock(type, content = '', blockSettings = null) {
         }, 0);
     }
     else if (type === 'image') {
-        const hasImg = content && content.length > 5;
+        const hasImg = typeof content === 'string' && content.length > 5;
+        const imgValue = hasImg ? content : '';
         const uniqueId = 'img_in_' + Math.random().toString(36).substr(2, 9);
         innerHTML = `
         <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-green-500 uppercase">🖼 Pojedynczy Obrazek</span></div>
         <div class="mb-3">
             <div class="flex w-full mb-2">
-                <input type="text" id="${uniqueId}" class="block-content w-full border border-r-0 p-2 text-sm rounded-l bg-gray-50 focus:bg-white focus:outline-none" placeholder="Adres URL obrazka..." value="${content}" oninput="this.closest('.block-item').querySelector('.img-preview').src = this.value || 'https://via.placeholder.com/800x400?text=Wybierz+lub+wgraj+obraz'">
-                <button type="button" onclick="openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media">📂</button>
-                <button type="button" onclick="triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik">⬆️</button>
+                <input type="text" id="${uniqueId}" class="block-content w-full border border-r-0 p-2 text-sm rounded-l bg-gray-50 focus:bg-white focus:outline-none" placeholder="Adres URL obrazka..." value="${imgValue}" oninput="this.closest('.block-item').querySelector('.img-preview').src = this.value || defaultPlaceholder">
+                <button type="button" onclick="window.openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media">📂</button>
+                <button type="button" onclick="window.triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik">⬆️</button>
             </div>
         </div>
         <div class="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center min-h-[100px]">
-            <img src="${hasImg ? content : 'https://via.placeholder.com/800x400?text=Wybierz+lub+wgraj+obraz'}" class="img-preview w-full object-contain max-h-[400px]">
+            <img src="${hasImg ? imgValue : defaultPlaceholder}" class="img-preview w-full object-contain max-h-[400px]">
         </div>`;
     }
     else if (type === 'linked_image') {
@@ -423,7 +447,7 @@ function renderBlock(type, content = '', blockSettings = null) {
         innerHTML = `
         <div class="bg-teal-50 border border-teal-200 p-4 rounded-lg text-center">
             <label class="block text-sm font-bold text-teal-800 mb-2">📝 Wybierz Formularz</label>
-            <select onchange="this.parentElement.dataset.val = this.value" class="block-select border rounded p-2 w-full text-center font-bold bg-white shadow-sm focus:ring-2 focus:ring-teal-500">
+            <select class="block-select border rounded p-2 w-full text-center font-bold bg-white shadow-sm focus:ring-2 focus:ring-teal-500">
                 ${buildOptions(availableForms, content)}
             </select>
         </div>`;
@@ -432,7 +456,7 @@ function renderBlock(type, content = '', blockSettings = null) {
         innerHTML = `
         <div class="bg-pink-50 border border-pink-200 p-4 rounded-lg text-center">
             <label class="block text-sm font-bold text-pink-800 mb-2">📷 Wybierz Galerię</label>
-            <select onchange="this.parentElement.dataset.val = this.value" class="block-select border rounded p-2 w-full text-center font-bold bg-white shadow-sm focus:ring-2 focus:ring-pink-500">
+            <select class="block-select border rounded p-2 w-full text-center font-bold bg-white shadow-sm focus:ring-2 focus:ring-pink-500">
                 ${buildOptions(availableGalleries, content)}
             </select>
         </div>`;
@@ -474,8 +498,8 @@ function renderBlock(type, content = '', blockSettings = null) {
         <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-bold text-blue-500 uppercase">🗄️ Tabela Danych</span>
             <div class="flex gap-2">
-                <button type="button" onclick="toggleEditor(this, 'visual')" class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded font-bold">Wizualny</button>
-                <button type="button" onclick="toggleEditor(this, 'raw')" class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded font-bold">Surowy (Excel)</button>
+                <button type="button" onclick="window.toggleEditor(this, 'visual')" class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded font-bold">Wizualny</button>
+                <button type="button" onclick="window.toggleEditor(this, 'raw')" class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded font-bold">Surowy (Excel)</button>
             </div>
         </div>
         <div class="editor-visual overflow-x-auto bg-gray-50 p-2 rounded border">
@@ -483,15 +507,15 @@ function renderBlock(type, content = '', blockSettings = null) {
                 <tbody class="visual-table-body"></tbody>
             </table>
             <div class="mt-2 flex gap-2">
-                <button type="button" onclick="addTableRow(this)" class="text-xs bg-white border px-3 py-1 rounded shadow-sm font-bold">+ Wiersz</button>
-                <button type="button" onclick="addTableCol(this)" class="text-xs bg-white border px-3 py-1 rounded shadow-sm font-bold">+ Kolumna</button>
+                <button type="button" onclick="window.addTableRow(this)" class="text-xs bg-white border px-3 py-1 rounded shadow-sm font-bold">+ Wiersz</button>
+                <button type="button" onclick="window.addTableCol(this)" class="text-xs bg-white border px-3 py-1 rounded shadow-sm font-bold">+ Kolumna</button>
             </div>
         </div>
         <div class="editor-raw hidden">
             <label class="block text-xs text-gray-500 mb-1">Wklej tabele prosto z Excela (wartości oddzielone tabulatorem)</label>
-            <textarea class="table-data w-full h-32 border p-2 text-sm rounded whitespace-pre font-mono focus:outline-none focus:ring-1 focus:ring-blue-500" oninput="syncTableRawToVisual(this.closest('.block-item'))" placeholder="Kolumna1\\tKolumna2\\nWartość1\\tWartość2">${content || 'Nagłówek 1\\tNagłówek 2\\nWartość A\\tWartość B'}</textarea>
+            <textarea class="table-data w-full h-32 border p-2 text-sm rounded whitespace-pre font-mono focus:outline-none focus:ring-1 focus:ring-blue-500" oninput="window.syncTableRawToVisual(this.closest('.block-item'))" placeholder="Kolumna1\\tKolumna2\\nWartość1\\tWartość2">${content || 'Nagłówek 1\\tNagłówek 2\\nWartość A\\tWartość B'}</textarea>
         </div>`;
-        setTimeout(() => syncTableRawToVisual(div), 0);
+        setTimeout(() => window.syncTableRawToVisual(div), 0);
     }
     else if (type === 'flight') {
         const data = typeof content === 'object' ? content : { html: content, state: [] };
@@ -501,8 +525,8 @@ function renderBlock(type, content = '', blockSettings = null) {
         <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-bold text-sky-500 uppercase">✈️ Przeloty</span>
             <div class="flex gap-2">
-                <button type="button" onclick="toggleEditor(this, 'visual')" class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded font-bold">Kreator</button>
-                <button type="button" onclick="toggleEditor(this, 'raw')" class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded font-bold">KOD HTML</button>
+                <button type="button" onclick="window.toggleEditor(this, 'visual')" class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded font-bold">Kreator</button>
+                <button type="button" onclick="window.toggleEditor(this, 'raw')" class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded font-bold">KOD HTML</button>
             </div>
         </div>
         <input type="hidden" class="flight-state" value="${stateJson}">
@@ -511,13 +535,13 @@ function renderBlock(type, content = '', blockSettings = null) {
             <div class="bg-white p-3 rounded border shadow-sm mt-4">
                 <span class="text-xs font-bold text-gray-500 block mb-2">Stopka widżetu (Podsumowanie)</span>
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="text" class="flight-f-arr w-full border p-1.5 text-xs rounded" placeholder="Przylot: wt., 30 wrz 2025" oninput="syncFlightVisualToRaw(this.closest('.block-item'))">
-                    <input type="text" class="flight-f-time w-full border p-1.5 text-xs rounded" placeholder="Czas trwania: 5 godz. 40 min" oninput="syncFlightVisualToRaw(this.closest('.block-item'))">
+                    <input type="text" class="flight-f-arr w-full border p-1.5 text-xs rounded" placeholder="Przylot: wt., 30 wrz 2025" oninput="window.syncFlightVisualToRaw(this.closest('.block-item'))">
+                    <input type="text" class="flight-f-time w-full border p-1.5 text-xs rounded" placeholder="Czas trwania: 5 godz. 40 min" oninput="window.syncFlightVisualToRaw(this.closest('.block-item'))">
                 </div>
             </div>
             <div class="flex gap-2 mt-4">
-                <button type="button" onclick="addFlightSegment(this, 'flight')" class="text-xs bg-white border border-sky-300 text-sky-700 px-4 py-2 rounded shadow-sm font-bold hover:bg-sky-100">✈️ Dodaj Lot</button>
-                <button type="button" onclick="addFlightSegment(this, 'connection')" class="text-xs bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded shadow-sm font-bold hover:bg-indigo-100">⏱ Dodaj Przesiadkę</button>
+                <button type="button" onclick="window.addFlightSegment(this, 'flight')" class="text-xs bg-white border border-sky-300 text-sky-700 px-4 py-2 rounded shadow-sm font-bold hover:bg-sky-100">✈️ Dodaj Lot</button>
+                <button type="button" onclick="window.addFlightSegment(this, 'connection')" class="text-xs bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded shadow-sm font-bold hover:bg-indigo-100">⏱ Dodaj Przesiadkę</button>
             </div>
         </div>
         <div class="editor-raw hidden">
@@ -535,7 +559,7 @@ function renderBlock(type, content = '', blockSettings = null) {
                 cardsHTML += `
                 <div class="image-card border border-gray-300 bg-white p-3 mb-2 rounded shadow-sm relative group grid grid-cols-2 gap-2">
                     <button type="button" onclick="this.closest('.image-card').querySelector('.item-settings-panel').classList.toggle('hidden')" class="absolute -top-2 right-6 bg-gray-500 hover:bg-gray-700 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10" title="Ustawienia kafelka">⚙️</button>
-                    <button type="button" onclick="this.closest('.image-card').remove(); updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10">X</button>
+                    <button type="button" onclick="this.closest('.image-card').remove(); window.updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10">X</button>
                     <div class="col-span-2">${imgInputTpl('card-img', 'URL Zdjęcia', card.img)}</div>
                     <input type="text" class="card-title w-full border p-2 text-sm rounded font-bold text-orange-600" placeholder="Tytuł" value="${card.title || ''}">
                     <input type="text" class="card-subtitle w-full border p-2 text-sm rounded" placeholder="Podtytuł" value="${card.subtitle || ''}">
@@ -549,7 +573,7 @@ function renderBlock(type, content = '', blockSettings = null) {
         <div class="cards-container min-h-[5px] mb-3 grid grid-cols-1 md:grid-cols-2 gap-4">
             ${cardsHTML}
         </div>
-        <button type="button" onclick="addImageCard(this)" class="bg-white border-2 border-orange-500 text-orange-600 hover:bg-orange-50 text-sm px-4 py-2 rounded-lg font-bold w-full transition">+ Dodaj Kartę</button>`;
+        <button type="button" onclick="window.addImageCard(this)" class="bg-white border-2 border-orange-500 text-orange-600 hover:bg-orange-50 text-sm px-4 py-2 rounded-lg font-bold w-full transition">+ Dodaj Kartę</button>`;
     }
     else if (type === 'carousel') {
         div.className += " border-2 border-dashed border-blue-300 bg-blue-50/30";
@@ -559,12 +583,12 @@ function renderBlock(type, content = '', blockSettings = null) {
             data.tabs.forEach((tab) => {
                 tabsHTML += `
                 <div class="carousel-tab border border-gray-200 bg-white p-3 mb-2 rounded-lg shadow-sm relative group">
-                    <button type="button" onclick="this.closest('.carousel-tab').remove(); updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10 shadow">X</button>
+                    <button type="button" onclick="this.closest('.carousel-tab').remove(); window.updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10 shadow">X</button>
                     <div class="flex gap-2 mb-2 w-full">
                         <div class="w-1/3">${imgInputTpl('tab-icon', 'Ikona/Emoji', tab.icon)}</div>
                         <input type="text" class="tab-label w-2/3 border p-2 text-sm rounded font-bold h-[38px]" placeholder="Tytuł zakładki" value="${tab.label || ''}">
                     </div>
-                    <div class="tab-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded p-4 min-h-[100px]" onclick="setActive(this, event)"></div>
+                    <div class="tab-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded p-4 min-h-[100px]"></div>
                 </div>`;
             });
         }
@@ -574,7 +598,7 @@ function renderBlock(type, content = '', blockSettings = null) {
             <label class="text-sm font-bold text-gray-700 flex items-center gap-2"><input type="checkbox" class="carousel-arrows" ${data.arrows ? 'checked' : ''}> Pokaż strzałki</label>
         </div>
         <div class="carousel-tabs-container min-h-[5px] mb-3">${tabsHTML}</div>
-        <button type="button" onclick="addCarouselTab(this)" class="bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 text-sm px-4 py-2 rounded-lg font-bold w-full transition">+ Dodaj Zakładkę / Kafelek</button>`;
+        <button type="button" onclick="window.addCarouselTab(this)" class="bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 text-sm px-4 py-2 rounded-lg font-bold w-full transition">+ Dodaj Zakładkę / Kafelek</button>`;
         setTimeout(() => {
             div.querySelectorAll('.tab-content').forEach(el => initSortable(el));
         }, 0);
@@ -648,7 +672,7 @@ function renderBlock(type, content = '', blockSettings = null) {
             </div>
             <div class="p-4 bg-white">
                 <span class="text-xs font-bold text-gray-400 block mb-2">Zagnieżdżona Treść (Przeciągnij tu Bloki):</span>
-                <div class="tab-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded min-h-[100px] p-4" onclick="setActive(this, event)"></div>
+                <div class="tab-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded min-h-[100px] p-4"></div>
             </div>
         </div>`;
         setTimeout(() => {
@@ -705,10 +729,12 @@ function renderBlock(type, content = '', blockSettings = null) {
     }
 
     div.innerHTML = controls + innerHTML;
+    
     if(type === 'form' || type === 'gallery') {
         const sel = div.querySelector('select');
         if(sel) sel.value = content || '';
     }
+    
     return div;
 }
 
@@ -716,42 +742,39 @@ function renderBlock(type, content = '', blockSettings = null) {
 // 3. EVENTY (DODAWANIE TABÓW, KART)
 // ==========================================
 
-function addCarouselTab(btn) {
+window.addCarouselTab = function(btn) {
     const container = btn.previousElementSibling;
     const div = document.createElement('div');
     div.className = "carousel-tab border border-gray-200 bg-white p-3 mb-2 rounded shadow-sm relative group";
     div.innerHTML = `
-    <button type="button" onclick="this.closest('.carousel-tab').remove(); updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10 shadow">X</button>
+    <button type="button" onclick="this.closest('.carousel-tab').remove(); window.updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10 shadow">X</button>
     <div class="flex gap-2 mb-2 w-full">
         <div class="w-1/3">${imgInputTpl('tab-icon', 'Ikona/URL')}</div>
         <input type="text" class="tab-label w-2/3 border p-2 text-sm rounded font-bold h-[38px]" placeholder="Tytuł Zakładki">
     </div>
-    <div class="tab-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded p-4 min-h-[100px]" onclick="setActive(this, event)"></div>
+    <div class="tab-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded p-4 min-h-[100px]"></div>
     `;
     container.appendChild(div);
     initSortable(div.querySelector('.tab-content'));
-    updateNavigator();
-}
-
-function setActive(el, e) {
-    document.querySelectorAll('.ring-2').forEach(d => d.classList.remove('ring-2', 'ring-blue-300'));
-    el.classList.add('ring-2', 'ring-blue-300');
-    e.stopPropagation();
-}
+    window.updateNavigator();
+};
 
 function buildOptions(list, selected) {
     let html = '<option value="">-- Wybierz z listy --</option>';
-    list.forEach(i => html += `<option value="${i.id}" ${i.id==selected?'selected':''}>${i.title}</option>`);
+    if(list) list.forEach(i => {
+        const label = i.title || i.name; // Rozpoznaje `title` (formularze) lub `name` (kategorie)
+        html += `<option value="${i.id}" ${i.id==selected?'selected':''}>${label}</option>`;
+    });
     return html;
 }
 
-function addImageCard(btn) {
+window.addImageCard = function(btn) {
     const container = btn.previousElementSibling;
     const div = document.createElement('div');
     div.className = "image-card border border-gray-300 bg-white p-3 mb-2 rounded shadow-sm relative group grid grid-cols-2 gap-2";
     div.innerHTML = `
     <button type="button" onclick="this.closest('.image-card').querySelector('.item-settings-panel').classList.toggle('hidden')" class="absolute -top-2 right-6 bg-gray-500 hover:bg-gray-700 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10" title="Ustawienia kafelka">⚙️</button>
-    <button type="button" onclick="this.closest('.image-card').remove(); updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10">X</button>
+    <button type="button" onclick="this.closest('.image-card').remove(); window.updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10">X</button>
     <div class="col-span-2">${imgInputTpl('card-img', 'URL Zdjęcia')}</div>
     <input type="text" class="card-title w-full border p-2 text-sm rounded font-bold text-orange-600" placeholder="Tytuł (np. Agenda)">
     <input type="text" class="card-subtitle w-full border p-2 text-sm rounded" placeholder="Podtytuł (np. Harmonogram)">
@@ -759,8 +782,8 @@ function addImageCard(btn) {
     ${itemSettingsTpl()}
     `;
     container.appendChild(div);
-    updateNavigator();
-}
+    window.updateNavigator();
+};
 
 function itemSettingsTpl(settings = {}) {
     return `
@@ -812,8 +835,8 @@ function getBlocksFromContainer(container) {
             children = getBlocksFromContainer(el.querySelector('.tab-content'));
         } else if (type === 'text') {
             const editorDiv = el.querySelector('.quill-editor');
-            if(editorDiv && quillRegistry[editorDiv.id]) {
-                content = quillRegistry[editorDiv.id].root.innerHTML;
+            if(editorDiv && editorDiv.__quill) {
+                content = editorDiv.__quill.root.innerHTML;
             }
         } else if (type === 'raw_html') {
             content = el.querySelector('textarea.block-content').value;
@@ -871,14 +894,21 @@ function getBlocksFromContainer(container) {
             content = { height: el.querySelector('.div-height').value };
         } else if (type === 'quote') {
             content = { text: el.querySelector('.quote-text').value, author: el.querySelector('.quote-author').value };
+        } 
+        else if (type === 'posts_grid') {
+            content = {
+                category: el.querySelector('.p-category').value,
+                limit: el.querySelector('.p-limit').value
+            };
         }
 
         blocks.push({ type, content, children, settings });
     });
     return blocks;
 }
+window.getBlocksFromContainer = getBlocksFromContainer;
 
-function savePage() {
+window.savePage = function() {
     const zones = document.querySelectorAll('div[data-zone-uid]');
     let dataToSave;
 
@@ -900,7 +930,9 @@ function savePage() {
     const tplSelect = document.getElementById('pageTemplate');
     const templateId = tplSelect ? tplSelect.value : '';
 
-    const btn = document.querySelector('button[onclick="savePage()"]');
+    const btn = document.querySelector('button[onclick="savePage()"]') || document.querySelector('button[onclick="window.savePage()"]');
+    if (!btn) return;
+    
     const oldText = btn.innerText;
     btn.innerText = "Zapisywanie...";
 
@@ -921,13 +953,13 @@ function savePage() {
         btn.innerText = d.status === 'success' ? 'Zapisano!' : 'Błąd zapisu';
         setTimeout(() => btn.innerText = oldText, 2000);
     });
-}
+};
 
 // ==========================================
 // 5. EDYTORY WIZUALNE TABEL/LOTÓW & MEDIA
 // ==========================================
 
-function toggleEditor(btn, mode) {
+window.toggleEditor = function(btn, mode) {
     const block = btn.closest('.block-item');
     const visual = block.querySelector('.editor-visual');
     const raw = block.querySelector('.editor-raw');
@@ -944,9 +976,9 @@ function toggleEditor(btn, mode) {
         visual.classList.add('hidden');
         raw.classList.remove('hidden');
     }
-}
+};
 
-function syncTableRawToVisual(block) {
+window.syncTableRawToVisual = function(block) {
     const raw = block.querySelector('.table-data').value;
     const tbody = block.querySelector('.visual-table-body');
     tbody.innerHTML = '';
@@ -958,7 +990,7 @@ function syncTableRawToVisual(block) {
     
     const ctrlTr = document.createElement('tr');
     for (let i = 0; i < colsCount; i++) {
-        ctrlTr.innerHTML += `<th class="bg-gray-100 border p-1 text-center"><button type="button" onclick="removeTableCol(this, ${i})" class="text-red-400 hover:text-red-600 text-[10px] font-bold">Usuń kol.</button></th>`;
+        ctrlTr.innerHTML += `<th class="bg-gray-100 border p-1 text-center"><button type="button" onclick="window.removeTableCol(this, ${i})" class="text-red-400 hover:text-red-600 text-[10px] font-bold">Usuń kol.</button></th>`;
     }
     ctrlTr.innerHTML += `<th class="bg-gray-100 border-0 w-8"></th>`;
     tbody.appendChild(ctrlTr);
@@ -969,14 +1001,14 @@ function syncTableRawToVisual(block) {
         const cells = r.split('\t');
         for (let i = 0; i < colsCount; i++) {
             let c = cells[i] !== undefined ? cells[i] : '';
-            tr.innerHTML += `<td class="border p-0"><input type="text" class="w-full text-sm outline-none px-2 py-1 bg-transparent" value="${c.replace(/"/g, '&quot;')}" oninput="syncTableVisualToRaw(this)"></td>`;
+            tr.innerHTML += `<td class="border p-0"><input type="text" class="w-full text-sm outline-none px-2 py-1 bg-transparent" value="${c.replace(/"/g, '&quot;')}" oninput="window.syncTableVisualToRaw(this)"></td>`;
         }
-        tr.innerHTML += `<td class="border-0 w-8 text-center"><button type="button" onclick="removeTableRow(this)" class="text-red-400 hover:text-red-600 text-xs font-bold" title="Usuń wiersz">X</button></td>`;
+        tr.innerHTML += `<td class="border-0 w-8 text-center"><button type="button" onclick="window.removeTableRow(this)" class="text-red-400 hover:text-red-600 text-xs font-bold" title="Usuń wiersz">X</button></td>`;
         tbody.appendChild(tr);
     });
-}
+};
 
-function syncTableVisualToRaw(element) {
+window.syncTableVisualToRaw = function(element) {
     const block = element.closest('.block-item') || element;
     const tbody = block.querySelector('.visual-table-body');
     const textarea = block.querySelector('.table-data');
@@ -991,33 +1023,33 @@ function syncTableVisualToRaw(element) {
     });
     
     textarea.value = tsv.join('\n');
-}
+};
 
-function addTableRow(btn) {
+window.addTableRow = function(btn) {
     const block = btn.closest('.block-item');
     const textarea = block.querySelector('.table-data');
     const cols = textarea.value.split('\n')[0].split('\t').length || 1;
     const newRow = new Array(cols).fill('-').join('\t');
     textarea.value += (textarea.value ? '\n' : '') + newRow;
-    syncTableRawToVisual(block);
-}
+    window.syncTableRawToVisual(block);
+};
 
-function addTableCol(btn) {
+window.addTableCol = function(btn) {
     const block = btn.closest('.block-item');
     const textarea = block.querySelector('.table-data');
     let rows = textarea.value.split('\n');
     rows = rows.map((r, i) => r + (i === 0 ? '\tNagłówek' : '\t-'));
     textarea.value = rows.join('\n');
-    syncTableRawToVisual(block);
-}
+    window.syncTableRawToVisual(block);
+};
 
-function removeTableRow(btn) {
+window.removeTableRow = function(btn) {
     const block = btn.closest('.block-item');
     btn.closest('tr').remove();
-    syncTableVisualToRaw(block);
-}
+    window.syncTableVisualToRaw(block);
+};
 
-function removeTableCol(btn, colIdx) {
+window.removeTableCol = function(btn, colIdx) {
     const block = btn.closest('.block-item');
     const textarea = block.querySelector('.table-data');
     let rows = textarea.value.split('\n');
@@ -1027,14 +1059,14 @@ function removeTableCol(btn, colIdx) {
         return cells.join('\t');
     });
     textarea.value = rows.join('\n');
-    syncTableRawToVisual(block);
-}
+    window.syncTableRawToVisual(block);
+};
 
-function removeFlightSegment(btn) {
+window.removeFlightSegment = function(btn) {
     const block = btn.closest('.block-item');
     btn.closest('.flight-segment').remove();
-    syncFlightVisualToRaw(block);
-}
+    window.syncFlightVisualToRaw(block);
+};
 
 function initFlightVisual(block) {
     const stateStr = block.querySelector('.flight-state').value;
@@ -1054,11 +1086,11 @@ function initFlightVisual(block) {
     }
 }
 
-function addFlightSegment(btn, type) {
+window.addFlightSegment = function(btn, type) {
     const container = btn.closest('.editor-visual').querySelector('.flight-segments-container');
     addFlightSegmentHTML(container, type, {});
-    syncFlightVisualToRaw(btn.closest('.block-item'));
-}
+    window.syncFlightVisualToRaw(btn.closest('.block-item'));
+};
 
 function addFlightSegmentHTML(container, type, data) {
     const div = document.createElement('div');
@@ -1067,7 +1099,7 @@ function addFlightSegmentHTML(container, type, data) {
     
     if (type === 'flight') {
         div.innerHTML = `
-        <button type="button" onclick="removeFlightSegment(this)" class="absolute top-2 right-2 text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded hover:bg-red-100 z-10">X Usuń Lot</button>
+        <button type="button" onclick="window.removeFlightSegment(this)" class="absolute top-2 right-2 text-red-500 font-bold text-xs bg-red-50 px-2 py-1 rounded hover:bg-red-100 z-10">X Usuń Lot</button>
         <div class="grid grid-cols-2 gap-3 mb-2 pr-20">
             <div><label class="text-[10px] uppercase text-gray-500 font-bold block">Linia Lotnicza</label><input type="text" class="f-airline w-full border-b p-1 text-xs outline-none" placeholder="LOT LO601" value="${data.airline || ''}"></div>
             <div><label class="text-[10px] uppercase text-gray-500 font-bold block mb-1">Logotyp (Media)</label>${imgInputTpl('f-logo', 'URL Logotypu', data.logo || '')}</div>
@@ -1093,19 +1125,19 @@ function addFlightSegmentHTML(container, type, data) {
     } else if (type === 'connection') {
         div.className = "flight-segment relative bg-indigo-50 border border-indigo-200 rounded p-2 text-center";
         div.innerHTML = `
-        <button type="button" onclick="removeFlightSegment(this)" class="absolute top-1 right-1 text-red-500 font-bold text-xs hover:text-red-700 bg-white rounded-full w-5 h-5 z-10">X</button>
+        <button type="button" onclick="window.removeFlightSegment(this)" class="absolute top-1 right-1 text-red-500 font-bold text-xs hover:text-red-700 bg-white rounded-full w-5 h-5 z-10">X</button>
         <input type="text" class="f-conn-pl w-full bg-transparent border-b border-indigo-300 p-1 text-xs text-center outline-none font-bold text-indigo-800 mb-1 relative z-0" placeholder="1 godz. 55 min Przesiadka" value="${data.connPl || ''}">
         <input type="text" class="f-conn-en w-full bg-transparent border-b border-indigo-300 p-1 text-xs text-center outline-none text-indigo-500 relative z-0" placeholder="EN: 1 hr 55 min Connection" value="${data.connEn || ''}">`;
     }
     
     div.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', () => syncFlightVisualToRaw(inp.closest('.block-item')));
+        inp.addEventListener('input', () => window.syncFlightVisualToRaw(inp.closest('.block-item')));
     });
 
     container.appendChild(div);
 }
 
-function syncFlightVisualToRaw(block) {
+window.syncFlightVisualToRaw = function(block) {
     let html = '<div class="przelot-widget">\n';
     let state = [];
 
@@ -1166,34 +1198,14 @@ function syncFlightVisualToRaw(block) {
 
     block.querySelector('.flight-html').value = html;
     block.querySelector('.flight-state').value = encodeURIComponent(JSON.stringify(state));
-}
+};
 
 const fileInput = document.createElement('input');
 fileInput.type = 'file';
 fileInput.style.display='none';
 document.body.appendChild(fileInput);
 
-let activeUploadEl = null;
-fileInput.addEventListener('change', function() {
-    if(!this.files[0]) return;
-    const fd = new FormData();
-    fd.append('file', this.files[0]);
-    
-    fetch('/admin/media/upload', {method:'POST', body:fd})
-    .then(r=>r.json()).then(d => {
-        if(d.url && activeUploadEl) {
-            activeUploadEl.innerHTML = `<img src="${d.url}" class="w-full rounded shadow"><input type="hidden" class="block-content" value="${d.url}">`;
-            activeUploadEl.className = "relative group-hover:border-blue-500 transition";
-        }
-    });
-});
-
-function triggerUpload(el) {
-    activeUploadEl = el;
-    fileInput.click();
-}
-
-function triggerInputUpload(btn) {
+window.triggerInputUpload = function(btn) {
     const input = btn.previousElementSibling.previousElementSibling;
     const fileInputTemp = document.createElement('input');
     fileInputTemp.type = 'file';
@@ -1202,7 +1214,7 @@ function triggerInputUpload(btn) {
         if(e.target.files[0]) handleInputUpload(input, e.target.files[0]);
     };
     fileInputTemp.click();
-}
+};
 
 function handleInputUpload(inputEl, file) {
     const fd = new FormData();
@@ -1226,32 +1238,34 @@ function imgInputTpl(className, placeholder, value = '') {
     const uniqueId = 'img_in_' + Math.random().toString(36).substr(2, 9);
     return `
     <div class="flex w-full mb-1">
-        <input type="text" id="${uniqueId}" class="${className} w-full border border-r-0 p-2 text-sm rounded-l bg-gray-50 focus:bg-white focus:outline-none" placeholder="${placeholder}" value="${value}">
-        <button type="button" onclick="openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media">📂</button>
-        <button type="button" onclick="triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik">⬆️</button>
+        <input type="text" id="${uniqueId}" class="${className} w-full border border-r-0 p-2 text-sm rounded-l bg-gray-50 focus:bg-white focus:outline-none" placeholder="${placeholder}" value="${value}" oninput="const p = this.closest('.block-item'); if(p){ const img = p.querySelector('.img-preview'); if(img) img.src = this.value || defaultPlaceholder; }">
+        <button type="button" onclick="window.openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media">📂</button>
+        <button type="button" onclick="window.triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik">⬆️</button>
     </div>`;
 }
 
 let activePickerInputId = null;
-function openMediaPicker(inputId) {
+window.openMediaPicker = function(inputId) {
     activePickerInputId = inputId;
     document.getElementById('mediaPickerModal').classList.remove('hidden');
     document.getElementById('mediaPickerFrame').src = '/admin/media?picker=1';
-}
+};
 
-function closeMediaPicker() {
+window.closeMediaPicker = function() {
     document.getElementById('mediaPickerModal').classList.add('hidden');
     document.getElementById('mediaPickerFrame').src = '';
-}
+};
 
 window.addEventListener('message', function(event) {
     if (event.data && event.data.type === 'media_selected') {
         if (activePickerInputId) {
             const inputEl = document.getElementById(activePickerInputId);
-            inputEl.value = event.data.url;
-            inputEl.dispatchEvent(new Event('input')); // <-- To odświeży podgląd
+            if(inputEl) {
+                inputEl.value = event.data.url;
+                inputEl.dispatchEvent(new Event('input')); 
+            }
         }
-        closeMediaPicker();
+        window.closeMediaPicker();
     }
 });
 

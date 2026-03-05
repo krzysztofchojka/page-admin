@@ -156,10 +156,25 @@ $router->get('/admin/email/fetch-imap', [CMS\Controllers\EmailController::class,
 
 $router->get('/admin/email', [CMS\Controllers\EmailController::class, 'index']);
 $router->get('/admin/email/read', [CMS\Controllers\EmailController::class, 'readEmail']);
-$router->post('/admin/email/send-direct', [CMS\Controllers\EmailController::class, 'sendDirect']); // <--- DODANA LINIA
+$router->post('/admin/email/send-direct', [CMS\Controllers\EmailController::class, 'sendDirect']);
 $router->get('/admin/email/queue', [CMS\Controllers\EmailController::class, 'queue']);
-$router->get('/admin/email/fetch-sent', [CMS\Controllers\EmailController::class, 'fetchSentEmails']); // <--- NOWA LINIA
+$router->get('/admin/email/fetch-sent', [CMS\Controllers\EmailController::class, 'fetchSentEmails']);
 $router->get('/admin/email/queue', [CMS\Controllers\EmailController::class, 'queue']);
+
+// --- MODUŁ POSTÓW (BLOG) ---
+$router->get('/admin/categories', [CMS\Controllers\PostController::class, 'categories']);
+$router->post('/admin/categories/save', [CMS\Controllers\PostController::class, 'saveCategory']);
+$router->get('/admin/categories/delete', [CMS\Controllers\PostController::class, 'deleteCategory']);
+
+$router->get('/admin/posts', [CMS\Controllers\PostController::class, 'index']);
+$router->get('/admin/posts/create', [CMS\Controllers\PostController::class, 'create']);
+$router->post('/admin/posts/store', [CMS\Controllers\PostController::class, 'store']);
+$router->get('/admin/posts/edit', [CMS\Controllers\PostController::class, 'edit']);
+$router->post('/admin/posts/save', [CMS\Controllers\PostController::class, 'save']);
+$router->get('/admin/posts/delete', [CMS\Controllers\PostController::class, 'delete']);
+
+// Publiczna ścieżka dla czytania postów
+$router->get('/post', [CMS\Controllers\PublicController::class, 'showPost']);
 
 $router->post('/admin/templates/toggleActive', [CMS\Controllers\TemplateController::class, 'toggleActive']);
 

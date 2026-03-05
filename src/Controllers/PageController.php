@@ -54,11 +54,10 @@ class PageController {
         exit;
     }
 
-    public function edit()
-    {
+    public function edit() {
         $id = $_GET['id'] ?? null;
         if (!$id) die("ID Missing");
-
+        
         $db = Database::getInstance();
         $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $id])->fetch();
         if (!$page) die("Page not found");
@@ -66,17 +65,18 @@ class PageController {
         $forms = $db->query("SELECT id, title FROM pa_forms ORDER BY id DESC")->fetchAll();
         $galleries = $db->query("SELECT id, title FROM pa_galleries ORDER BY id DESC")->fetchAll();
         
-        // Pobieramy szablony aktywne ORAZ ewentualnie ten obecnie wybrany (nawet jeśli został wyłączony)
+        // --- DODANA LINIJKA: POBIERANIE KATEGORII POSTÓW ---
+        $postCategories = $db->query("SELECT * FROM pa_post_categories ORDER BY name ASC")->fetchAll();
+
         $currentTplId = $page['template_id'] ?? 0;
         $templates = $db->query("SELECT id, title FROM pa_templates WHERE is_active = 1 OR id = :cid ORDER BY title ASC", ['cid' => $currentTplId])->fetchAll();
-
+        
         $templateName = '';
         if (!empty($page['template_id'])) {
             $tpl = $db->query("SELECT title FROM pa_templates WHERE id = :id", ['id' => $page['template_id']])->fetch();
             $templateName = $tpl['title'] ?? '';
         }
 
-        // Dodano 'home_page_id' do listy wyszukiwanych ról
         $roleRows = $db->query("SELECT setting_key FROM pa_settings WHERE setting_value = :id AND setting_key IN ('home_page_id', 'footer_page_id', 'login_page_id', 'register_page_id', 'change_password_page_id', 'lockdown_page_id')", ['id' => $id])->fetchAll();
         $currentRole = count($roleRows) > 0 ? $roleRows[0]['setting_key'] : 'standard';
 

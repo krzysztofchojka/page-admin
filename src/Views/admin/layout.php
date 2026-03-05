@@ -47,6 +47,9 @@ function isActive($path, $current) {
             <a href="/admin/menu" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/menu', $currentPath) ?>">
                 <span>🍔</span> <span class="menu-text">Menu Strony</span>
             </a>
+            <a href="/admin/posts" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/posts', $currentPath) ?>">
+                <span>📰</span> <span class="menu-text">Wpisy (Blog)</span>
+            </a>
             <a href="/admin/users" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/users', $currentPath) ?>">
                 <span>👥</span> <span class="menu-text">Użytkownicy</span>
             </a>
