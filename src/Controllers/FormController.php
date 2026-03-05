@@ -413,6 +413,34 @@ class FormController {
             exit;
         }
     }
+    public function delete() {
+        \CMS\Core\Session::init();
+        $id = $_GET['id'] ?? 0;
+        $db = \CMS\Core\Database::getInstance();
+
+        // 1. Sprawdzamy czy formularz ma już zebrane jakieś wpisy
+        $submissions = $db->query("SELECT COUNT(*) as c FROM pa_submissions WHERE form_id = ?", [$id])->fetch()['c'];
+        if ($submissions > 0) {
+            \CMS\Core\Session::setFlash("Nie można usunąć: Formularz posiada zebrane zgłoszenia ($submissions). Usuń je najpierw.", "error");
+            header('Location: /admin/forms');
+            exit;
+        }
+
+        // 2. Sprawdzamy czy blok formularza jest użyty na jakiejś stronie lub we wpisie
+        $inPages = $db->query("SELECT COUNT(*) as c FROM pa_data WHERE contents LIKE ?", ['%"type":"form","content":"'.$id.'"%'])->fetch()['c'];
+        $inPosts = $db->query("SELECT COUNT(*) as c FROM pa_posts WHERE contents LIKE ?", ['%"type":"form","content":"'.$id.'"%'])->fetch()['c'];
+
+        if ($inPages > 0 || $inPosts > 0) {
+            \CMS\Core\Session::setFlash("Nie można usunąć: Formularz jest aktualnie osadzony na stronach lub we wpisach.", "error");
+            header('Location: /admin/forms');
+            exit;
+        }
+
+        $db->query("DELETE FROM pa_forms WHERE id = ?", [$id]);
+        \CMS\Core\Session::setFlash("Formularz został pomyślnie usunięty.", "success");
+        header('Location: /admin/forms');
+        exit;
+    }
 
     public function downloadFile() {
         Session::init();

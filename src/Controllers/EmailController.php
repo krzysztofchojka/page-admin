@@ -69,6 +69,35 @@ class EmailController {
         exit;
     }
 
+    public function deleteTemplate() {
+        \CMS\Core\Session::init();
+        $id = $_GET['id'] ?? 0;
+        $db = \CMS\Core\Database::getInstance();
+
+        // 1. Sprawdzamy, czy jakaś wiadomość nie czeka w kolejce do wysłania z tym szablonem
+        $inQueue = $db->query("SELECT COUNT(*) as c FROM pa_email_queue WHERE template_id = ?", [$id])->fetch()['c'];
+        if ($inQueue > 0) {
+            \CMS\Core\Session::setFlash("Nie można usunąć: Szablon jest używany przez oczekujące zadania w kolejce wysyłkowej.", "error");
+            header('Location: /admin/email/templates');
+            exit;
+        }
+
+        // 2. Sprawdzamy czy szablon nie jest podpięty w ustawieniach formularzy jako autoresponder
+        $inFormsAdmin = $db->query("SELECT COUNT(*) as c FROM pa_forms WHERE settings LIKE ?", ['%"adminTemplate":"'.$id.'"%'])->fetch()['c'];
+        $inFormsUser = $db->query("SELECT COUNT(*) as c FROM pa_forms WHERE settings LIKE ?", ['%"userTemplate":"'.$id.'"%'])->fetch()['c'];
+
+        if ($inFormsAdmin > 0 || $inFormsUser > 0) {
+            \CMS\Core\Session::setFlash("Nie można usunąć: Szablon jest podpięty pod powiadomienia w formularzu.", "error");
+            header('Location: /admin/email/templates');
+            exit;
+        }
+
+        $db->query("DELETE FROM pa_email_templates WHERE id = ?", [$id]);
+        \CMS\Core\Session::setFlash("Szablon został usunięty.", "success");
+        header('Location: /admin/email/templates');
+        exit;
+    }
+
     // --- 1B. ASYNCHRONICZNE POBIERANIE MAILI (AJAX + CACHE 5 MINUT) ---
     public function fetchEmails() {
         header('Content-Type: application/json');

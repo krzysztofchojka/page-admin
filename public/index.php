@@ -84,6 +84,10 @@ $router->post('/admin/templates/delete', [CMS\Controllers\TemplateController::cl
 $router->post('/admin/forms/submissions/export', [CMS\Controllers\FormController::class, 'exportSubmissions']); 
 $router->post('/admin/forms/submissions/export-files', [CMS\Controllers\FormController::class, 'exportFiles']);
 
+$router->get('/admin/forms/delete', [CMS\Controllers\FormController::class, 'delete']);
+$router->get('/admin/galleries/delete', [CMS\Controllers\GalleryController::class, 'delete']);
+$router->get('/admin/email/templates/delete', [CMS\Controllers\EmailController::class, 'deleteTemplate']);
+
 // Ustawienia & Backup
 $router->get('/admin/settings/backup', [CMS\Controllers\SettingsController::class, 'backup']);
 
@@ -121,7 +125,6 @@ $router->post('/admin/media/move', [CMS\Controllers\MediaController::class, 'mov
 $router->get('/admin/users', [CMS\Controllers\UserController::class, 'index']);
 $router->post('/admin/users/create', [CMS\Controllers\UserController::class, 'create']);
 $router->get('/admin/users/delete', [CMS\Controllers\UserController::class, 'delete']);
-// NOWE TRASY DO EDYCJI:
 $router->get('/admin/users/edit', [CMS\Controllers\UserController::class, 'edit']);
 $router->post('/admin/users/update', [CMS\Controllers\UserController::class, 'update']);
 
