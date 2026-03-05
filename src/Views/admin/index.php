@@ -21,34 +21,34 @@
             <a href="/admin" class="block px-4 py-3 bg-gray-800 text-white border-l-4 border-blue-500 flex items-center gap-3">
                 <span>📊</span> <span class="menu-text">Dashboard</span>
             </a>
-            <a href="/admin/pages" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+            <a href="/admin/pages" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>📄</span> <span class="menu-text">Strony</span>
             </a>
-            <a href="/admin/forms" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+            <a href="/admin/forms" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>📝</span> <span class="menu-text">Formularze</span>
             </a>
-            <a href="/admin/galleries" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+            <a href="/admin/galleries" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>🖼️</span> <span class="menu-text">Galerie</span>
             </a>
-            <a href="/admin/templates" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+            <a href="/admin/templates" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>📐</span> <span class="menu-text">Szablony</span>
             </a>
-            <a href="/admin/media" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+            <a href="/admin/media" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>📂</span> <span class="menu-text">Pliki (Media)</span>
             </a>
-            <a href="/admin/menu" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+            <a href="/admin/menu" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>🍔</span> <span class="menu-text">Menu Strony</span>
             </a>
-            <a href="/admin/users" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+            <a href="/admin/users" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>👥</span> <span class="menu-text">Użytkownicy</span>
             </a>
-            <a href="/admin/email" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+            <a href="/admin/email" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>✉️</span> <span class="menu-text">Email</span>
             </a>
-            <a href="/admin/settings" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 transition flex items-center gap-3">
+            <a href="/admin/settings" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>⚙️</span> <span class="menu-text">Ustawienia</span>
             </a>
-            <a href="/admin/help" class="block px-4 py-3 hover:bg-gray-800 text-green-400 transition flex items-center gap-3 mt-4 border-t border-gray-800">
+            <a href="/admin/help" class="block px-4 py-3 hover:bg-gray-800 text-green-400 border-l-4 border-transparent transition flex items-center gap-3 mt-4 border-t border-gray-800">
                 <span>💡</span> <span class="menu-text font-bold">Pomoc</span>
             </a>
         </nav>
