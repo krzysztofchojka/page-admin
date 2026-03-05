@@ -8,6 +8,31 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Konfiguracja kolorów dynamicznych, aby podgląd w edytorze 
+        // odpowiadał kolorom ustawionym w panelu Settings
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '<?= $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'color_primary'")->fetch()['setting_value'] ?? '#f97316' ?>',
+                        secondary: '<?= $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'color_secondary'")->fetch()['setting_value'] ?? '#1e3a8a' ?>',
+                    }
+                }
+            },
+            // Ważne: zapobiega konfliktom z domyślnymi stylami panelu admina
+            corePlugins: {
+                preflight: false, 
+            }
+        }
+    </script>
+
+    <style>
+        /* Przywracamy podstawowe style dla warstwy tekstowej, ponieważ wyłączyliśmy preflight */
+        .block-item .prose { line-height: 1.6; }
+        .block-item img { max-width: 100%; height: auto; }
+    </style>
     <style>
         .ghost { opacity: 0.5; background: #e0e7ff; border: 2px dashed #4f46e5; }
         .drag-handle { cursor: grab; }
