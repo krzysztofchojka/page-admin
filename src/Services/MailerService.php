@@ -14,7 +14,7 @@ class MailerService {
         $config = [];
         foreach($settings as $s) $config[$s['setting_key']] = $s['setting_value'];
 
-        // Inicjalizacja PHPMailera (Pobierany automatycznie przez Composera)
+        // Inicjalizacja PHPMailera
         $this->mail = new PHPMailer(true);
         $this->mail->isSMTP();
         $this->mail->Host = $config['smtp_host'] ?? '';
@@ -23,11 +23,22 @@ class MailerService {
         $this->mail->Password = $config['smtp_pass'] ?? '';
         $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $this->mail->Port = $config['smtp_port'] ?? 587;
-        
-        $domain = $_SERVER['HTTP_HOST'] ?? 'CMS';
-        $this->mail->setFrom($config['smtp_user'] ?? 'no-reply@' . $domain, $domain);
         $this->mail->CharSet = 'UTF-8';
         $this->mail->isHTML(true);
+
+        // --- ZABEZPIECZONA LOGIKA NADAWCY ---
+        $domain = $_SERVER['HTTP_HOST'] ?? 'domena.pl';
+        $domain = preg_replace('/:\d+$/', '', $domain); // Usuwa port (np. z localhost:8000 zostawia localhost)
+        
+        // Zabezpieczenie przed błędem walidacji (localhost nie jest poprawną pełną domeną dla PHPMailera)
+        $safeDomain = ($domain === 'localhost' || $domain === '127.0.0.1') ? 'localhost.local' : $domain;
+        $fromEmail = !empty($config['smtp_user']) ? $config['smtp_user'] : 'no-reply@' . $safeDomain;
+
+        try {
+            $this->mail->setFrom($fromEmail, $domain);
+        } catch (Exception $e) {
+            // Zapobiega Crashowi (HTTP 500) jeśli adres z jakiegoś powodu nie przejdzie rygorystycznej walidacji
+        }
     }
 
     public function send($to, $subject, $body) {
