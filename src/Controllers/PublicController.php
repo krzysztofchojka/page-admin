@@ -8,6 +8,7 @@ class PublicController {
 
     public function show($slug = null) {
         Session::init();
+        \CMS\Helpers\Tracker::logVisit($_SERVER['REQUEST_URI'] ?? '/');
         $db = \CMS\Core\Database::getInstance();
         $settingsRows = $db->query("SELECT * FROM pa_settings")->fetchAll();
         $settings = [];
@@ -145,6 +146,7 @@ class PublicController {
         if (!$slug) die("Nie wybrano postu.");
 
         Session::init();
+        \CMS\Helpers\Tracker::logVisit($_SERVER['REQUEST_URI'] ?? '/');
         $db = Database::getInstance();
         $settingsRows = $db->query("SELECT * FROM pa_settings")->fetchAll();
         $settings = [];

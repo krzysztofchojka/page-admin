@@ -29,6 +29,10 @@ function isActive($path, $current) {
             <a href="/admin" class="block px-4 py-3 transition flex items-center gap-3 <?= $currentPath == '/admin' ? 'bg-gray-800 text-white border-l-4 border-blue-500' : 'hover:bg-gray-800 text-gray-300 border-l-4 border-transparent' ?>">
                 <span>📊</span> <span class="menu-text">Dashboard</span>
             </a>
+            <a href="/admin/stats" class="block px-4 py-3 transition flex items-center gap-3 <?= $currentPath == '/admin/stats' ? 'bg-gray-800 text-white border-l-4 border-blue-500' : 'hover:bg-gray-800 text-gray-300 border-l-4 border-transparent' ?>">
+                <span>📈</span>
+                <span class="menu-text">Statystyki</span>
+            </a>
             <a href="/admin/pages" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/pages', $currentPath) ?>">
                 <span>📄</span> <span class="menu-text">Strony</span>
             </a>

@@ -21,6 +21,10 @@
             <a href="/admin" class="block px-4 py-3 bg-gray-800 text-white border-l-4 border-blue-500 flex items-center gap-3">
                 <span>📊</span> <span class="menu-text">Dashboard</span>
             </a>
+            <a href="/admin/stats" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
+                <span>📈</span>
+                <span class="menu-text">Statystyki</span>
+            </a>
             <a href="/admin/pages" class="block px-4 py-3 hover:bg-gray-800 text-gray-300 border-l-4 border-transparent transition flex items-center gap-3">
                 <span>📄</span> <span class="menu-text">Strony</span>
             </a>

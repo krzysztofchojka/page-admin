@@ -155,6 +155,17 @@ class InstallController {
         $pdo->exec("CREATE TABLE IF NOT EXISTS pa_mailing_subscribers (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, list_id INT, email VARCHAR(255), name VARCHAR(255))");
         $pdo->exec("CREATE TABLE IF NOT EXISTS pa_sent_emails (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, recipient VARCHAR(255), subject VARCHAR(255), body LONGTEXT, sent_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
 
+        // Statystyki
+        $pdo->exec("CREATE TABLE IF NOT EXISTS pa_statistics (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            visit_date DATE NOT NULL,
+            visitor_hash VARCHAR(64) NOT NULL,
+            page_url VARCHAR(255) NOT NULL,
+            country_code VARCHAR(2) DEFAULT 'XX',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_visit (visit_date, visitor_hash, page_url)
+        );");
+
         // Rekordy domyślne
         $pdo->exec("INSERT IGNORE INTO pa_data (id, title, slug, field_type, contents, create_date, edit_date) VALUES (1, 'Strona Główna', '/', 'page', '[]', NOW(), NOW())");
         $pdo->exec("INSERT IGNORE INTO pa_mailing_lists (id, name, is_default) VALUES (1, 'Użytkownicy Systemu', 1)");

@@ -56,6 +56,7 @@ use CMS\Controllers\UserController;
 use CMS\Controllers\EmailController;
 use CMS\Controllers\PostController;
 use CMS\Controllers\HelpController;
+use CMS\Controllers\StatsController;
 
 $router = new Router();
 
@@ -186,6 +187,10 @@ $router->post('/admin/email/lists/create', [EmailController::class, 'createList'
 $router->get('/admin/email/lists/manage', [EmailController::class, 'manageList'], [AdminMiddleware::class]);
 $router->post('/admin/email/lists/add-subscriber', [EmailController::class, 'addSubscriber'], [AdminMiddleware::class]);
 $router->get('/admin/email/lists/remove-subscriber', [EmailController::class, 'removeSubscriber'], [AdminMiddleware::class]);
+
+// Statystyki
+$router->get('/admin/stats', [StatsController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/stats/data', [StatsController::class, 'getData'], [AdminMiddleware::class]);
 
 // =========================================================================
 // FALLBACK (Błąd 404 lub aliasy z bazy)
