@@ -119,6 +119,20 @@ class FormController {
         if (!empty($_FILES['file'])) {
             $file = $_FILES['file'];
             if ($file['error'] === UPLOAD_ERR_OK) {
+            
+                // WALIDACJA ROZSZERZENIA
+                $allowedRaw = $_POST['allowed_exts'] ?? 'jpg, jpeg, png, pdf, doc, docx, zip';
+                $allowedArray = array_map('trim', explode(',', strtolower($allowedRaw)));
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                
+                // Twardy zakaz dla plików wykonywalnych (nawet jeśli admin by na nie pozwolił)
+                $bannedExts = ['php', 'php3', 'php4', 'php5', 'phtml', 'exe', 'sh', 'bat', 'cgi', 'pl'];
+                
+                if (!in_array($ext, $allowedArray) || in_array($ext, $bannedExts)) {
+                    echo json_encode(['status' => 'error', 'msg' => 'Niedozwolony format pliku.']);
+                    exit;
+                }
+    
                 $uploadDir = __DIR__ . '/../../public/uploads/secure/';
                 if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
                 

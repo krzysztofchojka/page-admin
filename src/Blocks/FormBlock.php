@@ -137,10 +137,17 @@ class FormBlock implements BlockInterface {
                     foreach ($eFiles as $eFile) {
                         if (empty($eFile['original_name'])) continue;
                         $jsonVal = htmlspecialchars(json_encode($eFile), ENT_QUOTES, 'UTF-8');
-                        $html .= "<div class='flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm existing-file-item'>";
-                        $html .= "<span>".htmlspecialchars($eFile['original_name'])."</span>";
-                        $html .= "<button type='button' class='text-red-500 font-bold remove-existing-file'>X</button>";
-                        $html .= "<input type='hidden' name='async_files[{$fieldId}][]' value='{$jsonVal}'></div>";
+                        
+                        $html .= "<div class='flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item mb-2'>";
+                        $html .= "  <div class='flex items-center gap-3 overflow-hidden'>";
+                        $origName = urlencode($eFile['original_name']);
+                        $dlUrl = "/admin/forms/download?file=" . urlencode($eFile['storage_name'] ?? '') . "&orig=" . $origName;
+                        $html .= "      <div class='bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0'><svg class='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'><path fill-rule='evenodd' d='M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z' clip-rule='evenodd'></path></svg></div>";
+                        $html .= "      <a href='{$dlUrl}' target='_blank' class='truncate font-medium hover:text-blue-600 hover:underline transition-colors'>".htmlspecialchars($eFile['original_name'])."</a>";
+                        $html .= "  </div>";
+                        $html .= "  <button type='button' class='text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file' title='Usuń plik'><svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg></button>";
+                        $html .= "  <input type='hidden' name='async_files[{$fieldId}][]' value='{$jsonVal}'>";
+                        $html .= "</div>";
                     }
                 }
                 $html .= "</div></div>"; continue;
@@ -155,18 +162,38 @@ class FormBlock implements BlockInterface {
                     $html .= "<select name='data[{$fieldId}]' class='{$inputClasses}' {$reqAttr}><option value=''>-- Wybierz --</option>";
                     foreach ($options as $o) {
                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                        $disabled = ($o['limit'] > 0 && ($o['limit'] - $currentCount) <= 0 && $val !== $o['label']) ? 'disabled' : '';
+                        $disabled = '';
+                        $limitText = '';
+                        if ($o['limit'] > 0) {
+                            $left = $o['limit'] - $currentCount;
+                            if ($left <= 0 && $val !== $o['label']) {
+                                $disabled = 'disabled';
+                                $limitText = " (Brak miejsc)";
+                            } else {
+                                $limitText = " (Zostało: {$left})";
+                            }
+                        }
                         $selected = ($val === $o['label']) ? 'selected' : '';
-                        $html .= "<option value='".htmlspecialchars($o['label'])."' {$disabled} {$selected}>".htmlspecialchars($o['label'])."</option>";
+                        $html .= "<option value='".htmlspecialchars($o['label'])."' {$disabled} {$selected}>".htmlspecialchars($o['label']) . $limitText . "</option>";
                     }
                     $html .= "</select>";
                 } elseif ($type === 'radio') {
                     $html .= "<div class='flex flex-col gap-2'>";
                     foreach ($options as $idx => $o) {
                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                        $disabled = ($o['limit'] > 0 && ($o['limit'] - $currentCount) <= 0 && $val !== $o['label']) ? 'disabled' : '';
+                        $disabled = '';
+                        $limitText = '';
+                        if ($o['limit'] > 0) {
+                            $left = $o['limit'] - $currentCount;
+                            if ($left <= 0 && $val !== $o['label']) {
+                                $disabled = 'disabled';
+                                $limitText = " <span class='text-xs text-red-500 font-bold ml-1'>(Brak miejsc)</span>";
+                            } else {
+                                $limitText = " <span class='text-xs text-gray-500 ml-1'>(Zostało: {$left})</span>";
+                            }
+                        }
                         $checked = ($val === $o['label']) ? 'checked' : '';
-                        $html .= "<label class='flex items-center gap-2 text-sm p-3 border rounded-xl bg-white ".($disabled?'opacity-50':'')."'><input type='radio' name='data[{$fieldId}]' value='".htmlspecialchars($o['label'])."' {$disabled} {$checked} {$reqAttr}>".htmlspecialchars($o['label'])."</label>";
+                        $html .= "<label class='flex items-center gap-2 text-sm p-3 border rounded-xl bg-white ".($disabled?'opacity-50 cursor-not-allowed':'')."'><input type='radio' name='data[{$fieldId}]' value='".htmlspecialchars($o['label'])."' {$disabled} {$checked} {$reqAttr}><span>".htmlspecialchars($o['label']) . $limitText . "</span></label>";
                     }
                     $html .= "</div>";
                 } elseif ($type === 'checkbox') {
@@ -174,9 +201,19 @@ class FormBlock implements BlockInterface {
                     $html .= "<div class='flex flex-col gap-2'>";
                     foreach ($options as $idx => $o) {
                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                        $disabled = ($o['limit'] > 0 && ($o['limit'] - $currentCount) <= 0 && !in_array($o['label'], $valArr)) ? 'disabled' : '';
+                        $disabled = '';
+                        $limitText = '';
+                        if ($o['limit'] > 0) {
+                            $left = $o['limit'] - $currentCount;
+                            if ($left <= 0 && !in_array($o['label'], $valArr)) {
+                                $disabled = 'disabled';
+                                $limitText = " <span class='text-xs text-red-500 font-bold ml-1'>(Brak miejsc)</span>";
+                            } else {
+                                $limitText = " <span class='text-xs text-gray-500 ml-1'>(Zostało: {$left})</span>";
+                            }
+                        }
                         $checked = in_array($o['label'], $valArr) ? 'checked' : '';
-                        $html .= "<label class='flex items-center gap-2 text-sm p-3 border rounded-xl bg-white ".($disabled?'opacity-50':'')."'><input type='checkbox' name='data[{$fieldId}][]' value='".htmlspecialchars($o['label'])."' {$disabled} {$checked}>".htmlspecialchars($o['label'])."</label>";
+                        $html .= "<label class='flex items-center gap-2 text-sm p-3 border rounded-xl bg-white ".($disabled?'opacity-50 cursor-not-allowed':'')."'><input type='checkbox' name='data[{$fieldId}][]' value='".htmlspecialchars($o['label'])."' {$disabled} {$checked}><span>".htmlspecialchars($o['label']) . $limitText . "</span></label>";
                     }
                     $html .= "</div>";
                 }
@@ -196,11 +233,23 @@ class FormBlock implements BlockInterface {
 
         $html .= "<script>
         (function() {
-            const formContainer = document.getElementById('form-container-{$form['id']}'); if (!formContainer) return;
-            const form = formContainer.querySelector('form'); if (!form) return;
-            let autosaveTimeout; const statusEl = document.getElementById('autosave-status-{$form['id']}');
+            const formContainer = document.getElementById('form-container-{$form['id']}');
+            if (!formContainer) return;
+            const form = formContainer.querySelector('form');
+            if (!form) return;
+            
+            // Zmienne do kontroli przycisku Submit
+            const submitBtn = form.querySelector('button[type=\"submit\"]');
+            const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Wyślij';
+            let activeUploads = 0;
+        
+            let autosaveTimeout;
+            const statusEl = document.getElementById('autosave-status-{$form['id']}');
+        
             function triggerAutosave() {
-                if (!statusEl) return; statusEl.innerHTML = '⏳ Zapisywanie robocze...'; statusEl.classList.remove('hidden');
+                if (!statusEl) return;
+                statusEl.innerHTML = '⏳ Zapisywanie robocze...';
+                statusEl.classList.remove('hidden');
                 clearTimeout(autosaveTimeout);
                 autosaveTimeout = setTimeout(() => {
                     const formData = new FormData(form);
@@ -208,42 +257,162 @@ class FormBlock implements BlockInterface {
                         if (data.status === 'success') {
                             statusEl.innerHTML = '✅ Zapisano roboczo';
                             if (data.submission_id && !form.querySelector('input[name=\"submission_id\"]')) {
-                                const subInput = document.createElement('input'); subInput.type = 'hidden'; subInput.name = 'submission_id'; subInput.value = data.submission_id; form.appendChild(subInput);
+                                const subInput = document.createElement('input');
+                                subInput.type = 'hidden';
+                                subInput.name = 'submission_id';
+                                subInput.value = data.submission_id;
+                                form.appendChild(subInput);
                             }
                         }
                     });
                 }, 1500);
             }
-            if (statusEl) form.addEventListener('input', e => { if (e.target.name !== 'captcha_answer' && e.target.type !== 'password' && e.target.type !== 'file') triggerAutosave(); });
-            
+        
+            if (statusEl) {
+                form.addEventListener('input', e => {
+                    if (e.target.name !== 'captcha_answer' && e.target.type !== 'password' && e.target.type !== 'file') triggerAutosave();
+                });
+            }
+        
             form.querySelectorAll('.async-file-upload').forEach(container => {
                 const fileInput = container.querySelector('.file-input');
                 const filesList = container.querySelector('.uploaded-files-list');
+                const progressContainer = container.querySelector('.progress-container');
+                const progressBar = container.querySelector('.progress-bar');
                 const fieldId = container.dataset.fieldId;
-                
-                filesList.querySelectorAll('.remove-existing-file').forEach(btn => {
-                    btn.addEventListener('click', function() { this.closest('.existing-file-item').remove(); if (statusEl) triggerAutosave(); });
-                });
+                const dropArea = fileInput.closest('.border-dashed'); // Pobieramy przerywany kontener
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Dodajemy ciemniejsze tło, inną ramkę i lekkie powiększenie
+                dropArea.classList.add('bg-blue-200', 'border-blue-500', 'scale-105');
+            }, false);
+        });
 
+        ['dragleave'].forEach(eventName => {
+            dropArea.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Usuwamy klasy po opuszczeniu strefy
+                dropArea.classList.remove('bg-blue-200', 'border-blue-500', 'scale-105');
+            }, false);
+        });
+
+        dropArea.addEventListener('drop', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Usuwamy klasy po upuszczeniu pliku
+            dropArea.classList.remove('bg-blue-200', 'border-blue-500', 'scale-105');
+
+            // Przechwytujemy pliki i wymuszamy uruchomienie przesyłania
+            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        }, false);
+        
+                // Obsługa usuwania już istniejących plików
+                filesList.querySelectorAll('.remove-existing-file').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        this.closest('.existing-file-item').remove();
+                        if (statusEl) triggerAutosave();
+                    });
+                });
+        
+                // Obsługa wgrywania nowego pliku
                 fileInput.addEventListener('change', function() {
-                    const files = this.files; if (files.length === 0) return;
+                    const files = this.files;
+                    if (files.length === 0) return;
+        
                     Array.from(files).forEach(file => {
-                        const formData = new FormData(); formData.append('file', file);
-                        const xhr = new XMLHttpRequest(); xhr.open('POST', '/form-upload', true);
+                        activeUploads++;
+                        
+                        // Blokada przycisku Submit
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.innerHTML = '⏳ Przesyłanie plików...';
+                            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        }
+        
+                        // Pokazanie paska postępu
+                        if (progressContainer && progressBar) {
+                            progressContainer.classList.remove('hidden');
+                            progressBar.style.width = '0%';
+                        }
+        
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        // Pobieranie dozwolonych rozszerzeń (jeśli dodałeś tę opcję w poprzednim kroku)
+                        const allowedExts = fileInput.dataset.allowedExts || 'jpg, jpeg, png, pdf, doc, docx, zip';
+                        formData.append('allowed_exts', allowedExts);
+        
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', '/form-upload', true);
+        
+                        // Aktualizacja paska postępu
+                        xhr.upload.addEventListener('progress', function(e) {
+                            if (e.lengthComputable && progressBar) {
+                                const percentComplete = Math.round((e.loaded / e.total) * 100);
+                                progressBar.style.width = percentComplete + '%';
+                            }
+                        });
+        
                         xhr.onload = function() {
+                            activeUploads--;
+                            
+                            // Odblokowanie przycisku, jeśli to był ostatni plik
+                            if (activeUploads === 0) {
+                                if (submitBtn) {
+                                    submitBtn.disabled = false;
+                                    submitBtn.innerHTML = originalBtnText;
+                                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                }
+                                if (progressContainer) progressContainer.classList.add('hidden');
+                            }
+        
                             if (xhr.status === 200) {
                                 const res = JSON.parse(xhr.responseText);
                                 if (res.status === 'success') {
                                     const safeJson = JSON.stringify(res.file).replace(/'/g, '&#39;');
-                                    const item = document.createElement('div');
-                                    item.className = 'flex items-center justify-between p-3 bg-white border rounded-xl text-sm existing-file-item mt-2';
-                                    item.innerHTML = '<span>'+file.name+'</span><button type=\"button\" class=\"text-red-500 font-bold remove-existing-file\">X</button><input type=\"hidden\" name=\"async_files['+fieldId+'][]\" value=\''+safeJson+'\'>';
-                                    item.querySelector('.remove-existing-file').addEventListener('click', function() { item.remove(); });
+const dlUrl = '/admin/forms/download?file=' + encodeURIComponent(res.file.storage_name) + '&orig=' + encodeURIComponent(file.name);
+
+const item = document.createElement('div');
+item.className = 'flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item mt-2';
+item.innerHTML = '<div class=\"flex items-center gap-3 overflow-hidden\">' +
+                 '<div class=\"bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0\"><svg class=\"w-4 h-4\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z\" clip-rule=\"evenodd\"></path></svg></div>' +
+                 '<a href=\"' + dlUrl + '\" target=\"_blank\" class=\"truncate font-medium hover:text-blue-600 hover:underline transition-colors\">' + file.name + '</a>' +
+                 '</div>' +
+                 '<button type=\"button\" class=\"text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file\" title=\"Usuń plik\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button>' +
+                 '<input type=\"hidden\" name=\"async_files[' + fieldId + '][]\" value=\'' + safeJson + '\'>';
+                                    
+                                    item.querySelector('.remove-existing-file').addEventListener('click', function() {
+                                        item.remove();
+                                        if (statusEl) triggerAutosave();
+                                    });
                                     filesList.appendChild(item);
                                     if (statusEl) triggerAutosave();
+                                } else {
+                                    alert(res.msg || 'Wystąpił błąd podczas wgrywania pliku.');
                                 }
                             }
                         };
+        
+                        xhr.onerror = function() {
+                            activeUploads--;
+                            if (activeUploads === 0) {
+                                if (submitBtn) {
+                                    submitBtn.disabled = false;
+                                    submitBtn.innerHTML = originalBtnText;
+                                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                }
+                                if (progressContainer) progressContainer.classList.add('hidden');
+                            }
+                            alert('Błąd sieci podczas wgrywania pliku.');
+                        };
+        
                         xhr.send(formData);
                     });
                     this.value = '';

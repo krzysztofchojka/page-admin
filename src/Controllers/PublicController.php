@@ -8,12 +8,10 @@ class PublicController {
 
     public function show($slug = null) {
         Session::init();
-        $db = Database::getInstance();
+        $db = \CMS\Core\Database::getInstance();
         $settingsRows = $db->query("SELECT * FROM pa_settings")->fetchAll();
         $settings = [];
-        foreach($settingsRows as $r) {
-            $settings[$r['setting_key']] = $r['setting_value'];
-        }
+        foreach($settingsRows as $r) { $settings[$r['setting_key']] = $r['setting_value']; }
 
         // --- GATE 1: LOCKDOWN (Hasło globalne) ---
         if (($settings['lockdown_enabled'] ?? 0) == 1) {
@@ -30,16 +28,15 @@ class PublicController {
                     if ($page) {
                         $blocks = json_decode($page['contents'], true) ?? [];
                         require_once __DIR__ . '/../Views/public/page.php';
-                        exit; // Renderujemy naszą stronę i przerywamy!
+                        exit; 
                     }
                 }
-                // Fallback
                 require_once __DIR__ . '/../Views/public/lockdown.php';
                 exit;
             }
         }
 
-        // --- GATE 2: REQUIRE REGISTRATION (Wymóg logowania) ---
+        // --- GATE 2: REQUIRE REGISTRATION ---
         if (($settings['require_registration'] ?? 0) == 1) {
             if (!Session::isLoggedIn()) {
                 Session::setFlash('Zaloguj się, aby uzyskać dostęp do zawartości.', 'error');
@@ -48,17 +45,33 @@ class PublicController {
             }
         }
 
-        // --- GATE 3: RENDER PAGE ---
+        // --- LOGIKA CACHE ---
+        $isAdmin = (Session::get('is_admin') == 1);
+        $isPost = $_SERVER['REQUEST_METHOD'] === 'POST';
+        
+        // Tworzymy unikalny klucz dla KROK PO KROKU każdego URL (np. /page?id=18)
+        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $qs = $_SERVER['QUERY_STRING'] ?? '';
+        $fullUri = $uri . ($qs ? '?' . $qs : '');
+        $cacheKey = ($fullUri === '/' || $fullUri === '') ? 'index' : md5($fullUri);
+        
+        // Zmieniona ścieżka na folder public, gdzie PHP na pewno ma uprawnienia zapisu
+        $cacheDir = __DIR__ . '/../../public/cache/';
+        $cacheFile = $cacheDir . $cacheKey . '.html';
+
+        // Serwuj cache tylko dla gości i przy metodzie GET
+        if (!$isAdmin && !$isPost && file_exists($cacheFile)) {
+            readfile($cacheFile);
+            exit;
+        }
+
+        // --- POBIERANIE STRONY ---
         $page = null;
         $id = $_GET['id'] ?? null;
-
-        // Priorytet 1: Sprawdzamy, czy wywołano stronę z parametrem id (np. z menu /page?id=5)
         if ($id) {
             $page = $db->query("SELECT * FROM pa_data WHERE id = :id AND field_type = 'page'", ['id' => $id])->fetch();
         } else {
-            // Priorytet 2: Wyszukiwanie po przyjaznym URL (Slug) lub ładowanie strony głównej (z ustawień lub id=1)
             if ($slug === '/' || $slug === null || $slug === '') {
-                // Pobieramy ID strony głównej z ustawień. Jeśli nie istnieje, awaryjnie ładujemy stronę o ID 1
                 $homePageId = $settings['home_page_id'] ?? 1;
                 $page = $db->query("SELECT * FROM pa_data WHERE id = :id AND field_type = 'page'", ['id' => $homePageId])->fetch();
             } else {
@@ -75,6 +88,25 @@ class PublicController {
 
         $blocks = json_decode($page['contents'], true) ?? [];
 
+        // --- FIX DLA LOGÓW: Inteligentne szukanie formularzy ---
+        $flattenedBlocks = [];
+        if (isset($blocks[0])) {
+            $flattenedBlocks = $blocks;
+        } else {
+            foreach ($blocks as $zone) {
+                if (is_array($zone)) $flattenedBlocks = array_merge($flattenedBlocks, $zone);
+            }
+        }
+
+        $formsData = [];
+        foreach ($flattenedBlocks as $block) {
+            if (isset($block['type']) && $block['type'] === 'form') {
+                $formId = $block['content'];
+                $formDef = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $formId])->fetch();
+                if ($formDef) $formsData[$formId] = $formDef;
+            }
+        }
+
         // --- FOOTER INJECTION ---
         $footerBlocks = null;
         if (($settings['hide_footer'] ?? 0) != 1 && !empty($settings['footer_page_id'])) {
@@ -84,17 +116,28 @@ class PublicController {
             }
         }
 
-        // Pre-fetch Forms
-        $formsData = [];
-        foreach ($blocks as $block) {
-            if ($block['type'] === 'form') {
-                $formId = $block['content'];
-                $formDef = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $formId])->fetch();
-                if ($formDef) $formsData[$formId] = $formDef;
+        // --- RENDEROWANIE I ZAPIS CACHE ---
+        ob_start();
+        require_once __DIR__ . '/../Views/public/page.php';
+        $htmlOutput = ob_get_clean();
+
+        // Zapisujemy cache tylko w idealnych warunkach dla gości
+        if (!$isAdmin && !$isPost) {
+            if (!is_dir($cacheDir)) { 
+                mkdir($cacheDir, 0775, true); 
+                // Chronimy ten folder przed odczytem bezpośrednim przez przeglądarkę
+                file_put_contents($cacheDir . '.htaccess', "Require all denied");
+            }
+            $htmlOutput .= "\n";
+            
+            try {
+                file_put_contents($cacheFile, $htmlOutput);
+            } catch (\Exception $e) {
+                // ignorujemy błąd zapisu żeby strona dalej działała
             }
         }
 
-        require_once __DIR__ . '/../Views/public/page.php';
+        echo $htmlOutput;
     }
 
     public function showPost() {

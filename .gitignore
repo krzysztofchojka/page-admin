@@ -5,3 +5,4 @@ dump_files.sh
 sessions/
 public/uploads/*
 node_modules
+public/cache

@@ -4,6 +4,14 @@ use CMS\Core\Database;
 
 class InstallController {
     public function index() {
+        $lockFile = __DIR__ . '/../../install.lock';
+        
+        // 1. Sprawdź, czy system był już zainstalowany
+        if (file_exists($lockFile)) {
+            http_response_code(403);
+            die("<h1>Odmowa dostępu</h1><p>System został już zainstalowany. Usuń plik install.lock, aby ponowić instalację.</p>");
+        }
+
         $db = Database::getInstance();
         try {
             // 1. Tabele Główne
@@ -60,6 +68,7 @@ class InstallController {
             }
             
             echo "<hr><strong style='color:green'>Instalacja bazy kompletna!</strong>";
+            file_put_contents($lockFile, "Zainstalowano: " . date('Y-m-d H:i:s'));
         } catch (\Exception $e) {
             http_response_code(500);
             echo "Błąd instalacji: " . $e->getMessage();

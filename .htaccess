@@ -1,0 +1,4 @@
+Require all denied
+<Directory "%{DOCUMENT_ROOT}/public">
+    Require all granted
+</Directory>
