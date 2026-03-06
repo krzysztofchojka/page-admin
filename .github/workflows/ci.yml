@@ -68,11 +68,10 @@ jobs:
       - name: Run E2E Security Tests
         run: php tests/e2e.php
 
-  # ZADANIE 2: GENEROWANIE PACZKI PRODUKCYJNEJ (Zostanie uruchomione tylko jeśli testy z zadania wyżej przejdą pomyślnie)
   build-release:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' # Buduj ZIPa tylko na głównych gałęziach
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
 
     steps:
       - name: Checkout Code
@@ -97,35 +96,81 @@ jobs:
           npm install
           npm run build
 
-      - name: Prepare Release Folder
+      - name: Prepare Release Folders
         run: |
-          mkdir release_build
+          # -------------------------------------------------------------
+          # 1. BUDOWA STANDARDOWA (Dla hostingów z wyborem DocumentRoot)
+          # -------------------------------------------------------------
+          mkdir release_standard
+          cp -r src release_standard/
+          cp -r public release_standard/
+          cp -r vendor release_standard/
+          cp .env.example release_standard/
+          cp README.md release_standard/
+          cp .htaccess release_standard/ 2>/dev/null || true
 
-          # Kopiujemy tylko to, co potrzebne na serwerze produkcyjnym
-          cp -r src release_build/
-          cp -r public release_build/
-          cp -r vendor release_build/
-          cp .env.example release_build/
-          cp README.md release_build/
-          cp .htaccess release_build/ 2>/dev/null || true # Kopiuj jeśli istnieje
+          mkdir -p release_standard/public/uploads/media
+          mkdir -p release_standard/public/uploads/secure
+          mkdir -p release_standard/public/cache
+          mkdir -p release_standard/logs
+          chmod -R 775 release_standard/public/uploads release_standard/public/cache release_standard/logs
 
-          # Upewniamy się, że struktura katalogów dla uploadów i cache istnieje
-          mkdir -p release_build/public/uploads/media
-          mkdir -p release_build/public/uploads/secure
-          mkdir -p release_build/public/cache
-          mkdir -p release_build/logs
+          # -------------------------------------------------------------
+          # 2. BUDOWA "SHARED" (Dla hostingów wymuszających public_html / htdocs)
+          # -------------------------------------------------------------
+          mkdir release_shared
+          cp -r src release_shared/
+          cp -r public release_shared/
+          cp -r vendor release_shared/
+          cp .env.example release_shared/
+          cp README.md release_shared/
 
-          # Wymuszamy domyślne uprawnienia dla folderów dynamicznych (opcjonalne, większość hostingów poradzi sobie z tym sama)
-          chmod -R 775 release_build/public/uploads release_build/public/cache release_build/logs
+          mkdir -p release_shared/public/uploads/media
+          mkdir -p release_shared/public/uploads/secure
+          mkdir -p release_shared/public/cache
+          mkdir -p release_shared/logs
+          chmod -R 775 release_shared/public/uploads release_shared/public/cache release_shared/logs
 
-      - name: Create ZIP Archive
+          # Stworzenie specjalnego .htaccess w głównym folderze dla InfinityFree
+          cat << 'EOF' > release_shared/.htaccess
+          <IfModule mod_rewrite.c>
+              RewriteEngine On
+
+              # 1. Jeśli plik istnieje w /public, pokaż go bez ładowania PHP
+              RewriteCond %{DOCUMENT_ROOT}/public/%{REQUEST_URI} -f [OR]
+              RewriteCond %{DOCUMENT_ROOT}/public/%{REQUEST_URI} -d
+              RewriteRule ^(.*)$ public/$1 [L]
+
+              # 2. W przeciwnym razie wyślij ruch do routera
+              RewriteCond %{REQUEST_URI} !^/public/
+              RewriteRule ^(.*)$ public/index.php [L]
+
+              # 3. Zabezpieczenie katalogów systemowych
+              RewriteRule ^src/.*$ - [F,L]
+              RewriteRule ^vendor/.*$ - [F,L]
+              RewriteRule ^\.env$ - [F,L]
+          </IfModule>
+          EOF
+
+      - name: Create ZIP Archives
         run: |
-          cd release_build
-          zip -r ../cms-production-build.zip .
+          # Flaga -rX wyklucza atrybuty Linuxowe, czyniąc plik przyjaznym dla Windows
+          cd release_standard
+          zip -rX ../cms-standard-build.zip .
 
-      - name: Upload Artifact
+          cd ../release_shared
+          zip -rX ../cms-shared-hosting-build.zip .
+
+      - name: Upload Standard Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cms-production-build
-          path: cms-production-build.zip
-          retention-days: 30 # Przechowuj plik na GitHubie przez 30 dni
+          name: cms-standard-build
+          path: cms-standard-build.zip
+          retention-days: 30
+
+      - name: Upload Shared Hosting Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cms-shared-hosting-build
+          path: cms-shared-hosting-build.zip
+          retention-days: 30

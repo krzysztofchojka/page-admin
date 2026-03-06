@@ -4,18 +4,21 @@ namespace CMS\Controllers;
 use CMS\Core\Session;
 
 class MediaController {
-
     private string $baseDir;
     private string $baseUrl;
 
-    public function __construct()
-    {
-        $this->baseDir = realpath(__DIR__ . '/../../public/uploads/media');
+    public function __construct() {
+        // Używamy ścieżki bez realpath na starcie, by uniknąć problemów na shared hostingu
+        $this->baseDir = __DIR__ . '/../../public/uploads/media';
         $this->baseUrl = '/uploads/media';
+
+        // AUTOMATYCZNE TWORZENIE FOLDERU (InfinityFree czasem nie kopiuje pustych folderów)
+        if (!is_dir($this->baseDir)) {
+            mkdir($this->baseDir, 0755, true);
+        }
     }
 
-    private function checkAuth()
-    {
+    private function checkAuth() {
         Session::init();
         if (!Session::isLoggedIn()) {
             http_response_code(403);
@@ -23,51 +26,59 @@ class MediaController {
         }
     }
 
-    private function resolvePath(string $relative = '')
-    {
-        $path = realpath($this->baseDir . '/' . $relative);
-        if (!$path || strpos($path, $this->baseDir) !== 0) {
-            return $this->baseDir;
+    private function resolvePath(string $relative = '') {
+        $path = __DIR__ . '/../../public/uploads/media/' . $relative;
+        $realPath = realpath($path);
+        
+        // Zabezpieczenie: czy użytkownik nie próbuje wyjść poza folder media
+        if ($realPath && strpos($realPath, realpath($this->baseDir)) === 0) {
+            return $realPath;
         }
-        return $path;
+        return realpath($this->baseDir);
     }
 
-    public function index()
-    {
+    public function index() {
         $this->checkAuth();
-
         $relativePath = $_GET['path'] ?? '';
         $search = $_GET['search'] ?? '';
-
         $currentDir = $this->resolvePath($relativePath);
 
         $files = [];
+        if (is_dir($currentDir)) {
+            $items = scandir($currentDir);
+            foreach ($items as $item) {
+                if ($item === '.' || $item === '..') continue;
+                if ($search && stripos($item, $search) === false) continue;
 
-        foreach (scandir($currentDir) as $item) {
+                $fullPath = $currentDir . '/' . $item;
+                $relativeItem = trim($relativePath . '/' . $item, '/');
 
-            if ($item === '.' || $item === '..') continue;
-            if ($search && stripos($item, $search) === false) continue;
+                if (is_dir($fullPath)) {
+                    $files[] = [
+                        'type' => 'folder',
+                        'name' => $item,
+                        'path' => $relativeItem
+                    ];
+                } else {
+                    // BEZPIECZNIK DLA MIME TYPE (jeśli host nie ma fileinfo)
+                    $mime = 'application/octet-stream';
+                    if (function_exists('mime_content_type')) {
+                        $mime = @mime_content_type($fullPath);
+                    }
 
-            $fullPath = $currentDir . '/' . $item;
-            $relativeItem = trim($relativePath . '/' . $item, '/');
-
-            if (is_dir($fullPath)) {
-                $files[] = [
-                    'type' => 'folder',
-                    'name' => $item,
-                    'path' => $relativeItem
-                ];
-            } else {
-                $files[] = [
-                    'type' => 'file',
-                    'name' => $item,
-                    'relative' => $relativeItem,
-                    'url' => $this->baseUrl . '/' . $relativeItem,
-                    'size' => round(filesize($fullPath)/1024, 2) . ' KB',
-                    'mime' => mime_content_type($fullPath)
-                ];
+                    $files[] = [
+                        'type' => 'file',
+                        'name' => $item,
+                        'relative' => $relativeItem,
+                        'url' => $this->baseUrl . '/' . $relativeItem,
+                        'size' => round(filesize($fullPath)/1024, 2) . ' KB',
+                        'mime' => $mime
+                    ];
+                }
             }
         }
+
+        // Reszta bez zmian...
         if(isset($_GET["picker"]) && $_GET["picker"]==1){
             require __DIR__ . '/../Views/admin/media/index.php';
         }else{

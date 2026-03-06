@@ -6,7 +6,8 @@ use CMS\Core\Database;
 
 class InstallController {
 
-    public function index() {
+    // Zmieniona metoda index - teraz przyjmuje opcjonalne parametry do zachowania stanu
+    public function index($errorMsg = '', $host = 'localhost', $name = '', $user = '', $pass = '') {
         $lockFile = __DIR__ . '/../../install.lock';
         $envPath = __DIR__ . '/../../.env';
 
@@ -17,7 +18,7 @@ class InstallController {
         }
 
         // 2. Automatyzacja dla CI/CD: Jeśli .env istnieje, ale nie ma lock-file, odpal tabele z automatu
-        if (file_exists($envPath)) {
+        if (file_exists($envPath) && empty($errorMsg)) {
             try {
                 $db = Database::getInstance();
                 $this->runInstallation($db->getConnection());
@@ -28,12 +29,18 @@ class InstallController {
             return;
         }
 
-        // 3. Tryb dla zwykłego użytkownika: Wyświetl interfejs graficzny
-        $error = $_GET['error'] ?? '';
+        // 3. Obsługa komunikatów o błędach (także tych z Get dla starych przekierowań)
+        $error = !empty($errorMsg) ? $errorMsg : ($_GET['error'] ?? '');
         $errorHtml = '';
         if (!empty($error)) {
             $errorHtml = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm font-bold shadow-sm">⚠️ ' . htmlspecialchars($error) . '</div>';
         }
+
+        // 4. Zabezpieczenie danych z formularza przed atakami XSS
+        $safeHost = htmlspecialchars($host);
+        $safeName = htmlspecialchars($name);
+        $safeUser = htmlspecialchars($user);
+        $safePass = htmlspecialchars($pass);
 
         echo <<<HTML
         <!DOCTYPE html>
@@ -56,19 +63,19 @@ class InstallController {
                 <form action="/install" method="POST" class="space-y-5">
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Serwer Bazy Danych (Host)</label>
-                        <input type="text" name="db_host" value="localhost" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800">
+                        <input type="text" name="db_host" value="$safeHost" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nazwa Bazy Danych</label>
-                        <input type="text" name="db_name" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="np. strona_db">
+                        <input type="text" name="db_name" value="$safeName" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="np. strona_db">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Użytkownik MySQL</label>
-                        <input type="text" name="db_user" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="np. root">
+                        <input type="text" name="db_user" value="$safeUser" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="np. root">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Hasło</label>
-                        <input type="password" name="db_pass" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="Wpisz hasło...">
+                        <input type="password" name="db_pass" value="$safePass" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="Wpisz hasło...">
                     </div>
                     <div class="pt-4 mt-6 border-t border-gray-100">
                         <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 text-lg">
@@ -91,34 +98,32 @@ class InstallController {
         $user = $_POST['db_user'] ?? '';
         $pass = $_POST['db_pass'] ?? '';
 
-        // 1. Sprawdzamy czy wpisane dane są poprawne, używając tymczasowego obiektu PDO
+        // 1. Sprawdzamy czy wpisane dane są poprawne (bez redirectu przy błędzie!)
         try {
             $pdo = new PDO("mysql:host=$host;dbname=$name;charset=utf8mb4", $user, $pass, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
             ]);
         } catch (\Exception $e) {
-            header("Location: /install?error=" . urlencode("Błąd połączenia z bazą: " . $e->getMessage()));
-            exit;
+            // Zamiast redirect, odpalamy widok bezpośrednio z zachowanymi danymi
+            return $this->index("Błąd połączenia z bazą: " . $e->getMessage(), $host, $name, $user, $pass);
         }
 
-        // 2. Generowanie 256-bitowego (32 bajty) klucza szyfrującego AES i budowa .env
+        // 2. Generowanie 256-bitowego klucza i zapis pliku .env
         $key = 'base64:' . base64_encode(random_bytes(32));
         $envContent = "DB_HOST={$host}\nDB_NAME={$name}\nDB_USER={$user}\nDB_PASS={$pass}\nAPP_ENV=production\nAPP_KEY=\"{$key}\"\n";
         
         $envPath = __DIR__ . '/../../.env';
         if (@file_put_contents($envPath, $envContent) === false) {
-            header("Location: /install?error=" . urlencode("Błąd zapisu! Brak uprawnień do utworzenia pliku .env w głównym katalogu. Zmień CHMOD na 775."));
-            exit;
+            return $this->index("Błąd zapisu! Brak uprawnień do utworzenia pliku .env. Zmień uprawnienia CHMOD na 775.", $host, $name, $user, $pass);
         }
 
-        // 3. Budowa architektury bazy (Tabele i domyślne wpisy)
+        // 3. Budowa architektury bazy
         try {
             $this->runInstallation($pdo);
             header("Location: /login");
             exit;
         } catch (\Exception $e) {
-            header("Location: /install?error=" . urlencode("Błąd tworzenia struktur w bazie: " . $e->getMessage()));
-            exit;
+            return $this->index("Błąd tworzenia tabel w bazie: " . $e->getMessage(), $host, $name, $user, $pass);
         }
     }
 
