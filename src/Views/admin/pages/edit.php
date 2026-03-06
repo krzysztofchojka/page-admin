@@ -74,6 +74,12 @@
 .block-item label {
     color: inherit !important;
 }
+#editor-wrapper a{
+    pointer-events:none !important;
+}
+#editor-wrapper a div{
+    pointer-events:auto !important;
+}
     </style>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
@@ -212,6 +218,26 @@
             availableGalleries: <?= json_encode($galleries ?? []) ?>,
             availableCategories: <?= json_encode($postCategories ?? []) ?> // <-- DODANA ZMIENNA
         };
+        function replaceLinksWithHash() {
+        // 1. Pobierz główny kontener o podanym ID
+        const editorWrapper = document.getElementById('editor-wrapper');
+
+        // 2. Sprawdź, czy kontener faktycznie istnieje w strukturze DOM
+        if (editorWrapper) {
+            // 3. Znajdź wszystkie tagi <a> wewnątrz tego kontenera
+            const links = editorWrapper.querySelectorAll('a');
+
+            // 4. Przejdź przez każdy znaleziony link i zamień jego atrybut href
+            links.forEach(link => {
+            link.setAttribute('href', '#');
+            });
+        } else {
+            console.warn('Element o ID "editor-wrapper" nie został znaleziony.');
+        }
+        }
+
+        // Wywołanie funkcji
+        replaceLinksWithHash();
     </script>
     <script src="<?= \CMS\Helpers\Asset::url('/assets/js/admin/page-builder.js') ?>"></script>
 </body>

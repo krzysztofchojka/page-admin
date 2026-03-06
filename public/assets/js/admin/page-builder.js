@@ -74,7 +74,10 @@ function buildNavTree(domContainer, navContainer) {
                     <span class="text-gray-400 w-5 text-center text-lg">${icon}</span>
                     <span class="text-gray-700 font-bold text-xs truncate max-w-[140px]">${name}</span>
                 </div>
-                <span class="text-gray-300 text-[10px] drag-handle-nav opacity-0 group-hover:opacity-100 transition px-1">✥</span>
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="window.toggleBlockSettings('${uid}', event)" class="text-gray-500 hover:text-blue-600 px-2 font-bold opacity-0 group-hover:opacity-100 transition" title="Ustawienia bloku">⋮</button>
+                    <span class="text-gray-300 text-[10px] drag-handle-nav opacity-0 group-hover:opacity-100 transition px-1">✥</span>
+                </div>
             </div>
         `;
 
@@ -117,23 +120,67 @@ function buildNavTree(domContainer, navContainer) {
 function initNavSortables() {
     navSortables.forEach(s => s.destroy());
     navSortables = [];
-    
+
     document.querySelectorAll('.nav-drop-zone').forEach(el => {
         navSortables.push(Sortable.create(el, {
-            group: 'navigator',
+            group: { name: 'navigator', put: ['navigator', 'shared'] }, // POZWALA NA DROP Z PRAWIEGO PASKA
             animation: 150,
             handle: '.drag-handle-nav',
             fallbackOnBody: true,
             ghostClass: 'nav-ghost',
             swapThreshold: 0.65,
+            
+            // Gdy element zostaje dodany DO nawigatora z zewnętrznego źródła (np. z prawego paska)
+            onAdd: function (evt) {
+                const itemEl = evt.item;
+                
+                // Jeśli element przyszedł z prawego paska
+                if (itemEl.classList.contains('sidebar-block')) {
+                    const type = itemEl.dataset.type;
+                    const toList = evt.to;
+                    const newIndex = evt.newIndex;
+                    const refZoneUid = toList.dataset.refZone;
+                    
+                    // 1. Usuwamy wizualny śmieć z nawigatora
+                    itemEl.parentNode.removeChild(itemEl);
+                    
+                    // 2. Znajdujemy odpowiednią strefę drop-zone w GŁÓWNYM EDYTORZE
+                    const realZone = document.querySelector(`[data-zone-uid="${refZoneUid}"]`);
+                    
+                    if (realZone) {
+                        // 3. Generujemy nowy, pełny klocek HTML
+                        const newBlock = renderBlock(type);
+                        
+                        // 4. Wstawiamy go do głównego edytora w odpowiednim miejscu (odwzorowując pozycję w nawigatorze)
+                        const childBlocks = Array.from(realZone.children).filter(c => c.classList.contains('block-item'));
+                        if (newIndex < childBlocks.length) {
+                            realZone.insertBefore(newBlock, childBlocks[newIndex]);
+                        } else {
+                            realZone.appendChild(newBlock);
+                        }
+                        
+                        // 5. Inicjujemy zawartość w głównym klocku (tak samo jak w standardowym dodawaniu)
+                        if (type === 'text') initQuill(newBlock.querySelector('.quill-editor'), '');
+                        if (type === 'accordion') initSortable(newBlock.querySelector('.tab-content'));
+                        if (type === 'carousel') newBlock.querySelectorAll('.tab-content').forEach(tc => initSortable(tc));
+                        if (type === 'columns_2' || type === 'columns_3') {
+                            newBlock.querySelectorAll('.drop-zone').forEach(col => initSortable(col));
+                        }
+                        
+                        // 6. Odświeżamy nawigator od zera (który sam zaciągnie nowo wygenerowany element)
+                        updateNavigator();
+                    }
+                }
+            },
+            
+            // Kiedy porządkujesz elementy WEWNĄTRZ nawigatora
             onEnd: function (evt) {
                 const itemEl = evt.item;
                 const toList = evt.to;
                 const newIndex = evt.newIndex;
-                
                 const refUid = itemEl.dataset.refUid;
-                const refZoneUid = toList.dataset.refZone; 
-                
+                const refZoneUid = toList.dataset.refZone;
+
                 const realBlock = document.querySelector(`[data-uid="${refUid}"]`);
                 const realZone = document.querySelector(`[data-zone-uid="${refZoneUid}"]`);
 
@@ -160,6 +207,24 @@ window.scrollToBlock = function(uid) {
         scrollContainer.scrollTo({top: y-80, behavior: 'smooth'});
         el.classList.add('ring-4', 'ring-blue-500', 'ring-offset-2', 'z-50');
         setTimeout(() => el.classList.remove('ring-4', 'ring-blue-500', 'ring-offset-2', 'z-50'), 1500);
+    }
+}
+
+window.toggleBlockSettings = function(uid, e) {
+    e.stopPropagation(); // Zapobiega podwójnemu kliknięciu w rodzica
+    window.scrollToBlock(uid); // Najpierw przesuwa ekran na blok
+    
+    const block = document.querySelector(`[data-uid="${uid}"]`);
+    if (block) {
+        const settingsPanel = block.querySelector('.block-settings-panel');
+        if (settingsPanel) {
+            // Otwiera panel ustawień (jeśli był zamknięty)
+            settingsPanel.classList.remove('hidden');
+            
+            // Opcjonalnie: podświetla na ułamek sekundy cały blok, aby wskazać, że to on
+            block.classList.add('ring-4', 'ring-orange-400', 'ring-offset-2');
+            setTimeout(() => block.classList.remove('ring-4', 'ring-orange-400', 'ring-offset-2'), 1000);
+        }
     }
 }
 
