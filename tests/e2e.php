@@ -16,7 +16,7 @@ $routes = [
     ['GET', '/test-db', 200, 200, 200],
     // Autoryzacja
     ['GET', '/login', 200, 302, 302],
-    ['GET', '/register', 200, 302, 302], // Zależnie od ustawień może być 200 lub 302 (jeśli zablokowane), zakładamy domyślnie 200
+    ['GET', '/register', 302, 302, 302], // Zależnie od ustawień może być 200 lub 302 (jeśli zablokowane)
     ['GET', '/change-password', 302, 302, 302],
     // Moduły Admina
     ['GET', '/admin', 302, 302, 200],
