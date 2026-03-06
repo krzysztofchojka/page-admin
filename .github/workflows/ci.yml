@@ -1,4 +1,3 @@
---- FILE: ./.github/workflows/ci.yml ---
 name: CMS CI/CD Tests & Release
 
 on:
@@ -19,7 +18,7 @@ jobs:
         ports:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -54,15 +53,15 @@ jobs:
           APP_ENV=testing
           APP_KEY="base64:testkey123456789012345678901234="
           EOF
-          
+
           while ! mysqladmin ping -h 127.0.0.1 -uroot -p${DB_PASSWORD} --silent; do
             echo "Czekam na MySQL..."
             sleep 2
           done
-          
+
           php -S 127.0.0.1:8000 -t public public/index.php > /dev/null 2>&1 &
           sleep 3
-          
+
           echo "Budowanie tabel bazy..."
           curl -s http://127.0.0.1:8000/install
 
@@ -91,7 +90,7 @@ jobs:
       - name: Setup Node.js (for Tailwind)
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Build CSS
         run: |
@@ -101,7 +100,7 @@ jobs:
       - name: Prepare Release Folder
         run: |
           mkdir release_build
-          
+
           # Kopiujemy tylko to, co potrzebne na serwerze produkcyjnym
           cp -r src release_build/
           cp -r public release_build/
@@ -109,13 +108,13 @@ jobs:
           cp .env.example release_build/
           cp README.md release_build/
           cp .htaccess release_build/ 2>/dev/null || true # Kopiuj jeśli istnieje
-          
+
           # Upewniamy się, że struktura katalogów dla uploadów i cache istnieje
           mkdir -p release_build/public/uploads/media
           mkdir -p release_build/public/uploads/secure
           mkdir -p release_build/public/cache
           mkdir -p release_build/logs
-          
+
           # Wymuszamy domyślne uprawnienia dla folderów dynamicznych (opcjonalne, większość hostingów poradzi sobie z tym sama)
           chmod -R 775 release_build/public/uploads release_build/public/cache release_build/logs
 
