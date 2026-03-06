@@ -1,12 +1,12 @@
 <?php
 
-// 1. Załaduj zewnętrzne biblioteki z Composera (np. Gregwar/Captcha)
+// 1. Załaduj zewnętrzne biblioteki z Composera
 $composerAutoload = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($composerAutoload)) {
     require_once $composerAutoload;
 }
 
-// 2. Prosty Autoloader (ładuje nasze klasy automatycznie z folderu src)
+// 2. Prosty Autoloader
 spl_autoload_register(function ($class) {
     $prefix = 'CMS\\';
     $base_dir = __DIR__ . '/../src/';
@@ -17,13 +17,22 @@ spl_autoload_register(function ($class) {
     if (file_exists($file)) require $file;
 });
 
-// 3. Ładowanie zmiennych środowiskowych do globalnej tablicy $_ENV
+// 3. Sprawdzenie i ładowanie pliku .env
 $envPath = __DIR__ . '/../.env';
-if (file_exists($envPath)) {
+$envExists = file_exists($envPath);
+
+if ($envExists) {
     $env = parse_ini_file($envPath);
     foreach ($env as $key => $value) {
         $_ENV[$key] = $value;
     }
+}
+
+// KONTROLA INSTALACJI: Jeśli nie ma .env, wymuś przekierowanie na kreator instalacji
+$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+if (!$envExists && $currentPath !== '/install') {
+    header('Location: /install');
+    exit;
 }
 
 // 4. Inicjalizacja Routera i import klas
@@ -57,7 +66,10 @@ $router->get('/', [PublicController::class, 'show']);
 $router->get('/page', [PublicController::class, 'show']);
 $router->get('/post', [PublicController::class, 'showPost']);
 $router->get('/test-db', [HomeController::class, 'testDb']);
-$router->get('/install', [InstallController::class, 'index']); // Instalator
+
+// KREATOR INSTALACJI
+$router->get('/install', [InstallController::class, 'index']); 
+$router->post('/install', [InstallController::class, 'process']);
 
 // Logowanie i Rejestracja
 $router->get('/login', [AuthController::class, 'loginForm']);
@@ -71,19 +83,15 @@ $router->post('/submit-form', [FormController::class, 'submit']);
 $router->post('/form-upload', [FormController::class, 'asyncUpload']);
 $router->post('/form-autosave', [FormController::class, 'autosave']);
 
-
 // =========================================================================
 // TRASY ZALOGOWANEGO UŻYTKOWNIKA (Wymagają AuthMiddleware)
 // =========================================================================
 $router->get('/change-password', [AuthController::class, 'changePasswordForm']);
 $router->post('/change-password', [AuthController::class, 'changePassword']);
 
-
 // =========================================================================
 // TRASY ADMINISTRATORA (Wymagają AdminMiddleware)
 // =========================================================================
-
-// Dashboard
 $router->get('/admin', [AdminController::class, 'index'], [AdminMiddleware::class]);
 $router->get('/admin/help', [HelpController::class, 'index'], [AdminMiddleware::class]);
 
@@ -178,7 +186,6 @@ $router->post('/admin/email/lists/create', [EmailController::class, 'createList'
 $router->get('/admin/email/lists/manage', [EmailController::class, 'manageList'], [AdminMiddleware::class]);
 $router->post('/admin/email/lists/add-subscriber', [EmailController::class, 'addSubscriber'], [AdminMiddleware::class]);
 $router->get('/admin/email/lists/remove-subscriber', [EmailController::class, 'removeSubscriber'], [AdminMiddleware::class]);
-
 
 // =========================================================================
 // FALLBACK (Błąd 404 lub aliasy z bazy)
