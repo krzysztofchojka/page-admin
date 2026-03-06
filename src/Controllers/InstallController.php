@@ -1,3 +1,4 @@
+--- FILE: ./src/Controllers/InstallController.php ---
 <?php
 namespace CMS\Controllers;
 
@@ -154,14 +155,25 @@ class InstallController {
         $pdo->exec("INSERT IGNORE INTO pa_data (id, title, slug, field_type, contents, create_date, edit_date) VALUES (1, 'Strona Główna', '/', 'page', '[]', NOW(), NOW())");
         $pdo->exec("INSERT IGNORE INTO pa_mailing_lists (id, name, is_default) VALUES (1, 'Użytkownicy Systemu', 1)");
 
-        // Dodanie domyślnego użytkownika admin (tylko jeśli nie istnieje)
-        $check = $pdo->query("SELECT id FROM pa_users WHERE uname = 'admin'");
-        if (!$check->fetch()) {
+        // Dodanie domyślnego użytkownika ADMIN (tylko jeśli nie istnieje)
+        $checkAdmin = $pdo->query("SELECT id FROM pa_users WHERE uname = 'admin'");
+        if (!$checkAdmin->fetch()) {
             $stmt = $pdo->prepare("INSERT INTO pa_users (uname, pass, email, admin, pass_expired) VALUES (:uname, :pass, :email, 1, 0)");
             $stmt->execute([
                 'uname' => 'admin',
                 'pass' => password_hash('admin', PASSWORD_DEFAULT),
                 'email' => 'admin@localhost'
+            ]);
+        }
+
+        // Dodanie domyślnego użytkownika USER (potrzebny do testów E2E i uprawnień)
+        $checkUser = $pdo->query("SELECT id FROM pa_users WHERE uname = 'user'");
+        if (!$checkUser->fetch()) {
+            $stmt = $pdo->prepare("INSERT INTO pa_users (uname, pass, email, admin, pass_expired) VALUES (:uname, :pass, :email, 0, 0)");
+            $stmt->execute([
+                'uname' => 'user',
+                'pass' => password_hash('user123', PASSWORD_DEFAULT),
+                'email' => 'user@localhost'
             ]);
         }
 
