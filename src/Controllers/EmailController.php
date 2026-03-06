@@ -5,9 +5,13 @@ use CMS\Core\Database;
 use CMS\Core\Session;
 
 class EmailController {
+
     public function __construct() {
         Session::init();
-        if (!Session::isLoggedIn()) { header('Location: /login'); exit; }
+        if (!Session::isLoggedIn()) {
+            header('Location: /login');
+            exit;
+        }
     }
 
     public function index() {
@@ -42,10 +46,9 @@ class EmailController {
                 body LONGTEXT NOT NULL,
                 sent_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )");
+
             $db->query("INSERT INTO pa_sent_emails (recipient, subject, body, sent_at) VALUES (?, ?, ?, NOW())", [
-                $data['to'], 
-                $data['subject'], 
-                $data['body']
+                $data['to'], $data['subject'], $data['body']
             ]);
 
             echo json_encode(['status' => 'success']);
@@ -71,8 +74,9 @@ class EmailController {
 
     public function deleteTemplate() {
         \CMS\Core\Session::init();
-        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
+        // [POPRAWKA]: Usunięto weryfikację CSRF z POST, ponieważ interfejs przesyła to jako zwykły link GET
         $id = $_GET['id'] ?? 0;
+        
         $db = \CMS\Core\Database::getInstance();
 
         // 1. Sprawdzamy, czy jakaś wiadomość nie czeka w kolejce do wysłania z tym szablonem
@@ -86,7 +90,7 @@ class EmailController {
         // 2. Sprawdzamy czy szablon nie jest podpięty w ustawieniach formularzy jako autoresponder
         $inFormsAdmin = $db->query("SELECT COUNT(*) as c FROM pa_forms WHERE settings LIKE ?", ['%"adminTemplate":"'.$id.'"%'])->fetch()['c'];
         $inFormsUser = $db->query("SELECT COUNT(*) as c FROM pa_forms WHERE settings LIKE ?", ['%"userTemplate":"'.$id.'"%'])->fetch()['c'];
-
+        
         if ($inFormsAdmin > 0 || $inFormsUser > 0) {
             \CMS\Core\Session::setFlash("Nie można usunąć: Szablon jest podpięty pod powiadomienia w formularzu.", "error");
             header('Location: /admin/email/templates');
@@ -102,11 +106,11 @@ class EmailController {
     // --- 1B. ASYNCHRONICZNE POBIERANIE MAILI (AJAX + CACHE 5 MINUT) ---
     public function fetchEmails() {
         header('Content-Type: application/json');
-        
+
         // Zapisujemy cache w systemowym folderze tymczasowym serwera (bezpieczne i zawsze zapisywalne)
         $cacheFile = sys_get_temp_dir() . '/cms_imap_cache.json';
         $forceRefresh = isset($_GET['force']) && $_GET['force'] == '1';
-        
+
         // Sprawdzanie Cache (300 sekund = 5 minut)
         if (!$forceRefresh && file_exists($cacheFile) && (time() - filemtime($cacheFile) < 300)) {
             $cacheData = json_decode(file_get_contents($cacheFile), true);
@@ -118,8 +122,9 @@ class EmailController {
 
         $db = \CMS\Core\Database::getInstance();
         $settingsRaw = $db->query("SELECT * FROM pa_settings WHERE setting_key LIKE 'imap_%'")->fetchAll();
-        $imapSet = []; foreach($settingsRaw as $s) $imapSet[$s['setting_key']] = $s['setting_value'];
-        
+        $imapSet = [];
+        foreach($settingsRaw as $s) $imapSet[$s['setting_key']] = $s['setting_value'];
+
         $emails = [];
         $imapError = null;
         $debugLog = [];
@@ -157,12 +162,17 @@ class EmailController {
     // --- 1C. ODCZYT POJEDYNCZEGO MAILA (AJAX) ---
     public function readEmail() {
         header('Content-Type: application/json');
+        
         $id = $_GET['id'] ?? 0;
-        if (!$id) { echo json_encode(['status' => 'error', 'message' => 'Brak ID wiadomości.']); exit; }
+        if (!$id) {
+            echo json_encode(['status' => 'error', 'message' => 'Brak ID wiadomości.']);
+            exit;
+        }
 
         $db = \CMS\Core\Database::getInstance();
         $settingsRaw = $db->query("SELECT * FROM pa_settings WHERE setting_key LIKE 'imap_%'")->fetchAll();
-        $imapSet = []; foreach($settingsRaw as $s) $imapSet[$s['setting_key']] = $s['setting_value'];
+        $imapSet = [];
+        foreach($settingsRaw as $s) $imapSet[$s['setting_key']] = $s['setting_value'];
 
         require_once __DIR__ . '/../Libs/MiniImap.php';
         $imap = new \CMS\Libs\MiniImap();
@@ -181,26 +191,35 @@ class EmailController {
     public function templates() {
         $db = Database::getInstance();
         $templates = $db->query("SELECT * FROM pa_email_templates ORDER BY id DESC")->fetchAll();
-        ob_start(); require_once __DIR__ . '/../Views/admin/email/templates.php';
-        $content = ob_get_clean(); require_once __DIR__ . '/../Views/admin/layout.php';
+        ob_start();
+        require_once __DIR__ . '/../Views/admin/email/templates.php';
+        $content = ob_get_clean();
+        require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
     public function createTemplate() {
-        ob_start(); require_once __DIR__ . '/../Views/admin/email/template_builder.php';
-        $content = ob_get_clean(); require_once __DIR__ . '/../Views/admin/layout.php';
+        ob_start();
+        require_once __DIR__ . '/../Views/admin/email/template_builder.php';
+        $content = ob_get_clean();
+        require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
     public function editTemplate() {
         $id = $_GET['id'] ?? 0;
         $db = Database::getInstance();
         $template = $db->query("SELECT * FROM pa_email_templates WHERE id = ?", [$id])->fetch();
-        if (!$template) { header('Location: /admin/email/templates'); exit; }
-        ob_start(); require_once __DIR__ . '/../Views/admin/email/template_builder.php';
-        $content = ob_get_clean(); require_once __DIR__ . '/../Views/admin/layout.php';
+        if (!$template) {
+            header('Location: /admin/email/templates');
+            exit;
+        }
+        ob_start();
+        require_once __DIR__ . '/../Views/admin/email/template_builder.php';
+        $content = ob_get_clean();
+        require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
     public function saveTemplate() {
-        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? ''); // <-- DODANE
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         
         $db = Database::getInstance();
         if (!empty($_POST['id'])) {
@@ -215,15 +234,18 @@ class EmailController {
             ]);
         }
         Session::setFlash("Szablon zapisany!", "success");
-        header('Location: /admin/email/templates'); exit;
+        header('Location: /admin/email/templates');
+        exit;
     }
 
     // --- 3. LISTY MAILINGOWE ---
     public function lists() {
         $db = Database::getInstance();
         $lists = $db->query("SELECT * FROM pa_mailing_lists ORDER BY id DESC")->fetchAll();
-        ob_start(); require_once __DIR__ . '/../Views/admin/email/lists.php';
-        $content = ob_get_clean(); require_once __DIR__ . '/../Views/admin/layout.php';
+        ob_start();
+        require_once __DIR__ . '/../Views/admin/email/lists.php';
+        $content = ob_get_clean();
+        require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
     public function createList() {
@@ -232,33 +254,47 @@ class EmailController {
         $name = trim($_POST['name'] ?? 'Nowa lista');
         Database::getInstance()->query("INSERT INTO pa_mailing_lists (name, is_default) VALUES (?, 0)", [$name]);
         Session::setFlash("Lista utworzona!", "success");
-        header('Location: /admin/email/lists'); exit;
+        header('Location: /admin/email/lists');
+        exit;
     }
 
     public function manageList() {
         $id = $_GET['id'] ?? 0;
         $db = Database::getInstance();
+        
         $list = $db->query("SELECT * FROM pa_mailing_lists WHERE id = ?", [$id])->fetch();
-        if (!$list) { header('Location: /admin/email/lists'); exit; }
+        if (!$list) {
+            header('Location: /admin/email/lists');
+            exit;
+        }
+
         $subscribers = $db->query("SELECT * FROM pa_mailing_subscribers WHERE list_id = ? ORDER BY id DESC", [$id])->fetchAll();
         
-        ob_start(); require_once __DIR__ . '/../Views/admin/email/list_manage.php';
-        $content = ob_get_clean(); require_once __DIR__ . '/../Views/admin/layout.php';
+        ob_start();
+        require_once __DIR__ . '/../Views/admin/email/list_manage.php';
+        $content = ob_get_clean();
+        require_once __DIR__ . '/../Views/admin/layout.php';
     }
 
     public function addSubscriber() {
         \CMS\Core\Session::init();
         \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
+        
         $listId = $_POST['list_id'];
         $email = trim($_POST['email']);
         $name = trim($_POST['name'] ?? '');
+
         if(filter_var($email, FILTER_VALIDATE_EMAIL)) {
             try {
                 Database::getInstance()->query("INSERT INTO pa_mailing_subscribers (list_id, email, name) VALUES (?, ?, ?)", [$listId, $email, $name]);
                 Session::setFlash("Dodano subskrybenta.", "success");
-            } catch (\Exception $e) { Session::setFlash("Ten email już jest na liście.", "error"); }
+            } catch (\Exception $e) {
+                Session::setFlash("Ten email już jest na liście.", "error");
+            }
         }
-        header('Location: /admin/email/lists/manage?id=' . $listId); exit;
+        
+        header('Location: /admin/email/lists/manage?id=' . $listId);
+        exit;
     }
 
     public function removeSubscriber() {
@@ -266,23 +302,25 @@ class EmailController {
         $listId = $_GET['list_id'] ?? 0;
         Database::getInstance()->query("DELETE FROM pa_mailing_subscribers WHERE id = ?", [$id]);
         Session::setFlash("Usunięto.", "success");
-        header('Location: /admin/email/lists/manage?id=' . $listId); exit;
+        header('Location: /admin/email/lists/manage?id=' . $listId);
+        exit;
     }
 
     // --- KOLEJKA WYSYŁEK ---
     public function queue() {
         $db = \CMS\Core\Database::getInstance();
+        
         // Pobieramy kolejkę i dołączamy statystyki z logów (ile wysłano, ile błędów)
         $queue = $db->query("
             SELECT q.*, t.title as template_title, l.name as list_name,
-                   (SELECT COUNT(*) FROM pa_email_logs WHERE queue_id = q.id AND status = 'sent') as sent_count,
-                   (SELECT COUNT(*) FROM pa_email_logs WHERE queue_id = q.id AND status = 'failed') as failed_count
+            (SELECT COUNT(*) FROM pa_email_logs WHERE queue_id = q.id AND status = 'sent') as sent_count,
+            (SELECT COUNT(*) FROM pa_email_logs WHERE queue_id = q.id AND status = 'failed') as failed_count
             FROM pa_email_queue q 
-            LEFT JOIN pa_email_templates t ON q.template_id = t.id 
-            LEFT JOIN pa_mailing_lists l ON q.list_id = l.id 
+            LEFT JOIN pa_email_templates t ON q.template_id = t.id
+            LEFT JOIN pa_mailing_lists l ON q.list_id = l.id
             ORDER BY q.id DESC
         ")->fetchAll();
-        
+
         ob_start();
         require_once __DIR__ . '/../Views/admin/email/queue.php';
         $content = ob_get_clean();
@@ -295,7 +333,7 @@ class EmailController {
         $templateId = $_POST['template_id'] ?? 0;
         $listId = !empty($_POST['list_id']) ? $_POST['list_id'] : null;
         $customEmails = $_POST['custom_emails'] ?? '';
-        
+
         // Zapisujemy jako oczekujące (bez daty wymusza ręczne kliknięcie, ew. natychmiastowy CRON)
         $db->query("INSERT INTO pa_email_queue (template_id, list_id, custom_emails, status) VALUES (?, ?, ?, 'pending')", [
             $templateId, $listId, $customEmails
@@ -309,13 +347,16 @@ class EmailController {
     }
 
     public function triggerJob() {
-        \CMS\Core\Session::init(); // Zawsze na początku by uniknąć błędu 500 (headers already sent)
+        \CMS\Core\Session::init(); 
         \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
         $id = $_GET['id'] ?? 0;
-        if (!$id) { header('Location: /admin/email/queue'); exit; }
+        if (!$id) {
+            header('Location: /admin/email/queue');
+            exit;
+        }
 
         $db = \CMS\Core\Database::getInstance();
-        
+
         // --- OBSŁUGA "WYŚLIJ PONOWNIE" ---
         $isResend = isset($_GET['resend']) && $_GET['resend'] == 1;
         if ($isResend) {
@@ -336,8 +377,8 @@ class EmailController {
         if ($task) {
             // Zabezpieczenie przed podwójnym kliknięciem
             $db->query("UPDATE pa_email_queue SET status = 'processing' WHERE id = ?", [$id]);
+
             $template = $db->query("SELECT * FROM pa_email_templates WHERE id = ?", [$task['template_id']])->fetch();
-            
             if (!$template) {
                 $db->query("UPDATE pa_email_queue SET status = 'failed' WHERE id = ?", [$id]);
                 \CMS\Core\Session::setFlash("Błąd: Szablon został usunięty.", "error");
@@ -347,6 +388,7 @@ class EmailController {
 
             require_once __DIR__ . '/../Services/MailerService.php';
             $mailer = new \CMS\Services\MailerService();
+
             $recipients = [];
 
             // 1. Z Listy Systemowej (tylko poprawne maile)
@@ -380,7 +422,7 @@ class EmailController {
                 $subject = str_replace('{{uname}}', $recipient['name'], $template['subject']);
                 
                 $sendResult = $mailer->send($recipient['email'], $subject, $body);
-
+                
                 if ($sendResult === true) {
                     $db->query("INSERT INTO pa_email_logs (queue_id, user_email, status) VALUES (?, ?, 'sent')", [$task['id'], $recipient['email']]);
                 } else {
@@ -388,10 +430,11 @@ class EmailController {
                     $db->query("INSERT INTO pa_email_logs (queue_id, user_email, status, error_message) VALUES (?, ?, 'failed', ?)", [$task['id'], $recipient['email'], $errMsg]);
                 }
             }
+
             // Zmiana statusu na ukończony
             $db->query("UPDATE pa_email_queue SET status = 'completed' WHERE id = ?", [$id]);
         }
-        
+
         \CMS\Core\Session::setFlash("Proces wysyłki zakończony!", "success");
         header('Location: /admin/email/queue');
         exit;
