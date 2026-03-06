@@ -1,4 +1,3 @@
---- FILE: ./src/Controllers/InstallController.php ---
 <?php
 namespace CMS\Controllers;
 
