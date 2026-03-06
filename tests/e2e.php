@@ -18,6 +18,10 @@ $routes = [
     ['GET', '/login', 200, 302, 302],
     ['GET', '/register', 302, 302, 302], // Zależnie od ustawień może być 200 lub 302 (jeśli zablokowane)
     ['GET', '/change-password', 302, 302, 302],
+    ['GET', '/forgot-password', 200, 302, 302], // Gość widzi formularz (200), zalogowany (user/admin) jest przekierowany (302)
+    ['GET', '/reset-password', 302, 302, 302],  // Wszyscy dostają 302, bo wejście bez tokenu od razu odrzuca
+    ['GET', '/admin/stats', 302, 302, 200],
+    ['GET', '/admin/stats/data', 302, 302, 200],
     // Moduły Admina
     ['GET', '/admin', 302, 302, 200],
     ['GET', '/admin/pages', 302, 302, 200],
@@ -300,6 +304,33 @@ $userRes = request('POST', '/admin/users/create', [
 ]);
 assertSuccess("Utworzono nowego Administratora", in_array($userRes['code'], [302, 200]));
 
+// --- STATYSTYKI ---
+echo "\n[9] Statystyki (Stats)...\n";
+$statsRes = request('GET', '/admin/stats/data?days=7');
+assertSuccess("Wywołano endpoint statystyk i pobrano JSON", $statsRes['code'] === 200 && strpos($statsRes['body'], 'visits') !== false);
+
+
+// --- WYLOWANIE Z ADMINA DO TESTÓW PUBLICZNYCH ---
+request('GET', '/logout'); // Wylogowujemy admina, żeby przetestować widoki dla gościa
+
+
+// --- RESET HASŁA (Gość) ---
+echo "\n[10] Reset Hasła (Forgot Password)...\n";
+// Pobranie tokenu CSRF ze strony zapomnianego hasła
+$forgotGetRes = request('GET', '/forgot-password');
+preg_match('/name="csrf_token" value="([^"]+)"/', $forgotGetRes['body'], $matches);
+$forgotCsrf = $matches[1] ?? '';
+
+$forgotPostRes = request('POST', '/forgot-password', [
+    'email' => 'admin@localhost', // Konto utworzone przez InstallController
+    'csrf_token' => $forgotCsrf
+]);
+// Oczekujemy przekierowania (302) po udanym przyjęciu żądania wysyłki maila
+assertSuccess("Wysłano formularz zapomnianego hasła", in_array($forgotPostRes['code'], [302, 200]));
+
+// Próba wejścia na reset-password z fałszywym tokenem (powinno odrzucić i przekierować do logowania)
+$resetGetRes = request('GET', '/reset-password?token=falszywy_token_123');
+assertSuccess("Odrzucono próbę resetu ze złym tokenem", $resetGetRes['code'] === 302 && strpos($resetGetRes['location'], '/login') !== false);
 
 // =========================================================================
 // 5. ZAKOŃCZENIE I SPRZĄTANIE

@@ -299,6 +299,119 @@ public function loginForm() {
         exit;
     }
 
+    private function ensureResetColumnsExist($db) {
+        try {
+            $db->query("ALTER TABLE pa_users ADD COLUMN reset_token VARCHAR(64) NULL AFTER pass_expired, ADD COLUMN reset_expires DATETIME NULL AFTER reset_token");
+        } catch (\Exception $e) {}
+    }
+
+    public function forgotPasswordForm() {
+        Session::init();
+        if (Session::isLoggedIn()) {
+            header('Location: /admin');
+            exit;
+        }
+        $settings = $this->getSettings();
+        require_once __DIR__ . '/../Views/auth/forgot_password.php';
+    }
+
+    public function sendResetLink() {
+        Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        
+        $db = \CMS\Core\Database::getInstance();
+        $this->ensureResetColumnsExist($db);
+
+        $user = $db->query("SELECT id FROM pa_users WHERE email = :e", ['e' => $email])->fetch();
+        
+        if ($user) {
+            $token = bin2hex(random_bytes(32));
+            $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            
+            $db->query("UPDATE pa_users SET reset_token = :t, reset_expires = :d WHERE id = :id", [
+                't' => $token, 'd' => $expires, 'id' => $user['id']
+            ]);
+
+            $domain = $_SERVER['HTTP_HOST'] ?? 'domena.pl';
+            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+            $resetLink = "{$protocol}://{$domain}/reset-password?token={$token}";
+
+            require_once __DIR__ . '/../Services/MailerService.php';
+            $mailer = new \CMS\Services\MailerService();
+            $body = "Witaj,<br><br>Otrzymaliśmy prośbę o reset hasła do Twojego konta.<br>Kliknij w poniższy link, aby ustawić nowe hasło (link wygasa za godzinę):<br><br><a href='{$resetLink}'>{$resetLink}</a><br><br>Jeśli to nie Ty prosiłeś o reset, zignoruj tę wiadomość.";
+            
+            $mailer->send($email, "Reset hasła - " . $domain, $body);
+        }
+
+        // Zawsze pokazujemy ten sam komunikat, aby nie zdradzać istnienia maili w bazie (bezpieczeństwo)
+        Session::setFlash('Jeśli podany adres istnieje w bazie, wysłano na niego link do resetu hasła.', 'success');
+        header('Location: /forgot-password');
+        exit;
+    }
+
+    public function resetPasswordForm() {
+        Session::init();
+        $token = $_GET['token'] ?? '';
+        if (!$token) {
+            Session::setFlash('Brakujący token resetowania.');
+            header('Location: /login');
+            exit;
+        }
+
+        $db = \CMS\Core\Database::getInstance();
+        $this->ensureResetColumnsExist($db);
+        
+        $user = $db->query("SELECT id FROM pa_users WHERE reset_token = :t AND reset_expires > NOW()", ['t' => $token])->fetch();
+        if (!$user) {
+            Session::setFlash('Link do resetowania hasła jest nieprawidłowy lub wygasł.');
+            header('Location: /login');
+            exit;
+        }
+
+        $settings = $this->getSettings();
+        require_once __DIR__ . '/../Views/auth/reset_password.php';
+    }
+
+    public function updatePassword() {
+        Session::init();
+        \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
+        
+        $token = $_POST['token'] ?? '';
+        $pass1 = $_POST['pass1'] ?? '';
+        $pass2 = $_POST['pass2'] ?? '';
+
+        $db = \CMS\Core\Database::getInstance();
+        $user = $db->query("SELECT id FROM pa_users WHERE reset_token = :t AND reset_expires > NOW()", ['t' => $token])->fetch();
+
+        if (!$user) {
+            Session::setFlash('Zły lub przeterminowany token.');
+            header('Location: /login');
+            exit;
+        }
+
+        if ($pass1 !== $pass2) {
+            Session::setFlash('Hasła nie są identyczne.');
+            header("Location: /reset-password?token={$token}");
+            exit;
+        }
+
+        if (strlen($pass1) < 6) {
+            Session::setFlash('Hasło musi mieć minimum 6 znaków.');
+            header("Location: /reset-password?token={$token}");
+            exit;
+        }
+
+        $hash = password_hash($pass1, PASSWORD_DEFAULT);
+        $db->query("UPDATE pa_users SET pass = :p, reset_token = NULL, reset_expires = NULL WHERE id = :id", [
+            'p' => $hash, 'id' => $user['id']
+        ]);
+
+        Session::setFlash('Hasło zostało pomyślnie zmienione. Możesz się zalogować.', 'success');
+        header('Location: /login');
+        exit;
+    }
+
     public function logout() {
         Session::init();
         Session::destroy();

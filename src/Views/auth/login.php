@@ -42,6 +42,9 @@
                 <button class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full" type="submit">
                     Zaloguj się
                 </button>
+                <div class="text-right mb-2 mt-2">
+                    <a href="/forgot-password" class="text-sm font-bold text-blue-600 hover:underline">Zapomniałeś hasła?</a>
+                </div>
             </div>
         </form>
 

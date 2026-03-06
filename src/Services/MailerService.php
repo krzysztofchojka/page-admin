@@ -24,7 +24,8 @@ class MailerService {
         $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $this->mail->Port = $config['smtp_port'] ?? 587;
         
-        $this->mail->setFrom($config['smtp_user'] ?? 'no-reply@domena.pl', 'CMS System');
+        $domain = $_SERVER['HTTP_HOST'] ?? 'CMS';
+        $this->mail->setFrom($config['smtp_user'] ?? 'no-reply@' . $domain, $domain);
         $this->mail->CharSet = 'UTF-8';
         $this->mail->isHTML(true);
     }

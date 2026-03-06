@@ -192,6 +192,12 @@ $router->get('/admin/email/lists/remove-subscriber', [EmailController::class, 'r
 $router->get('/admin/stats', [StatsController::class, 'index'], [AdminMiddleware::class]);
 $router->get('/admin/stats/data', [StatsController::class, 'getData'], [AdminMiddleware::class]);
 
+// Odzyskliwanie hasła
+$router->get('/forgot-password', [AuthController::class, 'forgotPasswordForm']);
+$router->post('/forgot-password', [AuthController::class, 'sendResetLink']);
+$router->get('/reset-password', [AuthController::class, 'resetPasswordForm']);
+$router->post('/reset-password', [AuthController::class, 'updatePassword']);
+
 // =========================================================================
 // FALLBACK (Błąd 404 lub aliasy z bazy)
 // =========================================================================

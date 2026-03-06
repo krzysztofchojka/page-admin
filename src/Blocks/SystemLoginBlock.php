@@ -19,6 +19,9 @@ class SystemLoginBlock implements BlockInterface {
         $html .= '<div class="mb-4"><label class="block text-gray-700 text-sm font-bold mb-2">Email lub Login</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="login" type="text" required value="'.htmlspecialchars($oldLogin ?? '').'"></div>';
         $html .= '<div class="mb-6"><label class="block text-gray-700 text-sm font-bold mb-2">Hasło</label><input class="border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" name="password" type="password" required></div>';
         $html .= '<button class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded w-full transition shadow" type="submit">Zaloguj się</button>';
+        $html .= '<div class="text-right mb-2 mt-2">
+                <a href="/forgot-password" class="text-sm font-bold text-blue-600 hover:underline">Zapomniałeś hasła?</a>
+            </div>';
         $html .= '</form>';
 
         $regMode = $s['reg_mode'] ?? 'disabled';
