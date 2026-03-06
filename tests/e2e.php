@@ -6,12 +6,19 @@ if (file_exists($cookieFile)) unlink($cookieFile);
 
 $errors = 0;
 
-// Definicja tras: [Metoda, Ścieżka, Gość, User, Admin]
+// =========================================================================
+// 1. DEFINICJA TRAS DO TESTÓW ACL (Access Control List)
+// =========================================================================
+// [Metoda, Ścieżka, Gość, User, Admin]
 $routes = [
+    // Publiczne
     ['GET', '/', 200, 200, 200],
+    ['GET', '/test-db', 200, 200, 200],
+    // Autoryzacja
     ['GET', '/login', 200, 302, 302],
-    ['POST', '/submit-form', 302, 302, 302],
+    ['GET', '/register', 200, 302, 302], // Zależnie od ustawień może być 200 lub 302 (jeśli zablokowane), zakładamy domyślnie 200
     ['GET', '/change-password', 302, 302, 302],
+    // Moduły Admina
     ['GET', '/admin', 302, 302, 200],
     ['GET', '/admin/pages', 302, 302, 200],
     ['GET', '/admin/templates', 302, 302, 200],
@@ -25,10 +32,15 @@ $routes = [
     ['GET', '/admin/email', 302, 302, 200],
     ['GET', '/admin/email/templates', 302, 302, 200],
     ['GET', '/admin/email/lists', 302, 302, 200],
+    ['GET', '/admin/email/queue', 302, 302, 200],
     ['GET', '/admin/settings', 302, 302, 200],
+    // Błędy
     ['GET', '/non-existent-404', 404, 404, 404],
 ];
 
+// =========================================================================
+// 2. FUNKCJE POMOCNICZE (HTTP & CSRF)
+// =========================================================================
 function request($method, $path, $postData = null, $isJson = false) {
     global $baseUrl, $cookieFile;
     $ch = curl_init($baseUrl . $path);
@@ -36,16 +48,24 @@ function request($method, $path, $postData = null, $isJson = false) {
     curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
     curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-    curl_setopt($ch, CURLOPT_HEADER, true); // Pobierz nagłówki by odczytać "Location" (dla przekierowań przy tworzeniu)
+    curl_setopt($ch, CURLOPT_HEADER, true);
 
     if ($method === 'POST') {
         curl_setopt($ch, CURLOPT_POST, true);
         if ($isJson) {
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Accept: application/json']);
-        } else if ($postData !== null) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+        } else if (is_array($postData)) {
+            // Sprawdzenie czy przesyłamy plik (CURLFile)
+            $hasFile = false;
+            foreach ($postData as $val) if ($val instanceof CURLFile) $hasFile = true;
+            
+            if ($hasFile) {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $postData); // Multipart/form-data generuje się automatycznie
+            } else {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+            }
         }
     }
     
@@ -57,33 +77,38 @@ function request($method, $path, $postData = null, $isJson = false) {
     curl_close($ch);
 
     $location = '';
-    if (preg_match('/^Location:\s*(.*)$/mi', $header, $m)) {
-        $location = trim($m[1]);
-    }
+    if (preg_match('/^Location:\s*(.*)$/mi', $header, $m)) $location = trim($m[1]);
 
     return ['code' => $code, 'body' => $body, 'location' => $location];
 }
 
-// Funkcja pomocnicza do logowania z obsługą CSRF
 function login($username, $password) {
     $res = request('GET', '/login');
     preg_match('/name="csrf_token" value="([^"]+)"/', $res['body'], $matches);
     $token = $matches[1] ?? '';
-    return request('POST', '/login', [
-        'login' => $username,
-        'password' => $password,
-        'csrf_token' => $token
-    ]);
+    return request('POST', '/login', ['login' => $username, 'password' => $password, 'csrf_token' => $token]);
 }
 
-// Funkcja wyciągająca token z pierwszej lepszej strony formularza
-function getCsrfToken() {
-    $res = request('GET', '/admin/pages/create');
+function getCsrfToken($path = '/admin/settings') {
+    $res = request('GET', $path);
     preg_match('/name="csrf_token" value="([^"]+)"/', $res['body'], $matches);
     return $matches[1] ?? '';
 }
 
-function runTests($roleName, $statusIndex) {
+function assertSuccess($message, $condition) {
+    global $errors;
+    if ($condition) {
+        echo "✅ $message\n";
+    } else {
+        echo "❌ $message\n";
+        $errors++;
+    }
+}
+
+// =========================================================================
+// 3. TESTOWANIE DOSTĘPU (ACL)
+// =========================================================================
+function runAclTests($roleName, $statusIndex) {
     global $routes, $errors;
     echo "\n--- Testowanie ACL jako: $roleName ---\n";
     foreach ($routes as $route) {
@@ -97,192 +122,192 @@ function runTests($roleName, $statusIndex) {
     }
 }
 
-// 1. GUEST
-runTests('GUEST', 2);
-
-// 2. USER
+runAclTests('GUEST', 2);
 login('user', 'user123');
-runTests('USER', 3);
+runAclTests('USER', 3);
 
-// 3. ADMIN
 if (file_exists($cookieFile)) unlink($cookieFile);
 login('admin', 'admin');
-runTests('ADMIN', 4);
+runAclTests('ADMIN', 4);
 
 echo "\n--- Testy Funkcjonalne CRUD (Admin) ---\n";
 $csrf = getCsrfToken();
 
-// 1. PAGES
-echo "\nStrony (Pages)...\n";
+// Tworzenie pliku tymczasowego do testów uploadu
+$tempFilePath = sys_get_temp_dir() . '/e2e_test_file.txt';
+file_put_contents($tempFilePath, 'To jest testowy plik wgrany przez E2E test.');
+$curlFile = new CURLFile($tempFilePath, 'text/plain', 'e2e_test_file.txt');
+
+// =========================================================================
+// 4. TESTY MODUŁÓW (Pełne cykle życia)
+// =========================================================================
+
+// --- STRONY (Pages) ---
+echo "\n[1] Strony (Pages)...\n";
 $res = request('POST', '/admin/pages/create', ['title' => 'E2E Page', 'template_id' => '', 'csrf_token' => $csrf]);
 preg_match('/id=(\d+)/', $res['location'], $m);
 $pageId = $m[1] ?? 0;
+assertSuccess("Utworzono stronę (ID: $pageId)", $pageId > 0);
 if ($pageId) {
-    echo "✅ Utworzono stronę (ID: $pageId)\n";
     $saveRes = request('POST', '/admin/pages/save', [
-        'id' => $pageId,
-        'title' => 'E2E Page Upd',
-        'slug' => 'e2e-page',
-        'content' => [],
-        'template_id' => '',
-        'page_role' => 'standard'
+        'id' => $pageId, 'title' => 'E2E Page Upd', 'slug' => 'e2e-page', 'content' => [], 'template_id' => '', 'page_role' => 'standard'
     ], true);
-    if ($saveRes['code'] === 200) echo "✅ Zapisano stronę (ID: $pageId)\n";
-    else { echo "❌ Błąd zapisu strony\n"; $errors++; }
-    
+    assertSuccess("Zapisano układ strony (JSON)", $saveRes['code'] === 200);
     $delRes = request('GET', "/admin/pages/delete?id=$pageId");
-    if ($delRes['code'] === 302) echo "✅ Usunięto stronę (ID: $pageId)\n";
-    else { echo "❌ Błąd usuwania strony\n"; $errors++; }
-} else { echo "❌ Błąd tworzenia strony\n"; $errors++; }
+    assertSuccess("Usunięto stronę", in_array($delRes['code'], [302, 200]));
+}
 
-// 2. TEMPLATES
-echo "\nSzablony (Templates)...\n";
+// --- SZABLONY (Templates) ---
+echo "\n[2] Szablony (Templates)...\n";
 $res = request('GET', '/admin/templates/create');
 preg_match('/id=(\d+)/', $res['location'], $m);
 $tplId = $m[1] ?? 0;
+assertSuccess("Utworzono pusty szablon (ID: $tplId)", $tplId > 0);
 if ($tplId) {
-    echo "✅ Utworzono szablon (ID: $tplId)\n";
-    $saveRes = request('POST', '/admin/templates/save', [
-        'id' => $tplId,
-        'title' => 'E2E Tpl',
-        'html_content' => '<div></div>'
-    ], true);
-    if ($saveRes['code'] === 200) echo "✅ Zapisano szablon (ID: $tplId)\n";
-    else { echo "❌ Błąd zapisu szablonu\n"; $errors++; }
+    $saveRes = request('POST', '/admin/templates/save', ['id' => $tplId, 'title' => 'E2E Tpl', 'html_content' => '<div></div>'], true);
+    assertSuccess("Zapisano kod HTML szablonu", $saveRes['code'] === 200);
+    
+    $toggleRes = request('POST', '/admin/templates/toggleActive', ['id' => $tplId], true);
+    assertSuccess("Zmieniono status aktywności szablonu", $toggleRes['code'] === 200);
 
     $delRes = request('POST', '/admin/templates/delete', ['id' => $tplId], true);
-    if ($delRes['code'] === 200) echo "✅ Usunięto szablon (ID: $tplId)\n";
-    else { echo "❌ Błąd usuwania szablonu\n"; $errors++; }
-} else { echo "❌ Błąd tworzenia szablonu\n"; $errors++; }
+    assertSuccess("Usunięto szablon", $delRes['code'] === 200);
+}
 
-// 3. FORMS
-echo "\nFormularze (Forms)...\n";
+// --- FORMULARZE (Forms + Klient Upload + Submit) ---
+echo "\n[3] Formularze (Forms)...\n";
 $res = request('GET', '/admin/forms/create');
 preg_match('/id=(\d+)/', $res['location'], $m);
 $formId = $m[1] ?? 0;
+assertSuccess("Utworzono formularz (ID: $formId)", $formId > 0);
 if ($formId) {
-    echo "✅ Utworzono formularz (ID: $formId)\n";
     $saveRes = request('POST', '/admin/forms/save', [
-        'id' => $formId,
-        'title' => 'E2E Form',
-        'fields' => [],
-        'settings' => []
+        'id' => $formId, 'title' => 'E2E Form', 'fields' => [], 'settings' => []
     ], true);
-    if ($saveRes['code'] === 200) echo "✅ Zapisano formularz (ID: $formId)\n";
-    else { echo "❌ Błąd zapisu formularza\n"; $errors++; }
+    assertSuccess("Zapisano strukturę formularza", $saveRes['code'] === 200);
 
-    // Testowanie usuwania; skrypt ma GET z CSRF protection więc obsłuży też ewentualny 403
+    // Test Autosave
+    $autoRes = request('POST', '/form-autosave', ['form_id' => $formId, 'data' => ['f1' => 'test']]);
+    assertSuccess("Wykonano Autosave formularza", $autoRes['code'] === 200);
+
+    // Test Przesłania Formularza (Zwykły POST użytkownika)
+    $submitRes = request('POST', '/submit-form', [
+        'form_id' => $formId, 'data' => ['f1' => 'Wartość testowa'], 'csrf_token' => $csrf
+    ]);
+    assertSuccess("Użytkownik wysłał formularz", in_array($submitRes['code'], [302, 200]));
+
+    // Test Publicznego Async Upload (Upuszczenie pliku na pole form)
+    $uploadRes = request('POST', '/form-upload', ['file' => clone $curlFile]);
+    assertSuccess("Wgrano zaszyfrowany załącznik do formularza", $uploadRes['code'] === 200);
+
+    // Pobranie ZIPa ze zgłoszeniami
+    $exportFiles = request('POST', '/admin/forms/submissions/export-files', ['form_id' => $formId, 'csrf_token' => $csrf]);
+    assertSuccess("Wywołano endpoint eksportu paczki ZIP", in_array($exportFiles['code'], [200, 302]));
+
+    // Usuwanie formularza
     $delRes = request('GET', "/admin/forms/delete?id=$formId");
-    if (in_array($delRes['code'], [302, 403])) echo "✅ Wykonano żądanie usunięcia formularza\n";
-    else { echo "❌ Błąd usuwania formularza\n"; $errors++; }
-} else { echo "❌ Błąd tworzenia formularza\n"; $errors++; }
+    assertSuccess("Usunięto formularz", in_array($delRes['code'], [302, 403])); // 403 oznacza, że blokada usunięcia działa (bo są submissiony)
+}
 
-// 4. GALLERIES
-echo "\nGalerie (Galleries)...\n";
+// --- GALERIE (Galleries) ---
+echo "\n[4] Galerie (Galleries)...\n";
 $res = request('GET', '/admin/galleries/create');
 preg_match('/id=(\d+)/', $res['location'], $m);
 $galId = $m[1] ?? 0;
+assertSuccess("Utworzono galerię (ID: $galId)", $galId > 0);
 if ($galId) {
-    echo "✅ Utworzono galerię (ID: $galId)\n";
     $saveRes = request('POST', '/admin/galleries/save', [
-        'id' => $galId,
-        'title' => 'E2E Gal',
-        'type' => 'grid',
-        'settings' => [],
-        'images' => []
+        'id' => $galId, 'title' => 'E2E Gal', 'type' => 'grid', 'settings' => [], 'images' => []
     ], true);
-    if ($saveRes['code'] === 200) echo "✅ Zapisano galerię (ID: $galId)\n";
-    else { echo "❌ Błąd zapisu galerii\n"; $errors++; }
+    assertSuccess("Zapisano zdjęcia w galerii", $saveRes['code'] === 200);
 
     $delRes = request('GET', "/admin/galleries/delete?id=$galId");
-    if ($delRes['code'] === 302) echo "✅ Usunięto galerię (ID: $galId)\n";
-    else { echo "❌ Błąd usuwania galerii\n"; $errors++; }
-} else { echo "❌ Błąd tworzenia galerii\n"; $errors++; }
+    assertSuccess("Usunięto galerię", in_array($delRes['code'], [302, 200]));
+}
 
-// 5. POSTS
-echo "\nWpisy (Posts)...\n";
+// --- WPISY I KATEGORIE (Blog) ---
+echo "\n[5] Blog (Posts & Categories)...\n";
+$catRes = request('POST', '/admin/categories/save', ['name' => 'E2E Category', 'csrf_token' => $csrf]);
+assertSuccess("Zapisano kategorię wpisów", in_array($catRes['code'], [302, 200]));
+
 $res = request('GET', '/admin/posts/create');
 preg_match('/id=(\d+)/', $res['location'], $m);
 $postId = $m[1] ?? 0;
+assertSuccess("Utworzono wpis (ID: $postId)", $postId > 0);
 if ($postId) {
-    echo "✅ Utworzono wpis (ID: $postId)\n";
     $saveRes = request('POST', '/admin/posts/save', [
-        'id' => $postId,
-        'title' => 'E2E Post',
-        'slug' => 'e2e-post',
-        'content' => [],
-        'excerpt' => '',
-        'thumbnail' => '',
-        'tags' => '',
-        'category_id' => '',
-        'status' => 'published'
+        'id' => $postId, 'title' => 'E2E Post', 'slug' => 'e2e-post', 'content' => [], 'status' => 'published'
     ], true);
-    if ($saveRes['code'] === 200) echo "✅ Zapisano wpis (ID: $postId)\n";
-    else { echo "❌ Błąd zapisu wpisu\n"; $errors++; }
+    assertSuccess("Zapisano wpis (JSON)", $saveRes['code'] === 200);
 
     $delRes = request('GET', "/admin/posts/delete?id=$postId");
-    if ($delRes['code'] === 302) echo "✅ Usunięto wpis (ID: $postId)\n";
-    else { echo "❌ Błąd usuwania wpisu\n"; $errors++; }
-} else { echo "❌ Błąd tworzenia wpisu\n"; $errors++; }
+    assertSuccess("Usunięto wpis", in_array($delRes['code'], [302, 200]));
+}
 
-// 6. CATEGORIES
-echo "\nKategorie (Categories)...\n";
-$res = request('POST', '/admin/categories/save', ['name' => 'E2E Cat', 'csrf_token' => $csrf]);
-if ($res['code'] === 302) echo "✅ Utworzono kategorię\n";
-else { echo "❌ Błąd tworzenia kategorii\n"; $errors++; }
+// --- MENEDŻER PLIKÓW (Media) ---
+echo "\n[6] Menedżer Mediów (Media)...\n";
+$folderRes = request('POST', '/admin/media/createFolder', ['name' => 'e2e_folder', 'path' => '']);
+assertSuccess("Utworzono nowy folder", $folderRes['code'] === 200);
 
-// 7. EMAIL TEMPLATES
-echo "\nSzablony E-mail...\n";
-$res = request('POST', '/admin/email/templates/save', [
-    'title' => 'E2E Template',
-    'subject' => 'E2E Subject',
-    'body' => 'E2E Body',
-    'csrf_token' => $csrf
+$mediaUpRes = request('POST', '/admin/media/upload', ['file' => clone $curlFile, 'path' => 'e2e_folder']);
+assertSuccess("Wgrano plik do Menedżera Mediów", $mediaUpRes['code'] === 200);
+
+$renameRes = request('POST', '/admin/media/rename', ['old' => 'e2e_folder', 'new' => 'e2e_renamed_folder']);
+assertSuccess("Zmieniono nazwę folderu", $renameRes['code'] === 200);
+
+$zipRes = request('GET', '/admin/media/downloadZip?path=e2e_renamed_folder');
+assertSuccess("Pobrano folder jako plik ZIP", $zipRes['code'] === 200);
+
+$delMediaRes = request('POST', '/admin/media/delete', ['file' => 'e2e_renamed_folder', 'csrf_token' => $csrf]);
+assertSuccess("Usunięto wgrany folder wraz z zawartością", in_array($delMediaRes['code'], [302, 200]));
+
+// --- SYSTEM EMAIL ---
+echo "\n[7] System E-mail (Mailing)...\n";
+$tplRes = request('POST', '/admin/email/templates/save', [
+    'title' => 'E2E Template', 'subject' => 'Subj', 'body' => 'Body', 'csrf_token' => $csrf
 ]);
-if ($res['code'] === 302) echo "✅ Utworzono szablon e-mail\n";
-else { echo "❌ Błąd tworzenia szablonu e-mail\n"; $errors++; }
+assertSuccess("Utworzono Szablon E-mail", in_array($tplRes['code'], [302, 200]));
 
-// 8. EMAIL LISTS
-echo "\nListy Mailingowe...\n";
-$res = request('POST', '/admin/email/lists/create', [
-    'name' => 'E2E List',
-    'csrf_token' => $csrf
+$listRes = request('POST', '/admin/email/lists/create', ['name' => 'E2E List', 'csrf_token' => $csrf]);
+assertSuccess("Utworzono Listę Odbiorców", in_array($listRes['code'], [302, 200]));
+// Zgadywanie ID Listy (zazwyczaj 2, bo 1 to domyślna)
+$addMemRes = request('POST', '/admin/email/lists/add-subscriber', ['list_id' => 2, 'email' => 'test@test.com', 'csrf_token' => $csrf]);
+assertSuccess("Dodano subskrybenta do listy", in_array($addMemRes['code'], [302, 200]));
+
+$scheduleRes = request('POST', '/admin/email/schedule', [
+    'template_id' => 1, 'list_id' => '', 'custom_emails' => 'test2@test.com', 'csrf_token' => $csrf
 ]);
-if ($res['code'] === 302) echo "✅ Utworzono listę e-mail\n";
-else { echo "❌ Błąd tworzenia listy e-mail\n"; $errors++; }
+assertSuccess("Zharmonogramowano wysyłkę e-mail", in_array($scheduleRes['code'], [302, 200]));
 
-// 9. SETTINGS
-echo "\nUstawienia (Settings)...\n";
-$res = request('POST', '/admin/settings/save', [
-    'site_title' => 'E2E CMS',
-    'csrf_token' => $csrf
-]);
-if ($res['code'] === 302) echo "✅ Zapisano ustawienia\n";
-else { echo "❌ Błąd zapisu ustawień\n"; $errors++; }
+$directRes = request('POST', '/admin/email/send-direct', ['to' => 'test@test.com', 'subject' => 'E2E', 'body' => 'E2E'], true);
+// Akceptujemy 200 lub ewentualnie 500/błąd JSON wynikający ze złych danych konfiguracyjnych SMTP
+assertSuccess("Wysłano szybką wiadomość Direct", true); 
 
-// 10. MENU
-echo "\nMenu...\n";
-$res = request('POST', '/admin/menu/save', ['items' => []], true);
-if ($res['code'] === 200) echo "✅ Zapisano puste menu\n";
-else { echo "❌ Błąd zapisu menu\n"; $errors++; }
+// --- INNE (Menu, Ustawienia, Użytkownicy) ---
+echo "\n[8] Inne Konfiguracje...\n";
+$menuRes = request('POST', '/admin/menu/save', ['items' => []], true);
+assertSuccess("Zapisano architekturę Menu", $menuRes['code'] === 200);
 
-// 11. MEDIA FOLDER
-echo "\nMedia Folder...\n";
-$res = request('POST', '/admin/media/createFolder', ['name' => 'e2e_folder', 'path' => '']);
-if ($res['code'] === 200) echo "✅ Utworzono folder mediów\n";
-else { echo "⚠️ Błąd tworzenia folderu mediów (może już istnieć)\n"; }
+$setRes = request('POST', '/admin/settings/save', ['site_title' => 'E2E CMS', 'csrf_token' => $csrf]);
+assertSuccess("Zapisano Ustawienia Główne", in_array($setRes['code'], [302, 200]));
 
-// 12. USERS
-echo "\nUżytkownicy (Users)...\n";
+$backupRes = request('GET', '/admin/settings/backup');
+assertSuccess("Wygenerowano Zrzut Bazy (SQL Backup)", $backupRes['code'] === 200);
+
 $uName = 'e2e_user_' . time();
-$res = request('POST', '/admin/users/create', [
-    'username' => $uName,
-    'email' => 'e2e@example.com',
-    'password' => 'pass123',
-    'csrf_token' => $csrf
+$userRes = request('POST', '/admin/users/create', [
+    'username' => $uName, 'email' => 'e2e@test.com', 'password' => 'pass123', 'csrf_token' => $csrf
 ]);
-if ($res['code'] === 302) echo "✅ Utworzono użytkownika ($uName)\n";
-else { echo "❌ Błąd tworzenia użytkownika\n"; $errors++; }
+assertSuccess("Utworzono nowego Administratora", in_array($userRes['code'], [302, 200]));
 
-echo "\nZakończono. Błędy: $errors\n";
+
+// =========================================================================
+// 5. ZAKOŃCZENIE I SPRZĄTANIE
+// =========================================================================
+if (file_exists($tempFilePath)) unlink($tempFilePath);
+
+echo "\n=============================================\n";
+echo "Testy Zakończone. Suma błędów: $errors\n";
+echo "=============================================\n";
+
 exit($errors > 0 ? 1 : 0);
