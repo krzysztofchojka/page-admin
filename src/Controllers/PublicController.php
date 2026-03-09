@@ -55,15 +55,28 @@ class PublicController {
         $qs = $_SERVER['QUERY_STRING'] ?? '';
         $fullUri = $uri . ($qs ? '?' . $qs : '');
         $cacheKey = ($fullUri === '/' || $fullUri === '') ? 'index' : md5($fullUri);
-        
-        // Zmieniona ścieżka na folder public, gdzie PHP na pewno ma uprawnienia zapisu
         $cacheDir = __DIR__ . '/../../public/cache/';
         $cacheFile = $cacheDir . $cacheKey . '.html';
 
-        // Serwuj cache tylko dla gości i przy metodzie GET
-        if (!$isAdmin && !$isPost && file_exists($cacheFile)) {
-            readfile($cacheFile);
-            exit;
+        // 1. Sprawdzamy czy gość ma aktywne szkice w sesji lub komunikaty Flash
+        $hasSessionData = isset($_SESSION['flash']);
+        if (!$hasSessionData) {
+            foreach ($_SESSION as $key => $val) {
+                if (strpos($key, 'draft_') === 0) {
+                    $hasSessionData = true;
+                    break;
+                }
+            }
+        }
+
+        // 2. Serwuj cache tylko dla gości, bez aktywnych szkiców
+        if (!$isAdmin && !$isPost && !$hasSessionData && file_exists($cacheFile)) {
+            $cachedContent = file_get_contents($cacheFile);
+            // Omijamy cache, jeśli strona ma formularz (aby nie zepsuć tokenów CSRF i szkiców)
+            if (strpos($cachedContent, 'id="form-container-') === false) {
+                echo $cachedContent;
+                exit;
+            }
         }
 
         // --- POBIERANIE STRONY ---
@@ -122,20 +135,16 @@ class PublicController {
         require_once __DIR__ . '/../Views/public/page.php';
         $htmlOutput = ob_get_clean();
 
-        // Zapisujemy cache tylko w idealnych warunkach dla gości
-        if (!$isAdmin && !$isPost) {
-            if (!is_dir($cacheDir)) { 
+        // 3. Zapisujemy cache tylko w idealnych warunkach i pomijamy strony z formularzami
+        if (!$isAdmin && !$isPost && strpos($htmlOutput, 'id="form-container-') === false) {
+            if (!is_dir($cacheDir)) {
                 mkdir($cacheDir, 0775, true); 
-                // Chronimy ten folder przed odczytem bezpośrednim przez przeglądarkę
                 file_put_contents($cacheDir . '.htaccess', "Require all denied");
             }
             $htmlOutput .= "\n";
-            
             try {
                 file_put_contents($cacheFile, $htmlOutput);
-            } catch (\Exception $e) {
-                // ignorujemy błąd zapisu żeby strona dalej działała
-            }
+            } catch (\Exception $e) {}
         }
 
         echo $htmlOutput;
