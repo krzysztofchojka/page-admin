@@ -28,7 +28,7 @@ $db = Database::getInstance();
 // ========================================================================
 try {
     // Sprawdzamy czy tabela ma już kolumnę status, żeby CRON się nie zawiesił u starych instancji
-    $oldDrafts = $db->query("SELECT id, files_json FROM pa_submissions WHERE status = 'draft' AND created_at < DATE_SUB(NOW(), INTERVAL 48 HOUR)")->fetchAll();
+    $oldDrafts = $db->query("SELECT id, files_json FROM pa_submissions WHERE status = 'draft' AND created_at < DATE_SUB(NOW(), INTERVAL 32 HOUR)")->fetchAll();
     
     $deletedDraftsCount = 0;
     $deletedFilesCount = 0;
