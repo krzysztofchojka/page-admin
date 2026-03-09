@@ -77,7 +77,8 @@ $draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
                                                     $singleFile = reset($f);
                                                     if (!empty($singleFile['storage_name'])) {
                                                         $origName = urlencode($singleFile['original_name'] ?? 'plik');
-                                                        echo '<a href="/admin/forms/download?file='.$singleFile['storage_name'].'&orig='.$origName.'" title="'.htmlspecialchars($singleFile['original_name'] ?? '').'" class="text-blue-600 hover:text-blue-800 hover:underline font-bold flex items-center gap-1.5"><span class="text-base">📎</span> <span class="truncate max-w-[150px] inline-block">'.htmlspecialchars($singleFile['original_name'] ?? '').'</span></a>';
+                                                        $dlUrl = "/form-download?file=".$singleFile['storage_name']."&orig=".$origName;
+                                                        echo '<a href="'.$dlUrl.'" class="text-blue-600 hover:text-blue-800 hover:underline font-bold flex items-center gap-1.5"><span class="text-base">📎</span> <span class="truncate max-w-[150px] inline-block">'.htmlspecialchars($singleFile['original_name'] ?? '').'</span></a>';
                                                     } else {
                                                         echo '<span class="text-gray-300">-</span>';
                                                     }
@@ -89,7 +90,8 @@ $draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
                                                     foreach ($f as $singleFile) {
                                                         if (empty($singleFile['storage_name'])) continue;
                                                         $origName = urlencode($singleFile['original_name'] ?? 'plik');
-                                                        echo '<li><a href="/admin/forms/download?file='.$singleFile['storage_name'].'&orig='.$origName.'" title="'.htmlspecialchars($singleFile['original_name'] ?? '').'" class="text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-start gap-1.5 text-sm leading-tight"><span class="text-gray-400 mt-0.5">↳</span> <span class="truncate flex-1">'.htmlspecialchars($singleFile['original_name'] ?? '').'</span></a></li>';
+                                                        $dlUrl = "/form-download?file=".$singleFile['storage_name']."&orig=".$origName;
+                                                        echo '<li><a href="'.$dlUrl.'" class="text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-start gap-1.5 text-sm leading-tight"><span class="text-gray-400 mt-0.5">↳</span> <span class="truncate flex-1">'.htmlspecialchars($singleFile['original_name'] ?? '').'</span></a></li>';
                                                     }
                                                     echo '</ul>';
                                                     echo '</div>';

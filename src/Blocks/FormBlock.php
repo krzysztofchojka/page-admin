@@ -125,8 +125,14 @@ class FormBlock implements BlockInterface {
                 $hasExisting = isset($existingFiles[$fieldId]) && !empty($existingFiles[$fieldId]);
                 $currentReqAttr = ($hasExisting) ? '' : $reqAttr;
                 
+                $allowedExtsRaw = $field['allowedExts'] ?? 'jpg, png, pdf, zip, doc, docx';
+                $allowedExtsRawEscaped = htmlspecialchars($allowedExtsRaw, ENT_QUOTES);
+                $exts = array_filter(array_map('trim', explode(',', $allowedExtsRaw)));
+                $accepts = array_map(function($ext) { return '.' . ltrim($ext, '.'); }, $exts);
+                $acceptAttr = !empty($accepts) ? 'accept="' . htmlspecialchars(implode(',', $accepts), ENT_QUOTES) . '"' : '';
+        
                 $html .= "<div class='relative border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-xl py-4 px-6 text-center transition-all group overflow-hidden flex flex-col items-center justify-center'>";
-                $html .= "<input type='file' id='{$fieldId}' class='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 file-input' {$currentReqAttr} {$allowMultiple}>";
+                $html .= "<input type='file' id='{$fieldId}' class='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 file-input' {$currentReqAttr} {$allowMultiple} data-allowed-exts='{$allowedExtsRawEscaped}' {$acceptAttr}>";
                 if ($req) $html .= "<input type='hidden' class='original-required-flag' value='1'>";
                 $html .= "<p class='text-sm font-bold text-blue-700 mb-0'>Przeciągnij plik lub kliknij</p></div>";
                 $html .= "<div class='progress-container hidden mt-3'><div class='w-full bg-blue-100 rounded-full h-2.5'><div class='progress-bar bg-blue-600 h-2.5 rounded-full' style='width: 0%'></div></div></div>";
@@ -141,7 +147,7 @@ class FormBlock implements BlockInterface {
                         $html .= "<div class='flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item mb-2'>";
                         $html .= "  <div class='flex items-center gap-3 overflow-hidden'>";
                         $origName = urlencode($eFile['original_name']);
-                        $dlUrl = "/admin/forms/download?file=" . urlencode($eFile['storage_name'] ?? '') . "&orig=" . $origName;
+                        $dlUrl = "/form-download?file=" . urlencode($eFile['storage_name'] ?? '') . "&orig=" . $origName;
                         $html .= "      <div class='bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0'><svg class='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'><path fill-rule='evenodd' d='M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z' clip-rule='evenodd'></path></svg></div>";
                         $html .= "      <a href='{$dlUrl}' target='_blank' class='truncate font-medium hover:text-blue-600 hover:underline transition-colors'>".htmlspecialchars($eFile['original_name'])."</a>";
                         $html .= "  </div>";
@@ -376,8 +382,10 @@ class FormBlock implements BlockInterface {
                             if (xhr.status === 200) {
                                 const res = JSON.parse(xhr.responseText);
                                 if (res.status === 'success') {
+                                    fileInput.required = false;
+                                    fileInput.removeAttribute('required');
                                     const safeJson = JSON.stringify(res.file).replace(/'/g, '&#39;');
-const dlUrl = '/admin/forms/download?file=' + encodeURIComponent(res.file.storage_name) + '&orig=' + encodeURIComponent(file.name);
+const dlUrl = '/form-download?file=' + encodeURIComponent(res.file.storage_name) + '&orig=' + encodeURIComponent(file.name);
 
 const item = document.createElement('div');
 item.className = 'flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item mt-2';
@@ -388,10 +396,14 @@ item.innerHTML = '<div class=\"flex items-center gap-3 overflow-hidden\">' +
                  '<button type=\"button\" class=\"text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file\" title=\"Usuń plik\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button>' +
                  '<input type=\"hidden\" name=\"async_files[' + fieldId + '][]\" value=\'' + safeJson + '\'>';
                                     
-                                    item.querySelector('.remove-existing-file').addEventListener('click', function() {
-                                        item.remove();
-                                        if (statusEl) triggerAutosave();
-                                    });
+                 item.querySelector('.remove-existing-file').addEventListener('click', function() {
+                    item.remove();
+                    if (filesList.children.length === 0 && container.querySelector('.original-required-flag')) {
+                        fileInput.required = true;
+                        fileInput.setAttribute('required', 'required');
+                    }
+                    if (statusEl) triggerAutosave();
+                });
                                     filesList.appendChild(item);
                                     if (statusEl) triggerAutosave();
                                 } else {

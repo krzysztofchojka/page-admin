@@ -122,7 +122,7 @@ $router->get('/admin/forms/submissions', [FormController::class, 'submissions'],
 $router->get('/admin/forms/submissions/delete', [FormController::class, 'deleteSubmission'], [AdminMiddleware::class]);
 $router->post('/admin/forms/submissions/export', [FormController::class, 'exportSubmissions'], [AdminMiddleware::class]);
 $router->post('/admin/forms/submissions/export-files', [FormController::class, 'exportFiles'], [AdminMiddleware::class]);
-$router->get('/admin/forms/download', [FormController::class, 'downloadFile'], [AdminMiddleware::class]);
+$router->get('/form-download', [FormController::class, 'downloadFile']);
 
 // Galerie
 $router->get('/admin/galleries', [GalleryController::class, 'index'], [AdminMiddleware::class]);

@@ -467,17 +467,28 @@ OPIS SZABLONU DO WYGENEROWANIA:
 
     public function save() {
         $db = \CMS\Core\Database::getInstance();
-        
+
         // Odbieramy dane JSON z żądania (fetch API)
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
+        // CZYSZCZENIE CACHE
+        $clearCache = function() {
+            $cacheFiles = glob(__DIR__ . '/../../public/cache/*.html');
+            if (is_array($cacheFiles)) {
+                foreach ($cacheFiles as $file) {
+                    if(is_file($file)) unlink($file);
+                }
+            }
+        };
+
         if ($data) {
             $db->query("UPDATE pa_templates SET title = :title, html_content = :html WHERE id = :id", [
                 'title' => $data['title'],
                 'html' => $data['html_content'],
                 'id' => $data['id']
             ]);
-            
+
+            $clearCache();
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success']);
             exit;
@@ -489,6 +500,8 @@ OPIS SZABLONU DO WYGENEROWANIA:
             'html' => $_POST['html_content'],
             'id' => $_POST['id']
         ]);
+
+        $clearCache();
         header("Location: /admin/templates");
     }
 }

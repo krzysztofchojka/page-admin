@@ -90,16 +90,7 @@ class PostController {
         // Tworzenie sluga z tytułu jeśli pusty
         $slug = !empty($data['slug']) ? $data['slug'] : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['title']), '-'));
 
-        $db->query("UPDATE pa_posts SET 
-            title = :title, 
-            slug = :slug, 
-            contents = :content, 
-            excerpt = :excerpt, 
-            thumbnail = :thumbnail, 
-            tags = :tags, 
-            category_id = :category_id, 
-            status = :status 
-            WHERE id = :id", [
+        $db->query("UPDATE pa_posts SET title = :title, slug = :slug, contents = :content, excerpt = :excerpt, thumbnail = :thumbnail, tags = :tags, category_id = :category_id, status = :status WHERE id = :id", [
             'title' => $data['title'],
             'slug' => $slug,
             'content' => json_encode($data['content']),
@@ -110,6 +101,14 @@ class PostController {
             'status' => $data['status'] ?? 'published',
             'id' => $data['id']
         ]);
+
+        // CZYSZCZENIE CACHE
+        $cacheFiles = glob(__DIR__ . '/../../public/cache/*.html');
+        if (is_array($cacheFiles)) {
+            foreach ($cacheFiles as $file) {
+                if(is_file($file)) unlink($file);
+            }
+        }
 
         echo json_encode(['status' => 'success']);
     }

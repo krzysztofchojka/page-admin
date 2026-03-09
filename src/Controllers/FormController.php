@@ -48,6 +48,15 @@ class FormController {
             'settings' => json_encode($data['settings']),
             'id' => $data['id']
         ]);
+
+        // CZYSZCZENIE CACHE
+        $cacheFiles = glob(__DIR__ . '/../../public/cache/*.html');
+        if (is_array($cacheFiles)) {
+            foreach ($cacheFiles as $file) {
+                if(is_file($file)) unlink($file);
+            }
+        }
+
         echo json_encode(['status' => 'success']);
     }
 
@@ -126,17 +135,61 @@ class FormController {
                     echo json_encode(['status' => 'error', 'msg' => 'Niedozwolony format pliku.']);
                     exit;
                 }
-
+    
+                // Mime type check
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, $file['tmp_name']);
+                finfo_close($finfo);
+    
+                $allowedMimes = [
+                    'jpg' => ['image/jpeg', 'image/pjpeg'],
+                    'jpeg' => ['image/jpeg', 'image/pjpeg'],
+                    'png' => ['image/png'],
+                    'gif' => ['image/gif'],
+                    'webp' => ['image/webp'],
+                    'pdf' => ['application/pdf'],
+                    'doc' => ['application/msword'],
+                    'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+                    'xls' => ['application/vnd.ms-excel'],
+                    'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+                    'zip' => ['application/zip', 'application/x-zip-compressed'],
+                    'mp4' => ['video/mp4'],
+                    'mp3' => ['audio/mpeg'],
+                    'txt' => ['text/plain'],
+                    'csv' => ['text/csv', 'text/plain'],
+                ];
+    
+                $isValidMime = false;
+                if (array_key_exists($ext, $allowedMimes)) {
+                    if (in_array($mime, $allowedMimes[$ext])) {
+                        $isValidMime = true;
+                    }
+                } else {
+                    // Allow custom extensions defined by the user but strictly deny executable mimes
+                    $bannedMimes = ['text/x-php', 'text/html', 'application/x-sh', 'application/x-executable'];
+                    if (!in_array($mime, $bannedMimes)) {
+                        $isValidMime = true;
+                    }
+                }
+    
+                if (!$isValidMime) {
+                    echo json_encode(['status' => 'error', 'msg' => 'Zawartość pliku nie pasuje do rozszerzenia lub jest niedozwolona (MIME: '.$mime.').']);
+                    exit;
+                }
+    
                 $uploadDir = __DIR__ . '/../../public/uploads/secure/';
                 if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                
+    
                 $tmpName = $file['tmp_name'];
                 $filename = $file['name'];
                 $encryptedContent = $vault->encrypt(file_get_contents($tmpName));
-                
                 $safeName = bin2hex(random_bytes(16)) . '.enc';
                 file_put_contents($uploadDir . $safeName, $encryptedContent);
-                
+    
+                $sessionFiles = \CMS\Core\Session::get('uploaded_files') ?? [];
+                $sessionFiles[] = $safeName;
+                \CMS\Core\Session::set('uploaded_files', $sessionFiles);
+    
                 echo json_encode([
                     'status' => 'success',
                     'file' => [
@@ -439,33 +492,66 @@ class FormController {
     }
 
     public function downloadFile() {
-        Session::init();
-        if (!Session::isLoggedIn()) die("Access Denied");
-        
+        \CMS\Core\Session::init();
         $file = $_GET['file'] ?? '';
+
         if (strpos($file, '..') !== false || strpos($file, '/') !== false) {
             die("Invalid filename");
         }
-        
+
         $path = __DIR__ . '/../../public/uploads/secure/' . $file;
         if (!file_exists($path)) die("File not found");
-        
+
+        $db = \CMS\Core\Database::getInstance();
+        $userId = \CMS\Core\Session::get('user_id');
+        $isAdmin = \CMS\Core\Session::get('is_admin') == 1;
+
+        $hasAccess = false;
+
+        if ($isAdmin) {
+            $hasAccess = true;
+        } else {
+            $sessionFiles = \CMS\Core\Session::get('uploaded_files') ?? [];
+            if (in_array($file, $sessionFiles)) {
+                $hasAccess = true;
+            } else {
+                $stmt = $db->query("SELECT user_id, id FROM pa_submissions WHERE files_json LIKE ?", ['%'.$file.'%']);
+                $submission = $stmt->fetch();
+
+                if ($submission) {
+                    if ($userId && $submission['user_id'] == $userId) {
+                        $hasAccess = true;
+                    } else {
+                        foreach ($_SESSION as $key => $val) {
+                            if (strpos($key, 'draft_') === 0 && $val == $submission['id']) {
+                                $hasAccess = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!$hasAccess) {
+            http_response_code(403);
+            die("Brak uprawnień do pobrania tego pliku.");
+        }
+
         $encryptedContent = file_get_contents($path);
         $vault = new \CMS\Core\Vault();
         $decryptedContent = $vault->decrypt($encryptedContent);
-        
+
         header('Content-Description: File Transfer');
         header('Content-Type: application/octet-stream');
-        
         $origName = $_GET['orig'] ?? ('odkodowany_' . str_replace('.enc', '', $file));
         $origName = basename(urldecode($origName));
-        
         header('Content-Disposition: attachment; filename="' . $origName . '"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
         header('Pragma: public');
         header('Content-Length: ' . strlen($decryptedContent));
-        
+
         echo $decryptedContent;
         exit;
     }

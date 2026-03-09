@@ -86,6 +86,14 @@ class MenuController
             }
         }
 
+        // CZYSZCZENIE CACHE
+        $cacheFiles = glob(__DIR__ . '/../../public/cache/*.html');
+        if (is_array($cacheFiles)) {
+            foreach ($cacheFiles as $file) {
+                if(is_file($file)) unlink($file);
+            }
+        }
+
         echo json_encode(['status' => 'success']);
     }
 }
