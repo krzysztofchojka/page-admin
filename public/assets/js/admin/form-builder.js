@@ -64,9 +64,13 @@ function createFieldElement(data) {
     } else if (data.type === 'file') {
         visualHTML = `<div class="mt-3 w-full h-12 border-2 border-dashed border-gray-300 bg-gray-50 rounded flex items-center justify-center text-gray-400 text-xs font-bold pointer-events-none">📎 Upuść plik tutaj</div>`;
         extraSettings = `
-        <div class="mt-2">
+        <div class="mt-2 mb-2">
             <label class="text-xs font-bold text-gray-500 block">Dozwolone rozszerzenia (po przecinku)</label>
             <input type="text" class="field-allowed-exts w-full border p-2 rounded text-sm mt-1 bg-gray-50" placeholder="jpg, png, pdf, zip" value="${data.allowedExts || 'jpg, png, pdf, zip, doc, docx'}">
+        </div>
+        <div class="mt-2">
+            <label class="text-xs font-bold text-gray-500 block">Maksymalny rozmiar (MB)</label>
+            <input type="number" class="field-max-size w-full border p-2 rounded text-sm mt-1 bg-gray-50" placeholder="Zostaw puste dla max z serwera" value="${data.maxSize || ''}">
         </div>`;
     } else if (data.type === 'html') {
         visualHTML = `<div class="mt-3 w-full h-12 bg-gray-800 rounded flex items-center justify-center text-green-400 text-xs font-mono pointer-events-none">&lt; KOD HTML /&gt;</div>`;
@@ -229,6 +233,7 @@ function saveForm() {
         }
         if (type === 'file') {
             field.allowedExts = card.querySelector('.field-allowed-exts') ? card.querySelector('.field-allowed-exts').value : 'jpg, png, pdf, zip, doc, docx';
+            field.maxSize = card.querySelector('.field-max-size') ? card.querySelector('.field-max-size').value : '';
         }
         fields.push(field);
     });

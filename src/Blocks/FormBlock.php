@@ -4,6 +4,22 @@ namespace CMS\Blocks;
 class FormBlock implements BlockInterface {
     private static $turnstileLoaded = false;
 
+    private function parseSize($size) {
+        $unit = preg_replace('/[^bkmgtpezy]/i', '', $size);
+        $size = preg_replace('/[^0-9\.]/', '', $size);
+        if ($unit) {
+            return round($size * pow(1024, stripos('bkmgtpezy', $unit[0])));
+        }
+        return round($size);
+    }
+
+    private function getServerMaxUploadBytes() {
+        $maxUpload = $this->parseSize(ini_get('upload_max_filesize'));
+        $maxPost = $this->parseSize(ini_get('post_max_size'));
+        if ($maxPost <= 0) return $maxUpload; // 0 w post_max_size oznacza brak limitu
+        return min($maxUpload, $maxPost);
+    }
+
     public function render(array $block, $db): string {
         try {
             $db->query("ALTER TABLE pa_submissions ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'submitted' AFTER user_ip");
@@ -79,7 +95,7 @@ class FormBlock implements BlockInterface {
 
         $inputClasses = "w-full border border-gray-200 bg-gray-50/50 text-gray-800 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white block p-3.5 shadow-sm transition-all outline-none";
         $html .= '<form action="/submit-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-8">';
-        // --- KLUCZOWE: OCHRONA CSRF W FORMULARZACH DYNAMICZNYCH ---
+        
         $html .= '<input type="hidden" name="csrf_token" value="'.\CMS\Core\Session::generateCsrfToken().'">';
         $html .= '<input type="hidden" name="form_id" value="'.$form['id'].'">';
         $html .= '<input type="hidden" name="return_url" value="'.htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/').'">';
@@ -118,10 +134,22 @@ class FormBlock implements BlockInterface {
             $reqAttr = $req ? 'required' : '';
             $reqStar = $req ? '<span class="text-red-500 ml-1">*</span>' : '';
 
+            // POLE PLIKÓW - ASYNCHRONICZNE
             if ($type === 'file') {
                 $allowMultiple = !empty($formSettings['allowMultipleFiles']) ? 'multiple' : '';
+                
+                // --- OBLICZANIE MAX ROZMIARU PLIKU ---
+                $serverMaxBytes = $this->getServerMaxUploadBytes();
+                $serverMaxMB = floor($serverMaxBytes / (1024 * 1024));
+                $adminMaxMB = !empty($field['maxSize']) ? (int)$field['maxSize'] : $serverMaxMB;
+                // Wybieramy mniejszą wartość
+                $effectiveMaxMB = min($serverMaxMB, $adminMaxMB);
+                $effectiveMaxBytes = $effectiveMaxMB * 1024 * 1024;
+                // -------------------------------------
+
                 $html .= "<div class='{$widthClass} async-file-upload' data-field-id='{$fieldId}'>";
-                $html .= "<label class='block text-sm font-bold text-gray-800 mb-2'>".htmlspecialchars($field['label']).$reqStar."</label>";
+                $html .= "<label class='block text-sm font-bold text-gray-800 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
+                
                 $hasExisting = isset($existingFiles[$fieldId]) && !empty($existingFiles[$fieldId]);
                 $currentReqAttr = ($hasExisting) ? '' : $reqAttr;
                 
@@ -130,33 +158,45 @@ class FormBlock implements BlockInterface {
                 $exts = array_filter(array_map('trim', explode(',', $allowedExtsRaw)));
                 $accepts = array_map(function($ext) { return '.' . ltrim($ext, '.'); }, $exts);
                 $acceptAttr = !empty($accepts) ? 'accept="' . htmlspecialchars(implode(',', $accepts), ENT_QUOTES) . '"' : '';
-        
-                $html .= "<div class='relative border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 rounded-xl py-4 px-6 text-center transition-all group overflow-hidden flex flex-col items-center justify-center'>";
-                $html .= "<input type='file' id='{$fieldId}' class='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 file-input' {$currentReqAttr} {$allowMultiple} data-allowed-exts='{$allowedExtsRawEscaped}' {$acceptAttr}>";
-                if ($req) $html .= "<input type='hidden' class='original-required-flag' value='1'>";
-                $html .= "<p class='text-sm font-bold text-blue-700 mb-0'>Przeciągnij plik lub kliknij</p></div>";
-                $html .= "<div class='progress-container hidden mt-3'><div class='w-full bg-blue-100 rounded-full h-2.5'><div class='progress-bar bg-blue-600 h-2.5 rounded-full' style='width: 0%'></div></div></div>";
-                $html .= "<div class='uploaded-files-list mt-3 flex flex-col gap-2'>";
+
+                $html .= "<div class='relative border-2 border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-100/50 rounded-xl py-4 px-6 text-center transition-all group overflow-hidden focus-within:ring-4 focus-within:ring-blue-100 focus-within:border-blue-500 flex flex-col items-center justify-center'>";
+                $html .= "<input type='file' id='{$fieldId}' class='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 file-input' {$currentReqAttr} {$allowMultiple} data-allowed-exts='{$allowedExtsRawEscaped}' data-max-size='{$effectiveMaxBytes}' {$acceptAttr}>";
                 
+                if ($req) $html .= "<input type='hidden' class='original-required-flag' value='1'>";
+                
+                $html .= "<div class='text-blue-500 mb-1 transition-transform group-hover:scale-110 flex justify-center'>
+                            <svg class='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'></path></svg>
+                          </div>";
+                $html .= "<p class='text-sm font-bold text-blue-700 mb-0'>Przeciągnij plik lub kliknij</p>";
+                $html .= "<p class='text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider'>MAX: {$effectiveMaxMB} MB</p>";
+                $html .= "</div>";
+
+                $html .= "<div class='progress-container hidden mt-3'>";
+                $html .= "<div class='flex justify-between text-xs font-bold text-blue-800 mb-1'><span class='progress-text-name truncate max-w-[80%]'>Wgrywanie...</span><span class='progress-text-pct'>0%</span></div>";
+                $html .= "<div class='w-full bg-blue-100 rounded-full h-2.5 overflow-hidden shadow-inner'><div class='progress-bar bg-blue-600 h-2.5 rounded-full transition-all duration-300' style='width: 0%'></div></div>";
+                $html .= "</div>";
+
+                $html .= "<div class='uploaded-files-list mt-3 flex flex-col gap-2'>";
                 if ($hasExisting) {
                     $eFiles = isset($existingFiles[$fieldId]['original_name']) ? [$existingFiles[$fieldId]] : $existingFiles[$fieldId];
                     foreach ($eFiles as $eFile) {
-                        if (empty($eFile['original_name'])) continue;
+                        if (empty($eFile['original_name']) || empty($eFile['storage_name'])) continue;
                         $jsonVal = htmlspecialchars(json_encode($eFile), ENT_QUOTES, 'UTF-8');
-                        
-                        $html .= "<div class='flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item mb-2'>";
-                        $html .= "  <div class='flex items-center gap-3 overflow-hidden'>";
                         $origName = urlencode($eFile['original_name']);
-                        $dlUrl = "/form-download?file=" . urlencode($eFile['storage_name'] ?? '') . "&orig=" . $origName;
-                        $html .= "      <div class='bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0'><svg class='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'><path fill-rule='evenodd' d='M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z' clip-rule='evenodd'></path></svg></div>";
-                        $html .= "      <a href='{$dlUrl}' target='_blank' class='truncate font-medium hover:text-blue-600 hover:underline transition-colors'>".htmlspecialchars($eFile['original_name'])."</a>";
+                        $dlUrl = "/form-download?file=" . urlencode($eFile['storage_name']) . "&orig=" . $origName;
+                        $html .= "<div class='flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item animate-fade-in'>";
+                        $html .= "  <div class='flex items-center gap-3 overflow-hidden'>";
+                        $html .= "    <div class='bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0'><svg class='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'><path fill-rule='evenodd' d='M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z' clip-rule='evenodd'></path></svg></div>";
+                        $html .= "    <a href='{$dlUrl}' target='_blank' class='truncate font-medium hover:text-blue-600 transition-colors'>".htmlspecialchars($eFile['original_name'])."</a>";
                         $html .= "  </div>";
                         $html .= "  <button type='button' class='text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file' title='Usuń plik'><svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 18L18 6M6 6l12 12'></path></svg></button>";
                         $html .= "  <input type='hidden' name='async_files[{$fieldId}][]' value='{$jsonVal}'>";
                         $html .= "</div>";
                     }
                 }
-                $html .= "</div></div>"; continue;
+                $html .= "</div>";
+                $html .= "</div>";
+                continue;
             }
 
             $html .= "<div class='$widthClass'><label class='block text-sm font-bold text-gray-800 mb-2'>".htmlspecialchars($field['label']).$reqStar."</label>";
@@ -244,11 +284,9 @@ class FormBlock implements BlockInterface {
             const form = formContainer.querySelector('form');
             if (!form) return;
             
-            // Zmienne do kontroli przycisku Submit
             const submitBtn = form.querySelector('button[type=\"submit\"]');
             const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Wyślij';
             let activeUploads = 0;
-        
             let autosaveTimeout;
             const statusEl = document.getElementById('autosave-status-{$form['id']}');
         
@@ -286,40 +324,45 @@ class FormBlock implements BlockInterface {
                 const progressContainer = container.querySelector('.progress-container');
                 const progressBar = container.querySelector('.progress-bar');
                 const fieldId = container.dataset.fieldId;
-                const dropArea = fileInput.closest('.border-dashed'); // Pobieramy przerywany kontener
+                const dropArea = fileInput.closest('.border-dashed');
+                
+                // SPRAWDZAMY CZY UŻYTKOWNIK MOŻE DODAWAĆ WIELE PLIKÓW
+                const isMultiple = fileInput.hasAttribute('multiple');
         
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.addEventListener(eventName, e => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Dodajemy ciemniejsze tło, inną ramkę i lekkie powiększenie
-                dropArea.classList.add('bg-blue-200', 'border-blue-500', 'scale-105');
-            }, false);
-        });
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropArea.classList.add('bg-blue-200', 'border-blue-500', 'scale-105');
+                    }, false);
+                });
 
-        ['dragleave'].forEach(eventName => {
-            dropArea.addEventListener(eventName, e => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Usuwamy klasy po opuszczeniu strefy
-                dropArea.classList.remove('bg-blue-200', 'border-blue-500', 'scale-105');
-            }, false);
-        });
+                ['dragleave'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropArea.classList.remove('bg-blue-200', 'border-blue-500', 'scale-105');
+                    }, false);
+                });
 
-        dropArea.addEventListener('drop', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            // Usuwamy klasy po upuszczeniu pliku
-            dropArea.classList.remove('bg-blue-200', 'border-blue-500', 'scale-105');
+                dropArea.addEventListener('drop', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropArea.classList.remove('bg-blue-200', 'border-blue-500', 'scale-105');
 
-            // Przechwytujemy pliki i wymuszamy uruchomienie przesyłania
-            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
-                fileInput.files = e.dataTransfer.files;
-                fileInput.dispatchEvent(new Event('change'));
-            }
-        }, false);
+                    if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                        // FIX: Jeśli to pole pojedynczego pliku a ktoś upuścił kilka, weź tylko pierwszy!
+                        if (!isMultiple && e.dataTransfer.files.length > 1) {
+                            const dt = new DataTransfer();
+                            dt.items.add(e.dataTransfer.files[0]);
+                            fileInput.files = dt.files;
+                        } else {
+                            fileInput.files = e.dataTransfer.files;
+                        }
+                        fileInput.dispatchEvent(new Event('change'));
+                    }
+                }, false);
         
-                // Obsługa usuwania już istniejących plików
                 filesList.querySelectorAll('.remove-existing-file').forEach(btn => {
                     btn.addEventListener('click', function() {
                         this.closest('.existing-file-item').remove();
@@ -327,22 +370,33 @@ class FormBlock implements BlockInterface {
                     });
                 });
         
-                // Obsługa wgrywania nowego pliku
                 fileInput.addEventListener('change', function() {
                     const files = this.files;
                     if (files.length === 0) return;
+                    
+                    // FIX: Czyścimy widok i ukryte inputy z bazy, jeśli pole przyjmuje tylko 1 plik
+                    if (!isMultiple) {
+                        filesList.innerHTML = '';
+                        form.querySelectorAll('input[name=\"async_files[' + fieldId + '][]\"]').forEach(el => el.remove());
+                    }
         
                     Array.from(files).forEach(file => {
+                        const allowedExts = fileInput.dataset.allowedExts || \"jpg, png, pdf, zip, doc, docx\";
+                        const maxSize = parseInt(fileInput.dataset.maxSize) || 0;
+
+                        if (maxSize > 0 && file.size > maxSize) {
+                            alert(\"Plik \" + file.name + \" jest za duży! Maksymalny dozwolony rozmiar to \" + (maxSize / (1024 * 1024)) + \" MB.\");
+                            return;
+                        }
+                        
                         activeUploads++;
                         
-                        // Blokada przycisku Submit
                         if (submitBtn) {
                             submitBtn.disabled = true;
                             submitBtn.innerHTML = '⏳ Przesyłanie plików...';
                             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
                         }
         
-                        // Pokazanie paska postępu
                         if (progressContainer && progressBar) {
                             progressContainer.classList.remove('hidden');
                             progressBar.style.width = '0%';
@@ -350,15 +404,12 @@ class FormBlock implements BlockInterface {
         
                         const formData = new FormData();
                         formData.append('file', file);
-                        
-                        // Pobieranie dozwolonych rozszerzeń (jeśli dodałeś tę opcję w poprzednim kroku)
-                        const allowedExts = fileInput.dataset.allowedExts || 'jpg, jpeg, png, pdf, doc, docx, zip';
                         formData.append('allowed_exts', allowedExts);
+                        formData.append('max_size', maxSize);
         
                         const xhr = new XMLHttpRequest();
                         xhr.open('POST', '/form-upload', true);
         
-                        // Aktualizacja paska postępu
                         xhr.upload.addEventListener('progress', function(e) {
                             if (e.lengthComputable && progressBar) {
                                 const percentComplete = Math.round((e.loaded / e.total) * 100);
@@ -369,7 +420,6 @@ class FormBlock implements BlockInterface {
                         xhr.onload = function() {
                             activeUploads--;
                             
-                            // Odblokowanie przycisku, jeśli to był ostatni plik
                             if (activeUploads === 0) {
                                 if (submitBtn) {
                                     submitBtn.disabled = false;
@@ -384,26 +434,26 @@ class FormBlock implements BlockInterface {
                                 if (res.status === 'success') {
                                     fileInput.required = false;
                                     fileInput.removeAttribute('required');
-                                    const safeJson = JSON.stringify(res.file).replace(/'/g, '&#39;');
-const dlUrl = '/form-download?file=' + encodeURIComponent(res.file.storage_name) + '&orig=' + encodeURIComponent(file.name);
+                                    const safeJson = JSON.stringify(res.file).replace(/\'/g, '&#39;');
+                                    const dlUrl = '/form-download?file=' + encodeURIComponent(res.file.storage_name) + '&orig=' + encodeURIComponent(file.name);
 
-const item = document.createElement('div');
-item.className = 'flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item mt-2';
-item.innerHTML = '<div class=\"flex items-center gap-3 overflow-hidden\">' +
-                 '<div class=\"bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0\"><svg class=\"w-4 h-4\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z\" clip-rule=\"evenodd\"></path></svg></div>' +
-                 '<a href=\"' + dlUrl + '\" target=\"_blank\" class=\"truncate font-medium hover:text-blue-600 hover:underline transition-colors\">' + file.name + '</a>' +
-                 '</div>' +
-                 '<button type=\"button\" class=\"text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file\" title=\"Usuń plik\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button>' +
-                 '<input type=\"hidden\" name=\"async_files[' + fieldId + '][]\" value=\'' + safeJson + '\'>';
-                                    
-                 item.querySelector('.remove-existing-file').addEventListener('click', function() {
-                    item.remove();
-                    if (filesList.children.length === 0 && container.querySelector('.original-required-flag')) {
-                        fileInput.required = true;
-                        fileInput.setAttribute('required', 'required');
-                    }
-                    if (statusEl) triggerAutosave();
-                });
+                                    const item = document.createElement('div');
+                                    item.className = 'flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 shadow-sm group hover:border-blue-300 transition-colors existing-file-item mt-2';
+                                    item.innerHTML = '<div class=\"flex items-center gap-3 overflow-hidden\">' +
+                                                     '<div class=\"bg-blue-100 text-blue-600 p-2 rounded-lg shrink-0\"><svg class=\"w-4 h-4\" fill=\"currentColor\" viewBox=\"0 0 20 20\"><path fill-rule=\"evenodd\" d=\"M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z\" clip-rule=\"evenodd\"></path></svg></div>' +
+                                                     '<a href=\"' + dlUrl + '\" target=\"_blank\" class=\"truncate font-medium hover:text-blue-600 hover:underline transition-colors\">' + file.name + '</a>' +
+                                                     '</div>' +
+                                                     '<button type=\"button\" class=\"text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors remove-existing-file\" title=\"Usuń plik\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button>' +
+                                                     '<input type=\"hidden\" name=\"async_files[' + fieldId + '][]\" value=\'' + safeJson + '\'>';
+                                                    
+                                    item.querySelector('.remove-existing-file').addEventListener('click', function() {
+                                        item.remove();
+                                        if (filesList.children.length === 0 && container.querySelector('.original-required-flag')) {
+                                            fileInput.required = true;
+                                            fileInput.setAttribute('required', 'required');
+                                        }
+                                        if (statusEl) triggerAutosave();
+                                    });
                                     filesList.appendChild(item);
                                     if (statusEl) triggerAutosave();
                                 } else {

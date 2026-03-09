@@ -126,6 +126,15 @@ class FormController {
         if (!empty($_FILES['file'])) {
             $file = $_FILES['file'];
             if ($file['error'] === UPLOAD_ERR_OK) {
+                // WERYFIKACJA ROZMIARU (Backend)
+                $maxSizeBytes = isset($_POST['max_size']) ? (int)$_POST['max_size'] : 0;
+                if ($maxSizeBytes > 0 && $file['size'] > $maxSizeBytes) {
+                    echo json_encode([
+                        'status' => 'error', 
+                        'msg' => 'Plik przekracza maksymalny dopuszczalny rozmiar (' . ($maxSizeBytes / 1024 / 1024) . ' MB).'
+                    ]);
+                    exit;
+                }
                 $allowedRaw = $_POST['allowed_exts'] ?? 'jpg, jpeg, png, pdf, doc, docx, zip';
                 $allowedArray = array_map('trim', explode(',', strtolower($allowedRaw)));
                 $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
