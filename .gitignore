@@ -6,3 +6,5 @@ sessions/
 public/uploads/*
 node_modules
 public/cache
+install.lock
+dump.sh

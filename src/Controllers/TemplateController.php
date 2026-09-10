@@ -13,10 +13,15 @@ class TemplateController {
         }
     }
 
-    private function ensureActiveColumnExists($db)
-    {
+    private function ensureActiveColumnExists($db) {
         try {
             $db->query("ALTER TABLE pa_templates ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER html_content");
+        } catch (\Exception $e) {
+            // Kolumna już istnieje
+        }
+        try {
+            // Automatyczna migracja dla wygenerowanego CSS Tailwinda
+            $db->query("ALTER TABLE pa_templates ADD COLUMN compiled_css LONGTEXT NULL AFTER is_active");
         } catch (\Exception $e) {
             // Kolumna już istnieje
         }
@@ -151,20 +156,121 @@ class TemplateController {
             });
             editor.session.setValue(document.getElementById("html_content").value);
 
+            // --- KOPIOWANIE / EKSTRAKCJA TAILWIND CSS DO KONSOLI ---
+            function extractAndPrintTailwind(html) {
+                console.log("⏳ Kompilowanie Tailwind CSS lokalnie w przeglądarce...");
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <script src="https://cdn.tailwindcss.com"><\/script>
+                    </head>
+                    <body>${html}</body>
+                    </html>
+                `);
+                doc.close();
+
+                // Sprawdzaj co 100ms czy skrypt wygenerował już CSS
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    const styleElement = doc.querySelector('style');
+                    
+                    if (styleElement && styleElement.textContent.length > 100) {
+                        console.log("✅ Zbuildowany Tailwind CSS dla klas w tym szablonie:");
+                        console.log(styleElement.textContent);
+                        clearInterval(interval);
+                        iframe.remove();
+                    } else if (attempts > 50) { 
+                        console.warn("❌ Timeout: Nie udało się pobrać wygenerowanego Tailwind CSS.");
+                        clearInterval(interval);
+                        iframe.remove();
+                    }
+                }, 100);
+            }
+
+            // --- KOPIOWANIE / EKSTRAKCJA TAILWIND CSS DO BAZY ---
+            function extractTailwindCss(html) {
+                return new Promise((resolve) => {
+                    console.log("⏳ Kompilowanie Tailwind CSS lokalnie w przeglądarce...");
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+
+                    const doc = iframe.contentWindow.document;
+                    doc.open();
+                    // Ładujemy CDN wraz z konfiguracją kolorów wyciągniętą z PHP
+                    doc.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <script src="https://cdn.tailwindcss.com"><\/script>
+                            <script>
+                                tailwind.config = {
+                                    theme: {
+                                        extend: {
+                                            colors: {
+                                                primary: '<?= $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'color_primary'")->fetch()['setting_value'] ?? '#f97316' ?>',
+                                                secondary: '<?= $db->query("SELECT setting_value FROM pa_settings WHERE setting_key = 'color_secondary'")->fetch()['setting_value'] ?? '#1e3a8a' ?>',
+                                            }
+                                        }
+                                    }
+                                }
+                            <\/script>
+                        </head>
+                        <body>${html}</body>
+                        </html>
+                    `);
+                    doc.close();
+
+                    let attempts = 0;
+                    const interval = setInterval(() => {
+                        attempts++;
+                        const styleElement = doc.querySelector('style');
+                        
+                        if (styleElement && styleElement.textContent.length > 100) {
+                            const css = styleElement.textContent;
+                            console.log("✅ Zbuildowany Tailwind CSS wyciągnięty pomyślnie.");
+                            clearInterval(interval);
+                            iframe.remove();
+                            resolve(css);
+                        } else if (attempts > 50) { 
+                            console.warn("❌ Timeout: Nie udało się pobrać wygenerowanego Tailwind CSS.");
+                            clearInterval(interval);
+                            iframe.remove();
+                            resolve(''); // Przesyłamy puste w ramach błędu
+                        }
+                    }, 100);
+                });
+            }
+
             // --- ZAPISYWANIE AJAX ---
-            function saveTemplate() {
+            async function saveTemplate() {
                 const btn = document.getElementById('btn-save');
                 const originalText = "💾 Zapisz";
                 
                 // Zmiana stanu przycisku
-                btn.innerHTML = '⏳ Zapisywanie...';
+                btn.innerHTML = '⏳ Generowanie CSS...';
                 btn.disabled = true;
                 btn.classList.add('opacity-75');
+
+                const htmlContent = editor.getValue();
+                
+                // Oczekiwanie na kompilator CSS
+                const compiledCss = await extractTailwindCss(htmlContent);
+                btn.innerHTML = '⏳ Zapisywanie...';
 
                 const payload = {
                     id: document.getElementById('template_id').value,
                     title: document.getElementById('template_title').value,
-                    html_content: editor.getValue()
+                    html_content: htmlContent,
+                    compiled_css: compiledCss
                 };
 
                 fetch('/admin/templates/save', {
@@ -195,7 +301,11 @@ class TemplateController {
                 .catch(error => {
                     console.error('Błąd zapisu:', error);
                     btn.innerHTML = '❌ Błąd';
-                    setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-75'); }, 2000);
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-75');
+                    }, 2000);
                 });
             }
 
@@ -467,6 +577,7 @@ OPIS SZABLONU DO WYGENEROWANIA:
 
     public function save() {
         $db = \CMS\Core\Database::getInstance();
+        $this->ensureActiveColumnExists($db); // Upewniamy się, że kolumna istnieje
 
         // Odbieramy dane JSON z żądania (fetch API)
         $data = json_decode(file_get_contents('php://input'), true);
@@ -482,12 +593,13 @@ OPIS SZABLONU DO WYGENEROWANIA:
         };
 
         if ($data) {
-            $db->query("UPDATE pa_templates SET title = :title, html_content = :html WHERE id = :id", [
+            $db->query("UPDATE pa_templates SET title = :title, html_content = :html, compiled_css = :css WHERE id = :id", [
                 'title' => $data['title'],
                 'html' => $data['html_content'],
+                'css' => $data['compiled_css'] ?? '',
                 'id' => $data['id']
             ]);
-
+            
             $clearCache();
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success']);
@@ -495,12 +607,13 @@ OPIS SZABLONU DO WYGENEROWANIA:
         }
 
         // Fallback dla standardowego formularza (gdyby skrypty zawiodły)
-        $db->query("UPDATE pa_templates SET title = :title, html_content = :html WHERE id = :id", [
+        $db->query("UPDATE pa_templates SET title = :title, html_content = :html, compiled_css = :css WHERE id = :id", [
             'title' => $_POST['title'],
             'html' => $_POST['html_content'],
+            'css' => $_POST['compiled_css'] ?? '',
             'id' => $_POST['id']
         ]);
-
+        
         $clearCache();
         header("Location: /admin/templates");
     }

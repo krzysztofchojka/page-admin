@@ -13,19 +13,34 @@
     <link rel="icon" href="<?= htmlspecialchars($settings['site_favicon']) ?>">
     <?php endif; ?>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '<?= htmlspecialchars($settings['color_primary'] ?? '#f97316') ?>',
-                        secondary: '<?= htmlspecialchars($settings['color_secondary'] ?? '#1e3a8a') ?>',
+    <?php
+    $compiledCss = '';
+    if (!empty($page['template_id'])) {
+        $tplCssData = \CMS\Core\Database::getInstance()->query("SELECT compiled_css FROM pa_templates WHERE id = ?", [$page['template_id']])->fetch();
+        if ($tplCssData && !empty($tplCssData['compiled_css'])) {
+            $compiledCss = $tplCssData['compiled_css'];
+        }
+    }
+    ?>
+
+    <?php if (!empty($compiledCss)): ?>
+        <style><?= $compiledCss ?></style>
+    <?php else: ?>
+        <!-- Fallback dla stron które nie korzystają z szablonu, lub były utworzone przed updatem -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '<?= htmlspecialchars($settings['color_primary'] ?? '#f97316') ?>',
+                            secondary: '<?= htmlspecialchars($settings['color_secondary'] ?? '#1e3a8a') ?>',
+                        }
                     }
                 }
             }
-        }
-    </script>
+        </script>
+    <?php endif; ?>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

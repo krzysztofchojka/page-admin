@@ -10,7 +10,7 @@ window.showCarouselTab = function(cid, index) {
             btn.classList.remove('bg-blue-900', 'scale-105');
         }
     });
-    
+
     document.querySelectorAll('.c-content-' + cid).forEach(content => {
         if (parseInt(content.dataset.index) === index) {
             content.classList.remove('hidden');
@@ -51,11 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Mobilne Menu Burger
-document.getElementById('burger-btn').addEventListener('click', function() {
-    const menu = document.getElementById('mobile-menu');
-    menu.classList.toggle('hidden');
-    menu.classList.toggle('flex');
-});
+const burgerBtn = document.getElementById('burger-btn');
+if (burgerBtn) {
+    burgerBtn.addEventListener('click', function() {
+        const menu = document.getElementById('mobile-menu');
+        if (menu) {
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('flex');
+        }
+    });
+}
 </script>
 </body>
 </html>
