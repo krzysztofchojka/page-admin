@@ -32,7 +32,7 @@ $jsCurrentPath = htmlspecialchars($currentPath, ENT_QUOTES, 'UTF-8');
                 <a href="/admin" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md transition mr-2">🔙 Wróć</a>
             <?php endif; ?>
             
-            <a href="?" class="text-blue-600 hover:underline flex items-center gap-1 px-2 py-1 rounded transition border border-transparent"
+            <a href="/admin/media<?=(isset($_GET['picker']) ? '?picker='.$_GET['picker'] : '')?>" class="text-blue-600 hover:underline flex items-center gap-1 px-2 py-1 rounded transition border border-transparent"
                ondragover="dragOverBreadcrumb(event)" 
                ondragleave="dragLeaveBreadcrumb(event)" 
                ondrop="dropToFolder(event, '')">
