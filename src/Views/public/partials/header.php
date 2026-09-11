@@ -23,6 +23,7 @@
     }
     ?>
 
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/style.css') ?>">
     <?php if (!empty($compiledCss)): ?>
         <style><?= $compiledCss ?></style>
     <?php else: ?>
