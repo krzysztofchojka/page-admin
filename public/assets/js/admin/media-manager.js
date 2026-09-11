@@ -1,5 +1,6 @@
 const isPickerMode = new URLSearchParams(window.location.search).has('picker');
-    const currentPath = "<?= $jsCurrentPath ?>";
+const get_path=(new URLSearchParams(document.location.search)).get("path");
+    const currentPath = get_path?get_path:"";
     let cropper = null;
     let editingFileName = '';
 
