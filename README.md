@@ -8,91 +8,44 @@ Posiada wbudowany **Page Builder (Drag & Drop)**, szyfrowany system formularzy o
 Filozofią tego projektu jest **Drop & Run** – instalacja na serwerze produkcyjnym **nie wymaga terminala, Node.js ani skomplikowanej konfiguracji**.  
 Wgrywasz pliki przez FTP i strona działa.
 
-## Instalacja na serwerze klienta (Produkcja)
+[![Dashboard screenshot](screenshot.png)](screenshot.png)
 
-Aby uruchomić system na dowolnym hostingu (np. Apache, Litespeed):
+## Instalacja na serwerze (Produkcja)
 
-### 1. Pobierz projekt
+Aby uruchomić system na dowolnym hostingu (Apache, LiteSpeed, Nginx):
 
-Pobierz pliki projektu jako **ZIP** lub wykonaj clone z GitHuba.
+### 1. Pobierz odpowiednią paczkę
+Przejdź do zakładki **Releases** na GitHubie i pobierz paczkę ZIP dopasowaną do Twojego serwera:
+- **`cms-standard-build.zip`** – Wybierz tę paczkę, jeśli masz nowoczesny hosting (np. VPS, dedyk, panel DirectAdmin/cPanel), na którym możesz ustawić folder `/public` jako główny katalog domeny (tzw. DocumentRoot).
+- **`cms-shared-hosting-build.zip`** – Wybierz tę paczkę dla hostingów współdzielonych, które wymuszają wrzucanie plików do nadrzędnego folderu `public_html` lub `htdocs`. Posiada ona specjalnie skonfigurowany plik `.htaccess`, który przekieruje ruch do odpowiedniego katalogu.
 
-### 2. Wgraj pliki na serwer
+### 2. Wgraj pliki i utwórz bazę danych
+Wypakuj pobrane pliki i wrzuć je na swój serwer przez FTP. Następnie w panelu swojego hostingu utwórz pustą bazę **MySQL / MariaDB** i przygotuj jej dane logowania.
 
-Wrzuć pliki na serwer przez FTP.
+### 3. Uruchom kreator w przeglądarce
+Wejdź na swój adres URL:
 
-Katalog `public` musi być **głównym katalogiem domeny**.
-
-Można to osiągnąć przez:
-
-- plik `.htaccess` w głównym katalogu
-- odpowiednią konfigurację **vhosta**
-
-### 3. Utwórz bazę danych
-
-W panelu hostingowym utwórz bazę **MySQL / MariaDB**.
-
-### 4. Skonfiguruj plik `.env`
-
-Zmień nazwę pliku:
-
-```
-.env.example
-```
-
-na:
-
-```
-.env
-```
-
-Następnie wpisz dane swojej bazy danych:
-
-```ini
-DB_HOST=localhost
-DB_NAME=nazwa_bazy
-DB_USER=uzytkownik
-DB_PASS=haslo
-APP_ENV=production
-```
-
-### 5. Uruchom instalator
-
-Wejdź w przeglądarce pod adres:
-
-```
 twojadomena.pl/install
-```
 
-Skrypt wygeneruje strukturę tabel w bazie danych.
+Wpisz dane do bazy. Skrypt sam wygeneruje klucze bezpieczeństwa (plik `.env`) i zbuduje strukturę tabel.
 
-### 6. Logowanie
+### 4. Zaloguj się
+Po udanej instalacji system przeniesie Cię do logowania:
 
-Panel administracyjny:
-
-```
-twojadomena.pl/login
-```
-
-Dane domyślne:
-
-```
 Login: admin
 Hasło: admin
-```
 
-System **natychmiast wymusi zmianę hasła** po pierwszym logowaniu.
-
-## Wymagania serwera
-
-- PHP **8.1+**
-- **MySQL / MariaDB**
-- Apache / LiteSpeed / Nginx
 
 ## Przewodnik dla programistów (Środowisko Dev)
 
 Projekt wykorzystuje **system komponentów** do budowy bloków oraz **Tailwind CSS**.
 
 Pliki CSS są generowane przy pomocy **Node.js**, ale **Node nigdy nie trafia na serwer klienta**.
+
+### Wymagania systemowe
+- PHP **8.1+** (wymagane rozszerzenia: `pdo_mysql`, `mbstring`, `zip`, `gd`)
+- MySQL 8.0+ / MariaDB
+- Node.js (tylko do kompilacji CSS w środowisku dev)
 
 ---
 

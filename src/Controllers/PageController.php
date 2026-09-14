@@ -83,8 +83,7 @@ class PageController {
         require_once __DIR__ . '/../Views/admin/pages/edit.php';
     }
 
-    public function save()
-    {
+    public function save() {
         $data = json_decode(file_get_contents('php://input'), true);
         if (!isset($data['id']) || !isset($data['content'])) {
             http_response_code(400);
@@ -95,11 +94,17 @@ class PageController {
         $db = Database::getInstance();
         $templateId = !empty($data['template_id']) ? (int)$data['template_id'] : null;
 
+        // --- POPRAWKA: Automatyczne usuwanie początkowego slasha ---
+        $slug = trim($data['slug'] ?? '');
+        if ($slug !== '/') {
+            $slug = ltrim($slug, '/');
+        }
+
         $db->query("UPDATE pa_data SET title = :title, slug = :slug, contents = :content, template_id = :tid, edit_date = NOW() WHERE id = :id", [
             'title' => $data['title'],
-            'slug' => $data['slug'],
+            'slug' => $slug,
             'content' => json_encode($data['content']),
-            'tid' => !empty($data['template_id']) ? (int)$data['template_id'] : null,
+            'tid' => $templateId,
             'id' => $data['id']
         ]);
 

@@ -166,11 +166,29 @@ class InstallController {
             UNIQUE KEY unique_visit (visit_date, visitor_hash, page_url)
         );");
 
-        // Rekordy domyślne
-        $pdo->exec("INSERT IGNORE INTO pa_data (id, title, slug, field_type, contents, create_date, edit_date) VALUES (1, 'Strona Główna', '/', 'page', '[]', NOW(), NOW())");
+        // ---------------------------------------------------------
+        // IMPORT DOMYŚLNYCH SZABLONÓW Z PLIKÓW
+        // ---------------------------------------------------------
+        $templatePath = __DIR__ . '/../DefaultTemplates/tech_startup.html';
+        $templateId = 'NULL'; // Domyślnie brak szablonu dla strony głównej
+        
+        if (file_exists($templatePath)) {
+            $htmlContent = file_get_contents($templatePath);
+            $stmt = $pdo->prepare("INSERT INTO pa_templates (title, html_content, is_active) VALUES (:title, :html, 1)");
+            $stmt->execute([
+                'title' => 'Tech Startup (Example)',
+                'html' => $htmlContent
+            ]);
+            $templateId = $pdo->lastInsertId();
+        }
+
+        // Rekordy domyślne (Przypisujemy nowy szablon do strony głównej, jeśli się wczytał)
+        $stmtPage = $pdo->prepare("INSERT IGNORE INTO pa_data (id, title, slug, field_type, contents, template_id, create_date, edit_date) VALUES (1, 'Strona Główna', '/', 'page', '[]', :tid, NOW(), NOW())");
+        $stmtPage->execute(['tid' => $templateId !== 'NULL' ? $templateId : null]);
+        
         $pdo->exec("INSERT IGNORE INTO pa_mailing_lists (id, name, is_default) VALUES (1, 'Użytkownicy Systemu', 1)");
 
-        // Dodanie domyślnego użytkownika ADMIN (tylko jeśli nie istnieje)
+        // Dodanie domyślnego użytkownika ADMIN
         $checkAdmin = $pdo->query("SELECT id FROM pa_users WHERE uname = 'admin'");
         if (!$checkAdmin->fetch()) {
             $stmt = $pdo->prepare("INSERT INTO pa_users (uname, pass, email, admin, pass_expired) VALUES (:uname, :pass, :email, 1, 0)");
@@ -181,7 +199,7 @@ class InstallController {
             ]);
         }
 
-        // Dodanie domyślnego użytkownika USER (potrzebny do testów E2E i uprawnień)
+        // Dodanie domyślnego użytkownika USER (potrzebny do testów E2E)
         $checkUser = $pdo->query("SELECT id FROM pa_users WHERE uname = 'user'");
         if (!$checkUser->fetch()) {
             $stmt = $pdo->prepare("INSERT INTO pa_users (uname, pass, email, admin, pass_expired) VALUES (:uname, :pass, :email, 0, 0)");

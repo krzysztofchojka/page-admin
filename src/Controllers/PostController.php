@@ -82,13 +82,22 @@ class PostController {
 
     public function save() {
         $data = json_decode(file_get_contents('php://input'), true);
+
         if (!isset($data['id'])) {
-            http_response_code(400); echo json_encode(['status' => 'error']); return;
+            http_response_code(400);
+            echo json_encode(['status' => 'error']);
+            return;
         }
+
         $db = Database::getInstance();
-        
-        // Tworzenie sluga z tytułu jeśli pusty
-        $slug = !empty($data['slug']) ? $data['slug'] : strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['title']), '-'));
+
+        // --- POPRAWKA: Automatyczne usuwanie początkowego slasha ---
+        $slug = '';
+        if (!empty($data['slug'])) {
+            $slug = ltrim(trim($data['slug']), '/');
+        } else {
+            $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['title']), '-'));
+        }
 
         $db->query("UPDATE pa_posts SET title = :title, slug = :slug, contents = :content, excerpt = :excerpt, thumbnail = :thumbnail, tags = :tags, category_id = :category_id, status = :status WHERE id = :id", [
             'title' => $data['title'],
