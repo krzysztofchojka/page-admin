@@ -7,15 +7,16 @@ ob_start();
 require __DIR__ . '/partials/navbar.php';
 $navigatorHtml = ob_get_clean();
 
-
-// ZBUDUJ CUSTOMOWE MENU (z obsługą tagu dropdown) {{menu}}
+// ZBUDUJ CUSTOMOWE MENU (z obsługą tagu dropdown)
 $rawMenu = \CMS\Core\Database::getInstance()->query("SELECT * FROM pa_menu ORDER BY sort_order ASC")->fetchAll();
 $menuTree = [];
 $menuById = [];
+
 foreach ($rawMenu as $item) {
     $item['children'] = [];
     $menuById[$item['id']] = $item;
 }
+
 foreach ($menuById as $id => &$item) {
     if (!empty($item['parent_id']) && isset($menuById[$item['parent_id']])) {
         $menuById[$item['parent_id']]['children'][] = &$item;
@@ -28,12 +29,12 @@ $menuHtml = '';
 foreach ($menuTree as $item) {
     if (!empty($item['children'])) {
         $menuHtml .= '<div class="group relative inline-block menu-item-dropdown">';
-        $menuHtml .= '  <a href="'.htmlspecialchars($item['url']).'" class="menu-item-link inline-flex items-center gap-1 transition">'.htmlspecialchars($item['label']).' <span class="text-[10px]">▼</span></a>';
-        $menuHtml .= '  <div class="absolute left-0 top-full mt-0 hidden group-hover:flex flex-col bg-white text-gray-800 min-w-[220px] shadow-xl rounded-b-lg border border-gray-200 z-[202] overflow-hidden">';
+        $menuHtml .= '    <a href="'.htmlspecialchars($item['url']).'" class="menu-item-link inline-flex items-center gap-1 transition">'.htmlspecialchars($item['label']).' <span class="text-[10px]">▼</span></a>';
+        $menuHtml .= '    <div class="absolute left-0 top-full mt-0 hidden group-hover:flex flex-col bg-white text-gray-800 min-w-[220px] shadow-xl rounded-b-lg border border-gray-200 z-[202] overflow-hidden">';
         foreach ($item['children'] as $child) {
-            $menuHtml .= '    <a href="'.htmlspecialchars($child['url']).'" class="block px-5 py-3 hover:bg-gray-100 transition border-b border-gray-50 last:border-0">'.htmlspecialchars($child['label']).'</a>';
+            $menuHtml .= '        <a href="'.htmlspecialchars($child['url']).'" class="block px-5 py-3 hover:bg-gray-100 transition border-b border-gray-50 last:border-0">'.htmlspecialchars($child['label']).'</a>';
         }
-        $menuHtml .= '  </div>';
+        $menuHtml .= '    </div>';
         $menuHtml .= '</div>';
     } else {
         $menuHtml .= '<a href="'.htmlspecialchars($item['url']).'" class="menu-item-link inline-block transition">'.htmlspecialchars($item['label']).'</a>';

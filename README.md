@@ -160,14 +160,3 @@ Dodaj go do tablicy w pliku:
 ```
 src/Helpers/BlockRenderer.php
 ```
-
-## Główne cechy
-
-- architektura **MVC**
-- **Drop & Run deployment**
-- **Page Builder Drag & Drop**
-- szyfrowane formularze
-- obsługa **RODO**
-- własny system mailowy
-- **Tailwind CSS**
-- brak zależności Node na produkcji
