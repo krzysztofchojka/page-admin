@@ -38,6 +38,28 @@
                     <button type="button" onclick="toggleVisibility('password')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
                 </div>
             </div>
+            <?php 
+            $ip = $_SERVER['REMOTE_ADDR'];
+            $requireCaptcha = false;
+            try {
+                $db = \CMS\Core\Database::getInstance();
+                $recentFails = $db->query("SELECT COUNT(*) as c FROM pa_login_attempts WHERE ip_address = ? AND attempt_time > DATE_SUB(NOW(), INTERVAL 15 MINUTE)", [$ip])->fetch()['c'];
+                if ($recentFails >= 3) $requireCaptcha = true;
+            } catch (\Exception $e) {}
+
+            if ($requireCaptcha && class_exists('\Gregwar\Captcha\CaptchaBuilder')): 
+                $builder = new \Gregwar\Captcha\CaptchaBuilder;
+                $builder->build();
+                \CMS\Core\Session::set('login_captcha', $builder->getPhrase());
+            ?>
+                <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <label class="block text-gray-800 text-sm font-bold mb-3">Weryfikacja Anty-Spam</label>
+                    <div class="flex gap-4 items-center">
+                        <img src="<?= $builder->inline() ?>" class="rounded h-[50px] border">
+                        <input type="text" name="captcha_answer" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Kod...">
+                    </div>
+                </div>
+            <?php endif; ?>
             <div class="flex items-center justify-between">
                 <button class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full" type="submit">
                     Zaloguj się

@@ -28,7 +28,7 @@
         <style><?= $compiledCss ?></style>
     <?php else: ?>
         <!-- Fallback dla stron które nie korzystają z szablonu, lub były utworzone przed updatem -->
-        <script src="https://cdn.tailwindcss.com"></script>
+        <!--script src="https://cdn.tailwindcss.com"></script>
         <script>
             tailwind.config = {
                 theme: {
@@ -40,7 +40,7 @@
                     }
                 }
             }
-        </script>
+        </script-->
     <?php endif; ?>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />

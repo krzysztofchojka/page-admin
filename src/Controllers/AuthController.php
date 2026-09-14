@@ -18,47 +18,49 @@ class AuthController {
     }
 
     // Przykład modyfikacji metody loginForm()
-public function loginForm() {
-    Session::init();
-    if (Session::isLoggedIn()) {
-        header('Location: /admin');
-        exit;
-    }
-    $settings = $this->getSettings();
-
-    // SPRAWDZENIE CUSTOMOWEJ STRONY
-    if (!empty($settings['login_page_id'])) {
-        $db = \CMS\Core\Database::getInstance();
-        $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $settings['login_page_id']])->fetch();
-        
-        if ($page) {
-            $blocks = json_decode($page['contents'], true) ?? [];
-            // Załadowanie globalnej stopki
-            $footerBlocks = null;
-            if (($settings['hide_footer'] ?? 0) != 1 && !empty($settings['footer_page_id'])) {
-                $footerPage = $db->query("SELECT contents FROM pa_data WHERE id = :id", ['id' => $settings['footer_page_id']])->fetch();
-                if ($footerPage && $footerPage['contents']) {
-                    $footerBlocks = json_decode($footerPage['contents'], true);
-                }
-            }
-            require_once __DIR__ . '/../Views/public/page.php';
-            return; // Przerywamy, nie ładujemy domyślnego widoku!
+    public function loginForm() {
+        Session::init();
+        if (Session::isLoggedIn()) {
+            header('Location: /admin');
+            exit;
         }
-    }
+        $settings = $this->getSettings();
 
-    // Widok domyślny jako fallback
-    require_once __DIR__ . '/../Views/auth/login.php';
-}
+        // SPRAWDZENIE CUSTOMOWEJ STRONY
+        if (!empty($settings['login_page_id'])) {
+            $db = \CMS\Core\Database::getInstance();
+            $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $settings['login_page_id']])->fetch();
+            
+            if ($page) {
+                $blocks = json_decode($page['contents'], true) ?? [];
+                // Załadowanie globalnej stopki
+                $footerBlocks = null;
+                if (($settings['hide_footer'] ?? 0) != 1 && !empty($settings['footer_page_id'])) {
+                    $footerPage = $db->query("SELECT contents FROM pa_data WHERE id = :id", ['id' => $settings['footer_page_id']])->fetch();
+                    if ($footerPage && $footerPage['contents']) {
+                        $footerBlocks = json_decode($footerPage['contents'], true);
+                    }
+                }
+                require_once __DIR__ . '/../Views/public/page.php';
+                return; // Przerywamy, nie ładujemy domyślnego widoku!
+            }
+        }
+
+        // Widok domyślny jako fallback
+        require_once __DIR__ . '/../Views/auth/login.php';
+    }
 
     public function login() {
         Session::init();
         \CMS\Core\Session::verifyCsrfToken($_POST['csrf_token'] ?? '');
+        
+        $db = \CMS\Core\Database::getInstance();
         $settings = $this->getSettings();
-
-        // 1. Oczyszczanie wejścia
+        
         $login = filter_input(INPUT_POST, 'login', FILTER_SANITIZE_STRING);
         $password = $_POST['password'] ?? '';
-
+        $ip = $_SERVER['REMOTE_ADDR'];
+        
         Session::set('old_login', $login);
 
         if (!$login || !$password) {
@@ -67,40 +69,81 @@ public function loginForm() {
             exit;
         }
 
-        // --- OBSŁUGA UKRYTEJ REJESTRACJI ---
+        // 1. AUTOMATYCZNA MIGRACJA TABELI ANTI-BRUTEFORCE
+        try {
+            $db->query("CREATE TABLE IF NOT EXISTS pa_login_attempts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                ip_address VARCHAR(45) NOT NULL,
+                username VARCHAR(255) NOT NULL,
+                attempt_time DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+            // Czyszczenie starych prób (starszych niż 24h)
+            $db->query("DELETE FROM pa_login_attempts WHERE attempt_time < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+        } catch (\Exception $e) {}
+
+        // 2. POZIOM 3: TWARDA BLOKADA IP (Chamski brute-force)
+        // 30 błędów w ciągu ostatnich 60 minut z jednego IP
+        $ipFails = $db->query("SELECT COUNT(*) as c FROM pa_login_attempts WHERE ip_address = ? AND attempt_time > DATE_SUB(NOW(), INTERVAL 60 MINUTE)", [$ip])->fetch()['c'];
+        if ($ipFails >= 30) {
+            http_response_code(429); // Too Many Requests
+            die("Zbyt wiele prób logowania z tego adresu IP. Twój dostęp został zablokowany. Spróbuj ponownie za godzinę.");
+        }
+
+        // 3. POZIOM 1: MIĘKKA BLOKADA KONTA (Targetowany brute-force)
+        // 5 błędów w ciągu 15 minut dla konkretnego loginu
+        $accountFails = $db->query("SELECT COUNT(*) as c FROM pa_login_attempts WHERE username = ? AND attempt_time > DATE_SUB(NOW(), INTERVAL 15 MINUTE)", [$login])->fetch()['c'];
+        if ($accountFails >= 5) {
+            Session::setFlash('Konto tymczasowo zablokowane na 15 minut z powodu zbyt wielu błędnych logowań.');
+            header('Location: /login');
+            exit;
+        }
+
+        // 4. WERYFIKACJA CAPTCHA (Jeśli IP ma na koncie 3+ błędy w ciągu 15 minut)
+        $recentIpFails15m = $db->query("SELECT COUNT(*) as c FROM pa_login_attempts WHERE ip_address = ? AND attempt_time > DATE_SUB(NOW(), INTERVAL 15 MINUTE)", [$ip])->fetch()['c'];
+        if ($recentIpFails15m >= 3) {
+            $expectedCaptcha = Session::get('login_captcha');
+            $providedCaptcha = strtolower(trim($_POST['captcha_answer'] ?? ''));
+            
+            if (!$expectedCaptcha || $providedCaptcha !== strtolower($expectedCaptcha)) {
+                Session::setFlash('Nieprawidłowy kod z obrazka (Captcha).');
+                header('Location: /login');
+                exit;
+            }
+        }
+
+        // --- OBSŁUGA UKRYTEJ REJESTRACJI (Bez zmian) ---
         $regMode = $settings['reg_mode'] ?? 'disabled';
         $secretLogin = trim($settings['reg_secret_login'] ?? '');
         $secretPass = $settings['reg_secret_pass'] ?? '';
 
-        // Sprawdzamy, czy tryb to secret i czy dane logowania nie są puste w ustawieniach
         if ($regMode === 'secret' && $secretLogin !== '') {
             if ($login === $secretLogin && $password === $secretPass) {
-                // Sukces: Odblokowujemy rejestrację i kierujemy na /register
                 Session::set('secret_reg_unlocked', true);
                 header('Location: /register');
                 exit;
             } else {
-                // Dodatkowe zabezpieczenie: Jeśli ktoś próbuje się logować (i błędnie),
-                // upewniamy się, że blokada zostaje nałożona na nowo
                 Session::remove('secret_reg_unlocked');
             }
         }
 
-        // -------------------------------------
-        // 2. Szukamy zwykłego użytkownika
-        $userModel = new User();
+        // 5. WERYFIKACJA UŻYTKOWNIKA W BAZIE
+        $userModel = new \CMS\Models\User();
         $user = $userModel->findByEmail($login);
         if (!$user) {
             $user = $userModel->findByUsername($login);
         }
 
-        // 3. Weryfikacja hasła
         if ($user && password_verify($password, $user['pass'])) {
+            // SUKCES: Czyścimy historię błędów dla tego IP i loginu
+            $db->query("DELETE FROM pa_login_attempts WHERE username = ? OR ip_address = ?", [$login, $ip]);
+            Session::remove('login_captcha');
+            
             if ($user['pass_expired'] == 1) {
                 Session::set('temp_user_id', $user['id']);
                 header('Location: /change-password');
                 exit;
             }
+            
             session_regenerate_id(true);
             Session::set('user_id', $user['id']);
             Session::set('user_name', $user['uname']);
@@ -109,7 +152,8 @@ public function loginForm() {
             exit;
         }
 
-        // Błędne dane (zarówno dla trybu secret, jak i normalnego logowania)
+        // BŁĄD: Rejestrujemy nieudaną próbę
+        $db->query("INSERT INTO pa_login_attempts (ip_address, username) VALUES (?, ?)", [$ip, $login]);
         Session::setFlash('Nieprawidłowe dane logowania.');
         header('Location: /login');
         exit;

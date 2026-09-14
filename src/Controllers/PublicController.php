@@ -7,35 +7,80 @@ use CMS\Core\Session;
 class PublicController {
 
     public function show($slug = null) {
-        Session::init();
-        \CMS\Helpers\Tracker::logVisit($_SERVER['REQUEST_URI'] ?? '/');
-        $db = \CMS\Core\Database::getInstance();
-        $settingsRows = $db->query("SELECT * FROM pa_settings")->fetchAll();
-        $settings = [];
-        foreach($settingsRows as $r) { $settings[$r['setting_key']] = $r['setting_value']; }
+    Session::init();
+    \CMS\Helpers\Tracker::logVisit($_SERVER['REQUEST_URI'] ?? '/');
 
-        // --- GATE 1: LOCKDOWN (Hasło globalne) ---
-        if (($settings['lockdown_enabled'] ?? 0) == 1) {
+    $db = \CMS\Core\Database::getInstance();
+    $settingsRows = $db->query("SELECT * FROM pa_settings")->fetchAll();
+    $settings = [];
+    foreach($settingsRows as $r) {
+        $settings[$r['setting_key']] = $r['setting_value'];
+    }
+
+    // --- GATE 1: LOCKDOWN (Hasło globalne) ---
+    if (($settings['lockdown_enabled'] ?? 0) == 1) {
+        $ip = $_SERVER['REMOTE_ADDR'];
+        
+        // Auto-migracja na wypadek gdyby Lockdown był szybszy niż pierwsze logowanie admina
+        try {
+            $db->query("CREATE TABLE IF NOT EXISTS pa_login_attempts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                ip_address VARCHAR(45) NOT NULL,
+                username VARCHAR(255) NOT NULL,
+                attempt_time DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+        } catch (\Exception $e) {}
+
+        if (!Session::get('site_unlocked')) {
+            // Twarda blokada (30 błędów)
+            $ipFails = $db->query("SELECT COUNT(*) as c FROM pa_login_attempts WHERE ip_address = ? AND attempt_time > DATE_SUB(NOW(), INTERVAL 60 MINUTE)", [$ip])->fetch()['c'];
+            if ($ipFails >= 30) {
+                http_response_code(429);
+                die("Zbyt wiele prób wpisania hasła. Dostęp zablokowany na godzinę.");
+            }
+
             if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['site_pass'])) {
-                if ($_POST['site_pass'] === ($settings['lockdown_password'] ?? '')) {
+                // Miękka blokada (Sprawdzanie Captchy)
+                $recentFails = $db->query("SELECT COUNT(*) as c FROM pa_login_attempts WHERE ip_address = ? AND username = '__lockdown__' AND attempt_time > DATE_SUB(NOW(), INTERVAL 15 MINUTE)", [$ip])->fetch()['c'];
+                
+                $captchaValid = true;
+                if ($recentFails >= 3) {
+                    $expected = Session::get('lockdown_captcha');
+                    $provided = strtolower(trim($_POST['captcha_answer'] ?? ''));
+                    if (!$expected || $provided !== strtolower($expected)) {
+                        $captchaValid = false;
+                    }
+                }
+
+                if ($captchaValid && $_POST['site_pass'] === ($settings['lockdown_password'] ?? '')) {
+                    // Sukces - odblokowanie
+                    $db->query("DELETE FROM pa_login_attempts WHERE ip_address = ? AND username = '__lockdown__'", [$ip]);
+                    Session::remove('lockdown_captcha');
                     Session::set('site_unlocked', true);
+                    header("Location: " . $_SERVER['REQUEST_URI']);
+                    exit;
+                } else {
+                    // Błąd
+                    $db->query("INSERT INTO pa_login_attempts (ip_address, username) VALUES (?, '__lockdown__')", [$ip]);
+                    Session::setFlash($captchaValid ? 'Nieprawidłowy kod dostępu.' : 'Nieprawidłowy kod z obrazka (Captcha).', 'error');
                     header("Location: " . $_SERVER['REQUEST_URI']);
                     exit;
                 }
             }
-            if (!Session::get('site_unlocked')) {
-                if (!empty($settings['lockdown_page_id'])) {
-                    $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $settings['lockdown_page_id']])->fetch();
-                    if ($page) {
-                        $blocks = json_decode($page['contents'], true) ?? [];
-                        require_once __DIR__ . '/../Views/public/page.php';
-                        exit; 
-                    }
+
+            // Renderowanie bloku lub domyślnej strony lockdown
+            if (!empty($settings['lockdown_page_id'])) {
+                $page = $db->query("SELECT * FROM pa_data WHERE id = :id", ['id' => $settings['lockdown_page_id']])->fetch();
+                if ($page) {
+                    $blocks = json_decode($page['contents'], true) ?? [];
+                    require_once __DIR__ . '/../Views/public/page.php';
+                    exit;
                 }
-                require_once __DIR__ . '/../Views/public/lockdown.php';
-                exit;
             }
+            require_once __DIR__ . '/../Views/public/lockdown.php';
+            exit;
         }
+    }
 
         // --- GATE 2: REQUIRE REGISTRATION ---
         if (($settings['require_registration'] ?? 0) == 1) {
