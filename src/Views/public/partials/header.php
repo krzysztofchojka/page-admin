@@ -4,14 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($settings['site_title'] ?? ($page['title'] ?? 'CMS')) ?></title>
-    
+
     <?php if (!empty($settings['meta_description'])): ?>
-    <meta name="description" content="<?= htmlspecialchars($settings['meta_description']) ?>">
+        <meta name="description" content="<?= htmlspecialchars($settings['meta_description']) ?>">
     <?php endif; ?>
-    
-    <?php if (!empty($settings['site_favicon'])): ?>
-    <link rel="icon" href="<?= htmlspecialchars($settings['site_favicon']) ?>">
-    <?php endif; ?>
+
+    <link rel="icon" href="/favicon.ico">
 
     <?php
     $compiledCss = '';

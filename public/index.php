@@ -67,6 +67,7 @@ $router->get('/', [PublicController::class, 'show']);
 $router->get('/page', [PublicController::class, 'show']);
 $router->get('/post', [PublicController::class, 'showPost']);
 $router->get('/test-db', [HomeController::class, 'testDb']);
+$router->get('/favicon.ico', [PublicController::class, 'favicon']);
 
 // KREATOR INSTALACJI
 $router->get('/install', [InstallController::class, 'index']); 
