@@ -131,7 +131,14 @@ class InstallController {
         // Tabele Główne
         $pdo->exec("CREATE TABLE IF NOT EXISTS pa_users (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, uname VARCHAR(50) NOT NULL UNIQUE, pass VARCHAR(255) NOT NULL, email VARCHAR(100), admin TINYINT(1) DEFAULT 0, pass_expired TINYINT(1) DEFAULT 1, reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
         $pdo->exec("CREATE TABLE IF NOT EXISTS pa_data (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, slug VARCHAR(255), field_type VARCHAR(50) NOT NULL, contents LONGTEXT, template_id INT DEFAULT NULL, editor VARCHAR(50), create_date DATETIME, edit_date DATETIME)");
-        $pdo->exec("CREATE TABLE IF NOT EXISTS pa_templates (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), html_content LONGTEXT, is_active TINYINT(1) DEFAULT 1)");
+        
+        // Utworzenie tabeli z nową kolumną
+        $pdo->exec("CREATE TABLE IF NOT EXISTS pa_templates (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), html_content LONGTEXT, compiled_css LONGTEXT NULL, is_active TINYINT(1) DEFAULT 1)");
+        
+        // Uodpornienie na nadpisywanie starych baz (wymuszenie dodania kolumny, ignoruje błąd jeśli już istnieje)
+        try {
+            $pdo->exec("ALTER TABLE pa_templates ADD COLUMN compiled_css LONGTEXT NULL AFTER html_content");
+        } catch (\Exception $e) {}
 
         // Architektura Systemowa
         $pdo->exec("CREATE TABLE IF NOT EXISTS pa_sessions (id VARCHAR(128) PRIMARY KEY, data TEXT, last_accessed INT)");
@@ -170,19 +177,23 @@ class InstallController {
         // IMPORT DOMYŚLNYCH SZABLONÓW Z PLIKÓW
         // ---------------------------------------------------------
         $templatePath = __DIR__ . '/../DefaultTemplates/tech_startup.html';
-        $templateId = 'NULL'; // Domyślnie brak szablonu dla strony głównej
+        $cssPath = __DIR__ . '/../DefaultTemplates/tech_startup.css';
+        $templateId = 'NULL'; 
         
         if (file_exists($templatePath)) {
             $htmlContent = file_get_contents($templatePath);
-            $stmt = $pdo->prepare("INSERT INTO pa_templates (title, html_content, is_active) VALUES (:title, :html, 1)");
+            $cssContent = file_exists($cssPath) ? file_get_contents($cssPath) : '';
+            
+            $stmt = $pdo->prepare("INSERT INTO pa_templates (title, html_content, compiled_css, is_active) VALUES (:title, :html, :css, 1)");
             $stmt->execute([
                 'title' => 'Tech Startup (Example)',
-                'html' => $htmlContent
+                'html' => $htmlContent,
+                'css' => $cssContent // Zapisujemy CSS do nowej kolumny
             ]);
             $templateId = $pdo->lastInsertId();
         }
 
-        // Rekordy domyślne (Przypisujemy nowy szablon do strony głównej, jeśli się wczytał)
+        // Rekordy domyślne (Strona główna)
         $stmtPage = $pdo->prepare("INSERT IGNORE INTO pa_data (id, title, slug, field_type, contents, template_id, create_date, edit_date) VALUES (1, 'Strona Główna', '/', 'page', '[]', :tid, NOW(), NOW())");
         $stmtPage->execute(['tid' => $templateId !== 'NULL' ? $templateId : null]);
         

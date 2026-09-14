@@ -21,6 +21,7 @@ Przejdź do zakładki **Releases** na GitHubie i pobierz paczkę ZIP dopasowaną
 
 ### 2. Wgraj pliki i utwórz bazę danych
 Wypakuj pobrane pliki i wrzuć je na swój serwer przez FTP. Następnie w panelu swojego hostingu utwórz pustą bazę **MySQL / MariaDB** i przygotuj jej dane logowania.
+*Zalecane kodowanie bazy to uniwersalne `utf8mb4` (np. z systemem porównywania `utf8mb4_unicode_ci`), co zapewni pełną obsługę wszystkich znaków specjalnych i emoji.*
 
 ### 3. Uruchom kreator w przeglądarce
 Wejdź na swój adres URL:
