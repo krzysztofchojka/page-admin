@@ -41,9 +41,10 @@ class MediaController {
         $this->checkAuth();
         $relativePath = $_GET['path'] ?? '';
         $search = $_GET['search'] ?? '';
-        $currentDir = $this->resolvePath($relativePath);
 
+        $currentDir = $this->resolvePath($relativePath);
         $files = [];
+
         if (is_dir($currentDir)) {
             $items = scandir($currentDir);
             foreach ($items as $item) {
@@ -60,10 +61,22 @@ class MediaController {
                         'path' => $relativeItem
                     ];
                 } else {
-                    // BEZPIECZNIK DLA MIME TYPE (jeśli host nie ma fileinfo)
                     $mime = 'application/octet-stream';
                     if (function_exists('mime_content_type')) {
                         $mime = @mime_content_type($fullPath);
+                    }
+                    
+                    // FALLBACK: Jeśli system nie rozpoznał MIME (częsty problem na Windowsie)
+                    if (empty($mime) || $mime === 'application/octet-stream' || $mime === false) {
+                        $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+                        $mimes = [
+                            'png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+                            'gif' => 'image/gif', 'webp' => 'image/webp', 'svg' => 'image/svg+xml',
+                            'pdf' => 'application/pdf', 'txt' => 'text/plain', 'html' => 'text/html',
+                            'csv' => 'text/csv', 'mp4' => 'video/mp4', 'mp3' => 'audio/mpeg',
+                            'zip' => 'application/zip'
+                        ];
+                        $mime = $mimes[$ext] ?? 'application/octet-stream';
                     }
 
                     $files[] = [
@@ -78,10 +91,9 @@ class MediaController {
             }
         }
 
-        // Reszta bez zmian...
         if(isset($_GET["picker"]) && $_GET["picker"]==1){
             require __DIR__ . '/../Views/admin/media/index.php';
-        }else{
+        } else {
             ob_start();
             require __DIR__ . '/../Views/admin/media/index.php';
             $content = ob_get_clean();

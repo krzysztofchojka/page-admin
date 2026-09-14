@@ -24,7 +24,7 @@
             </div>
             <div class="mb-4">
                 <label class="block font-bold text-sm">Site Logo URL</label>
-                <input type="text" name="site_logo" value="<?= htmlspecialchars($settings['site_logo'] ?? '') ?>" class="w-full border p-2 rounded text-sm" placeholder="/uploads/media/logo.png">
+                <input type="text" name="site_logo" value="<?= htmlspecialchars($settings['site_logo'] ?? '') ?>" class="w-full media-input border p-2 rounded text-sm" placeholder="/uploads/media/logo.png">
             </div>
             <div class="mb-4">
                 <label class="block font-bold">Theme Color (Hex)</label>

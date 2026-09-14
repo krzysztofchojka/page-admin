@@ -153,6 +153,9 @@ $jsCurrentPath = htmlspecialchars($currentPath, ENT_QUOTES, 'UTF-8');
                             <div class="absolute inset-0 z-0" onclick="handleFileClick('<?= htmlspecialchars($file['url'], ENT_QUOTES) ?>', <?= $isImg ? 'true' : 'false' ?>, <?= $isPdf ? 'true' : 'false' ?>)"></div>
 
                             <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition flex gap-1 z-10">
+                                <button onclick="copyPath('<?= htmlspecialchars($file['url'], ENT_QUOTES) ?>', false, event)" class="p-1.5 bg-white border border-gray-200 rounded shadow text-xs hover:text-green-600" title="Kopiuj ścieżkę (/uploads/...)">🔗</button>
+                                <button onclick="copyPath('<?= htmlspecialchars($file['url'], ENT_QUOTES) ?>', true, event)" class="p-1.5 bg-white border border-gray-200 rounded shadow text-xs hover:text-green-600" title="Kopiuj pełen adres z domeną">🌐</button>
+                                
                                 <?php if ($isImg): ?>
                                     <button onclick="openImageEditor('<?= htmlspecialchars($file['url'], ENT_QUOTES) ?>', '<?= htmlspecialchars($file['name'], ENT_QUOTES) ?>', event)" class="p-1.5 bg-white border border-gray-200 rounded shadow text-xs hover:text-purple-600" title="Kadruj/Obróć">✂️</button>
                                 <?php endif; ?>
@@ -259,6 +262,31 @@ function sendMultipleToPicker() {
     
     if (urls.length > 0) {
         window.parent.postMessage({ type: 'media_selected_multiple', urls: urls }, '*');
+    }
+}
+</script>
+<script>
+function copyPath(url, fullDomain, event) {
+    event.stopPropagation();
+    event.preventDefault();
+    const textToCopy = fullDomain ? window.location.origin + url : url;
+    
+    // Zgrabne kopiowanie do schowka
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert('Skopiowano: ' + textToCopy);
+        });
+    } else {
+        // Fallback dla przeglądarek niewspierających API lub działania po HTTP
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+        alert('Skopiowano: ' + textToCopy);
     }
 }
 </script>
