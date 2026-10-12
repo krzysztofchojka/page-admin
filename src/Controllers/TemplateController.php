@@ -97,6 +97,7 @@ class TemplateController {
                                 <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2">🧩 Struktura</h3>
                                 <div class="flex flex-col gap-1.5">
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-blue-600 shadow-sm text-xs cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition" data-tag="{{zone:main}}">{{zone:main}}</code>
+                                    <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-blue-600 shadow-sm text-xs cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition" data-tag="{{zone:post_header}}">{{zone:post_header}}</code>
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-gray-600 shadow-sm text-xs cursor-pointer hover:border-gray-400 hover:bg-gray-100 transition" data-tag="{{global_footer}}">{{global_footer}}</code>
                                 </div>
                             </div>

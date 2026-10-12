@@ -139,9 +139,23 @@
 
                     $html = preg_replace_callback('/\{\{zone:([a-zA-Z0-9_]+)\}\}/', function($matches) {
                         $zoneId = $matches[1];
+                        
+                        // Zablokowana strefa nagłówkowa postów
+                        if ($zoneId === 'post_header') {
+                            return '<div class="min-h-[120px] border-2 border-dashed border-gray-300 bg-gray-50 p-4 rounded-lg relative flex flex-col items-center justify-center select-none" data-zone-uid="'.$zoneId.'">
+                                <span class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">STREFA SYSTEMOWA: '.$zoneId.'</span>
+                                <span class="text-2xl mb-1 opacity-50">📰</span>
+                                <p class="text-gray-500 font-bold text-xs text-center uppercase tracking-wide">
+                                    Tu pojawi się automatyczny nagłówek wpisu<br>
+                                    <span class="font-normal text-[10px] normal-case">(Tytuł, kategoria, data. Upuszczanie bloków jest zablokowane)</span>
+                                </p>
+                            </div>';
+                        }
+
+                        // Standardowa, otwarta strefa Drop-Zone
                         return '<div class="drop-zone min-h-[100px] border-2 border-dashed border-blue-400 bg-blue-50/50 p-4 rounded-lg relative" data-zone-uid="'.$zoneId.'">
-                                    <span class="absolute top-0 right-0 bg-blue-400 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">STREFA: '.$zoneId.'</span>
-                                </div>';
+                            <span class="absolute top-0 right-0 bg-blue-400 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">STREFA: '.$zoneId.'</span>
+                        </div>';
                     }, $html);
                     echo $html;
                 } else {

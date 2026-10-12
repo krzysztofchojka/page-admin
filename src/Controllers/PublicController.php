@@ -240,6 +240,8 @@ class PublicController {
 
         // Trik: Udajemy stronę klasyczną by użyć starego `page.php` z obsługą szablonów!
         $page = [
+            'id' => $post['id'],
+            'is_post' => true,
             'title' => $post['title'],
             'contents' => $post['contents'],
             'template_id' => $post['template_id'] ?? null
@@ -262,7 +264,7 @@ class PublicController {
             ';
         }
 
-        // Wstrzyknięcie nagłówka blogowego (oraz ewentualnego ostrzeżenia) DO GŁÓWNEGO EDYTORA na pierwszą pozycję
+        // Wstrzyknięcie nagłówka blogowego (oraz ewentualnego ostrzeżenia) 
         $headerBlock = [
             'type' => 'raw_html',
             'content' => $draftWarning . '
@@ -274,13 +276,28 @@ class PublicController {
             '
         ];
 
-        // Zabezpiecz format bloków
-        if (isset($blocks['editor'])) {
-            array_unshift($blocks['editor'],$headerBlock);
-        } else if (isset($blocks['main'])) {
-            array_unshift($blocks['main'],$headerBlock);
+        // SPRAWDZENIE CZY SZABLON MA DEDYKOWANĄ STREFĘ {{zone:post_header}}
+        $hasPostHeaderZone = false;
+        if (!empty($post['template_id'])) {
+            $tplCheck = $db->query("SELECT html_content FROM pa_templates WHERE id = ?", [$post['template_id']])->fetch();
+            if ($tplCheck && strpos($tplCheck['html_content'], '{{zone:post_header}}') !== false) {
+                $hasPostHeaderZone = true;
+            }
+        }
+
+        // Zabezpiecz format bloków i przypisz nagłówek
+        if ($hasPostHeaderZone) {
+            // Wstrzykujemy bezpośrednio do strefy dedykowanej wpisom
+            $blocks['post_header'] = [$headerBlock];
         } else {
-            array_unshift($blocks,$headerBlock);
+            // Fallback - jeśli nie ma strefy post_header, dodajemy na samej górze głównej przestrzeni roboczej
+            if (isset($blocks['editor'])) {
+                array_unshift($blocks['editor'], $headerBlock);
+            } else if (isset($blocks['main'])) {
+                array_unshift($blocks['main'], $headerBlock);
+            } else {
+                array_unshift($blocks, $headerBlock);
+            }
         }
 
         $page['contents'] = json_encode($blocks);
