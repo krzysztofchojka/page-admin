@@ -71,17 +71,21 @@ if (!function_exists('renderNavMenuMobile')) {
                 <?= htmlspecialchars($settings['site_title'] ?? $page['title'] ?? 'CMS') ?>
             <?php endif; ?>
         </a>
-        
-        <button id="burger-btn" class="md:hidden text-3xl px-2 focus:outline-none hover:text-gray-300">
-            ☰
-        </button>
-        
+
+        <?php if (!empty($menuTree)): ?>
+            <button id="burger-btn" class="md:hidden text-3xl px-2 focus:outline-none hover:text-gray-300">
+                ☰
+            </button>
+        <?php endif; ?>
+
         <div class="hidden md:flex gap-8 items-center">
             <?php renderNavMenuDesktop($menuTree); ?>
         </div>
     </div>
-    
-    <div id="mobile-menu" class="hidden md:hidden flex-col gap-0 mt-4 border-t border-gray-700 pt-2 px-2">
-        <?php renderNavMenuMobile($menuTree); ?>
-    </div>
+
+    <?php if (!empty($menuTree)): ?>
+        <div id="mobile-menu" class="hidden md:hidden flex-col gap-0 mt-4 border-t border-gray-700 pt-2 px-2">
+            <?php renderNavMenuMobile($menuTree); ?>
+        </div>
+    <?php endif; ?>
 </nav>
