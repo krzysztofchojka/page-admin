@@ -69,7 +69,7 @@ class PostController {
 
     public function create() {
         $db = Database::getInstance();
-        $db->query("INSERT INTO pa_posts (title, slug, contents) VALUES ('Nowy Wpis', 'nowy-wpis-" . time() . "', '[]')");
+        $db->query("INSERT INTO pa_posts (title, slug, contents, status) VALUES ('Nowy Wpis', 'nowy-wpis-" . time() . "', '[]', 'draft')");
         $id = $db->getConnection()->lastInsertId();
         header("Location: /admin/posts/edit?id=$id");
         exit;

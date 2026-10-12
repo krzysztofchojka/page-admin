@@ -193,25 +193,93 @@
 </div>
 
 <script>
-    // Przekazanie danych do Buildera
-    window.CMS_CONFIG = {
-        pageId: <?= $post['id'] ?>,
-        savedContent: JSON.parse(decodeURIComponent('<?= rawurlencode($post['contents'] ?: '[]') ?>')),
-        availableForms: <?= json_encode($forms ?? []) ?>,
-        availableGalleries: <?= json_encode($galleries ?? []) ?>,
-        availableCategories: <?= json_encode($categories ?? []) ?>
-    };
+<?php
+// Pobranie kodu HTML wszystkich szablonów do JS, aby uniknąć przeładowania i automatycznego zapisu
+$templatesData = [];
+$templatesData[''] = '<div id="editor" class="drop-zone max-w-4xl mx-auto min-h-[600px] bg-white shadow-xl rounded-lg p-8 grid grid-cols-1 gap-6 border-2 border-transparent" data-zone-uid="editor"></div>';
+foreach($templates as $tpl) {
+    $tHtml = $dbLocal->query("SELECT html_content FROM pa_templates WHERE id = ?", [$tpl['id']])->fetch()['html_content'] ?? '';
+    $tHtml = str_replace('{{global_footer}}', '<div class="bg-gray-200 text-gray-500 text-center p-4 rounded-lg my-4 text-xs font-bold uppercase border-2 border-dashed border-gray-300 pointer-events-none">W tym miejscu wyrenderuje się globalna stopka</div>', $tHtml);
+    $tHtml = preg_replace('/\{\{(navigator|admin_navigator|menu)\}\}/', '<div style="background:#1e293b; color:#fff; padding:10px; text-align:center; font-family:sans-serif; margin-bottom:10px; border-radius:4px; font-size:12px; font-weight:bold; pointer-events:none;">[ Element Nawigacyjny Szablonu ]</div>', $tHtml);
+    $tHtml = preg_replace_callback('/\{\{zone:([a-zA-Z0-9_]+)\}\}/', function($matches) {
+        $zoneId = $matches[1];
+        return '<div class="drop-zone min-h-[100px] border-2 border-dashed border-blue-400 bg-blue-50/50 p-4 rounded-lg relative" data-zone-uid="'.$zoneId.'">
+                    <span class="absolute top-0 right-0 bg-blue-400 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">STREFA: '.$zoneId.'</span>
+                </div>';
+    }, $tHtml);
+    $templatesData[$tpl['id']] = $tHtml;
+}
+?>
+const templatesData = <?= json_encode($templatesData) ?>;
 
-    // Wymuszanie zapisu po zmianie układu (szablonu)
-    document.getElementById('postTemplate').addEventListener('change', function() {
-        if (confirm('Zmiana szablonu wymaga zapisania posta i przeładowania edytora. Twoja zawartość zostanie dopasowana do nowej struktury. Kontynuować?')) {
-            savePost('<?= $post['status'] ?>');
-        } else {
-            this.value = "<?= $post['template_id'] ?? '' ?>"; // Cofnij wybór
+// Przekazanie danych do Buildera
+window.CMS_CONFIG = {
+    pageId: <?= $post['id'] ?>,
+    savedContent: JSON.parse(decodeURIComponent('<?= rawurlencode($post['contents'] ?: '[]') ?>')),
+    availableForms: <?= json_encode($forms ?? []) ?>,
+    availableGalleries: <?= json_encode($galleries ?? []) ?>,
+    availableCategories: <?= json_encode($categories ?? []) ?>
+};
+
+// Zmiana układu (szablonu) bez automatycznego zapisu - przenoszenie bloków do nowej strefy
+document.getElementById('postTemplate').addEventListener('change', function() {
+    const newTemplateId = this.value;
+    const newHtml = templatesData[newTemplateId];
+    
+    if (newHtml !== undefined) {
+        // 1. Zbieranie wszystkich obecnych bloków z istniejących stref
+        let allBlocks = [];
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            Array.from(zone.children).forEach(child => {
+                // Pomijamy techniczne etykiety stref
+                if (!child.classList.contains('absolute') && child.tagName !== 'SPAN') {
+                    allBlocks.push(child);
+                }
+            });
+        });
+
+        // 2. Podmiana HTML edytora
+        document.getElementById('editor-wrapper').innerHTML = newHtml;
+
+        // 3. Znajdź nową strefę docelową (szukamy takiej z 'main' w nazwie lub łapiemy pierwszą lepszą)
+        const newZones = document.querySelectorAll('.drop-zone');
+        if (newZones.length > 0) {
+            let targetZone = null;
+            for (let i = 0; i < newZones.length; i++) {
+                if (newZones[i].getAttribute('data-zone-uid').toLowerCase().includes('main')) {
+                    targetZone = newZones[i];
+                    break;
+                }
+            }
+            if (!targetZone) {
+                targetZone = newZones[0];
+            }
+
+            // 4. Przeniesienie bloków do docelowej strefy
+            allBlocks.forEach(block => {
+                targetZone.appendChild(block);
+            });
         }
-    });
 
-    // Główna funkcja zapisująca wpis
+        // 5. Ponowna inicjalizacja mechanizmu drag&drop (Sortable) na nowych strefach
+        if (typeof window.initDropZones === 'function') {
+            window.initDropZones();
+        } else {
+            // Fallback, jeśli metoda z głównego skryptu nie jest dostępna w pamięci
+            newZones.forEach(zone => {
+                if (typeof Sortable !== 'undefined') {
+                    Sortable.create(zone, {
+                        group: 'blocks', // Powszechna nazwa strefy przemieszczania (drag area)
+                        animation: 150,
+                        ghostClass: 'ghost'
+                    });
+                }
+            });
+        }
+    }
+});
+
+// Główna funkcja zapisująca wpis
     function savePost(statusToSave) {
         // Zabezpieczenie przed kliknięciem
         const btnDraft = document.getElementById('btn-draft');
