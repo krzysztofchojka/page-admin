@@ -1,12 +1,32 @@
 <?php
 // cron.php - Uruchamiaj za pomocą zadania CRON na serwerze
+
+// Weryfikacja: tylko dostęp z localhosta (CLI lub lokalny web-serwer)
+$remoteIp = $_SERVER['REMOTE_ADDR'] ?? '';
+if (php_sapi_name() !== 'cli' && $remoteIp !== '127.0.0.1' && $remoteIp !== '::1') {
+    http_response_code(403);
+    die('Access denied - local execution only');
+}
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Zbuduj ścieżki i załaduj .env tak jak w public/index.php
+// Zbuduj ścieżki i załaduj .env tak jak w public/index.php (z bezpiecznym parsowaniem cudzysłowów)
 $envPath = __DIR__ . '/../.env';
 if (file_exists($envPath)) {
-    $env = parse_ini_file($envPath);
-    foreach ($env as $key => $value) $_ENV[$key] = $value;
+    $envLines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($envLines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        $parts = explode('=', $line, 2);
+        if (count($parts) === 2) {
+            $key = trim($parts[0]);
+            $value = trim($parts[1]);
+            // Usuwamy cudzysłowy, w które owinięte są hasła
+            if (preg_match('/^"(.*)"$/', $value, $matches)) {
+                $value = $matches[1];
+            }
+            $_ENV[$key] = $value;
+        }
+    }
 }
 
 spl_autoload_register(function ($class) {
@@ -54,7 +74,7 @@ try {
         $db->query("DELETE FROM pa_submissions WHERE id = ?", [$draft['id']]);
         $deletedDraftsCount++;
     }
-
+    
     if ($deletedDraftsCount > 0) {
         echo "RODO Cleanup: Usunieto stare szkice formularzy: {$deletedDraftsCount} (w tym usunieto plikow: {$deletedFilesCount})\n";
     }

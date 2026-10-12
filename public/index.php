@@ -1,5 +1,4 @@
 <?php
-
 // 1. Załaduj zewnętrzne biblioteki z Composera
 $composerAutoload = __DIR__ . '/../vendor/autoload.php';
 if (file_exists($composerAutoload)) {
@@ -17,14 +16,24 @@ spl_autoload_register(function ($class) {
     if (file_exists($file)) require $file;
 });
 
-// 3. Sprawdzenie i ładowanie pliku .env
+// 3. Sprawdzenie i ładowanie pliku .env (z obsługą cudzysłowów)
 $envPath = __DIR__ . '/../.env';
 $envExists = file_exists($envPath);
 
 if ($envExists) {
-    $env = parse_ini_file($envPath);
-    foreach ($env as $key => $value) {
-        $_ENV[$key] = $value;
+    $envLines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($envLines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        $parts = explode('=', $line, 2);
+        if (count($parts) === 2) {
+            $key = trim($parts[0]);
+            $value = trim($parts[1]);
+            // Zdejmujemy cudzysłowy jeśli są na początku i końcu
+            if (preg_match('/^"(.*)"$/', $value, $matches)) {
+                $value = $matches[1];
+            }
+            $_ENV[$key] = $value;
+        }
     }
 }
 
@@ -39,7 +48,6 @@ if (!$envExists && $currentPath !== '/install') {
 use CMS\Core\Router;
 use CMS\Middleware\AuthMiddleware;
 use CMS\Middleware\AdminMiddleware;
-
 use CMS\Controllers\HomeController;
 use CMS\Controllers\PublicController;
 use CMS\Controllers\AuthController;
@@ -70,7 +78,7 @@ $router->get('/test-db', [HomeController::class, 'testDb']);
 $router->get('/favicon.ico', [PublicController::class, 'favicon']);
 
 // KREATOR INSTALACJI
-$router->get('/install', [InstallController::class, 'index']); 
+$router->get('/install', [InstallController::class, 'index']);
 $router->post('/install', [InstallController::class, 'process']);
 
 // Logowanie i Rejestracja
@@ -79,6 +87,7 @@ $router->post('/login', [AuthController::class, 'login']);
 $router->get('/logout', [AuthController::class, 'logout']);
 $router->get('/register', [AuthController::class, 'registerForm']);
 $router->post('/register', [AuthController::class, 'register']);
+$router->get('/verify-email', [AuthController::class, 'verifyEmail']);
 
 // Formularze od strony klienta
 $router->post('/submit-form', [FormController::class, 'submit']);
@@ -178,11 +187,13 @@ $router->get('/admin/email/fetch-imap', [EmailController::class, 'fetchEmails'],
 $router->get('/admin/email/read', [EmailController::class, 'readEmail'], [AdminMiddleware::class]);
 $router->post('/admin/email/send-direct', [EmailController::class, 'sendDirect'], [AdminMiddleware::class]);
 $router->get('/admin/email/fetch-sent', [EmailController::class, 'fetchSentEmails'], [AdminMiddleware::class]);
+
 $router->get('/admin/email/templates', [EmailController::class, 'templates'], [AdminMiddleware::class]);
 $router->get('/admin/email/templates/create', [EmailController::class, 'createTemplate'], [AdminMiddleware::class]);
 $router->get('/admin/email/templates/edit', [EmailController::class, 'editTemplate'], [AdminMiddleware::class]);
 $router->post('/admin/email/templates/save', [EmailController::class, 'saveTemplate'], [AdminMiddleware::class]);
 $router->get('/admin/email/templates/delete', [EmailController::class, 'deleteTemplate'], [AdminMiddleware::class]);
+
 $router->get('/admin/email/lists', [EmailController::class, 'lists'], [AdminMiddleware::class]);
 $router->post('/admin/email/lists/create', [EmailController::class, 'createList'], [AdminMiddleware::class]);
 $router->get('/admin/email/lists/manage', [EmailController::class, 'manageList'], [AdminMiddleware::class]);

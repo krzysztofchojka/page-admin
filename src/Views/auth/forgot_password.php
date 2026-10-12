@@ -10,7 +10,7 @@
     <div class="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
         <h2 class="text-2xl font-bold mb-2 text-center text-gray-800">Reset hasła</h2>
         <p class="text-sm text-gray-500 text-center mb-6">Podaj adres e-mail przypisany do konta, a wyślemy Ci link do zmiany hasła.</p>
-        
+
         <?php $flash = \CMS\Core\Session::getFlash(); if ($flash): ?>
             <div class="bg-<?= $flash['type'] === 'error' ? 'red' : 'green' ?>-100 border border-<?= $flash['type'] === 'error' ? 'red' : 'green' ?>-400 text-<?= $flash['type'] === 'error' ? 'red' : 'green' ?>-700 px-4 py-3 rounded mb-4 text-sm font-bold">
                 <?= htmlspecialchars($flash['msg']) ?>
@@ -23,10 +23,28 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Adres E-mail</label>
                 <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" id="email" name="email" type="email" placeholder="jan@domena.pl" required>
             </div>
+
+            <?php 
+            if (isset($requireCaptcha) && $requireCaptcha && class_exists('\Gregwar\Captcha\CaptchaBuilder')): 
+                $builder = new \Gregwar\Captcha\CaptchaBuilder;
+                $builder->build();
+                \CMS\Core\Session::set('reset_captcha', $builder->getPhrase());
+            ?>
+            <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <label class="block text-gray-800 text-sm font-bold mb-3">Weryfikacja Anty-Spam</label>
+                <p class="text-xs text-gray-500 mb-3">Zbyt wiele prób wysyłki resetu. Przepisz kod z obrazka lub odczekaj 2 minuty.</p>
+                <div class="flex gap-4 items-center">
+                    <img src="<?= $builder->inline() ?>" class="rounded h-[50px] border bg-white">
+                    <input type="text" name="captcha_answer" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Kod...">
+                </div>
+            </div>
+            <?php endif; ?>
+
             <button class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded w-full transition shadow" type="submit">
                 Wyślij link
             </button>
         </form>
+
         <p class="text-center mt-5 text-sm text-gray-600 border-t pt-4">
             Pamiętasz hasło? <a href="/login" class="text-blue-600 font-bold hover:underline">Zaloguj się</a>
         </p>

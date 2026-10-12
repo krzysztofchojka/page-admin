@@ -12,6 +12,18 @@ class PostController {
             header('Location: /login');
             exit;
         }
+
+        // Automatyczna migracja zapobiegająca awariom u klientów aktualizujących kod (błąd 1054)
+        $this->ensureTemplateColumnExists();
+    }
+
+    private function ensureTemplateColumnExists() {
+        $db = Database::getInstance();
+        try {
+            $db->query("ALTER TABLE pa_posts ADD COLUMN template_id INT NULL AFTER category_id");
+        } catch (\Exception $e) {
+            // Kolumna już istnieje
+        }
     }
 
     // --- KATEGORIE ---
@@ -30,7 +42,7 @@ class PostController {
         $db = Database::getInstance();
         $name = trim($_POST['name'] ?? '');
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
-        
+
         if (!empty($_POST['id'])) {
             $db->query("UPDATE pa_post_categories SET name = ?, slug = ? WHERE id = ?", [$name, $slug, $_POST['id']]);
         } else {
@@ -66,13 +78,21 @@ class PostController {
     public function edit() {
         $id = $_GET['id'] ?? null;
         if (!$id) die("ID Missing");
-        
+
         $db = Database::getInstance();
         $post = $db->query("SELECT * FROM pa_posts WHERE id = :id", ['id' => $id])->fetch();
         if (!$post) die("Post not found");
 
         $categories = $db->query("SELECT * FROM pa_post_categories ORDER BY name ASC")->fetchAll();
-        
+        $templates = $db->query("SELECT id, title FROM pa_templates WHERE is_active = 1 ORDER BY title ASC")->fetchAll(); // Dla szablonów posta
+
+        // Nazwa przypisanego szablonu (dla informacyjnej odznaki w edytorze)
+        $templateName = '';
+        if (!empty($post['template_id'])) {
+            $tpl = $db->query("SELECT title FROM pa_templates WHERE id = :id", ['id' => $post['template_id']])->fetch();
+            $templateName = $tpl['title'] ?? '';
+        }
+
         // Zmienne dla buildera
         $forms = $db->query("SELECT id, title FROM pa_forms ORDER BY id DESC")->fetchAll();
         $galleries = $db->query("SELECT id, title FROM pa_galleries ORDER BY id DESC")->fetchAll();
@@ -99,7 +119,10 @@ class PostController {
             $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['title']), '-'));
         }
 
-        $db->query("UPDATE pa_posts SET title = :title, slug = :slug, contents = :content, excerpt = :excerpt, thumbnail = :thumbnail, tags = :tags, category_id = :category_id, status = :status WHERE id = :id", [
+        $createdAt = !empty($data['created_at']) ? date('Y-m-d H:i:s', strtotime($data['created_at'])) : date('Y-m-d H:i:s');
+        $templateId = !empty($data['template_id']) ? (int)$data['template_id'] : null;
+
+        $db->query("UPDATE pa_posts SET title = :title, slug = :slug, contents = :content, excerpt = :excerpt, thumbnail = :thumbnail, tags = :tags, category_id = :category_id, template_id = :template_id, status = :status, created_at = :created_at WHERE id = :id", [
             'title' => $data['title'],
             'slug' => $slug,
             'content' => json_encode($data['content']),
@@ -107,7 +130,9 @@ class PostController {
             'thumbnail' => $data['thumbnail'] ?? '',
             'tags' => $data['tags'] ?? '',
             'category_id' => !empty($data['category_id']) ? (int)$data['category_id'] : null,
+            'template_id' => $templateId,
             'status' => $data['status'] ?? 'published',
+            'created_at' => $createdAt,
             'id' => $data['id']
         ]);
 

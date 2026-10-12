@@ -9,23 +9,44 @@ class Database {
     private $pdo;
 
     private function __construct() {
-        $config = parse_ini_file(__DIR__ . '/../../.env');
-        $dsn = "mysql:host=" . $config['DB_HOST'] . ";dbname=" . $config['DB_NAME'] . ";charset=utf8mb4";
+        // Bezpieczne ładowanie .env w cudzysłowach z pominięciem parse_ini_file
+        $envPath = __DIR__ . '/../../.env';
+        $config = [];
+        if (file_exists($envPath)) {
+            $envLines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($envLines as $line) {
+                if (strpos(trim($line), '#') === 0) continue;
+                $parts = explode('=', $line, 2);
+                if (count($parts) === 2) {
+                    $key = trim($parts[0]);
+                    $value = trim($parts[1]);
+                    // Usuwamy cudzysłowy jeśli są na początku i końcu
+                    if (preg_match('/^"(.*)"$/', $value, $matches)) {
+                        $value = $matches[1];
+                    }
+                    $config[$key] = $value;
+                }
+            }
+        }
+
+        $dsn = "mysql:host=" . ($config['DB_HOST'] ?? '') . ";dbname=" . ($config['DB_NAME'] ?? '') . ";charset=utf8mb4";
         $options = [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_EMULATE_PREPARES   => false,
         ];
 
         try {
-            $this->pdo = new PDO($dsn, $config['DB_USER'], $config['DB_PASS'], $options);
+            $this->pdo = new PDO($dsn, $config['DB_USER'] ?? '', $config['DB_PASS'] ?? '', $options);
         } catch (PDOException $e) {
             // Zapisanie błędu do bezpiecznego pliku na serwerze
             $logDir = __DIR__ . '/../../logs/';
-            if (!is_dir($logDir)) { mkdir($logDir, 0755, true); }
+            if (!is_dir($logDir)) {
+                mkdir($logDir, 0755, true);
+            }
             $logMessage = "[" . date('Y-m-d H:i:s') . "] DB Connection Error: " . $e->getMessage() . "\n";
             file_put_contents($logDir . 'error.log', $logMessage, FILE_APPEND);
-            
+
             // Ładny ekran dla użytkownika końcowego
             http_response_code(503);
             echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Przerwa Techniczna</title></head>";

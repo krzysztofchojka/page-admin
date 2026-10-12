@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($settings['site_title'] ?? ($page['title'] ?? 'CMS')) ?></title>
-
+    
     <?php if (!empty($settings['meta_description'])): ?>
-        <meta name="description" content="<?= htmlspecialchars($settings['meta_description']) ?>">
+    <meta name="description" content="<?= htmlspecialchars($settings['meta_description']) ?>">
     <?php endif; ?>
-
+    
     <link rel="icon" href="/favicon.ico">
 
-    <?php
+    <?php 
     $compiledCss = '';
     if (!empty($page['template_id'])) {
         $tplCssData = \CMS\Core\Database::getInstance()->query("SELECT compiled_css FROM pa_templates WHERE id = ?", [$page['template_id']])->fetch();
@@ -20,34 +20,30 @@
         }
     }
     ?>
-
     <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/style.css') ?>">
     <?php if (!empty($compiledCss)): ?>
         <style><?= $compiledCss ?></style>
-    <?php else: ?>
-        <!-- Fallback dla stron które nie korzystają z szablonu, lub były utworzone przed updatem -->
-        <!--script src="https://cdn.tailwindcss.com"></script>
-        <script>
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        colors: {
-                            primary: '<?= htmlspecialchars($settings['color_primary'] ?? '#f97316') ?>',
-                            secondary: '<?= htmlspecialchars($settings['color_secondary'] ?? '#1e3a8a') ?>',
-                        }
-                    }
-                }
-            }
-        </script-->
     <?php endif; ?>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
+    <!-- KaTeX do renderowania wzorów matematycznych (Latex) w postach i blokach -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {
+        delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+        ]
+    });"></script>
+
     <style>
         nav { position: sticky !important; top: 0 !important; z-index: 201 !important; }
         main { padding-top: 0 !important; }
-        
+
         /* Widget Lotów - Awaryjne style na twardo */
         .przelot-widget { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 24px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .przelot-widget .header { display: flex; align-items: center; gap: 12px; font-weight: bold; margin-bottom: 16px; border-bottom: 1px solid #f3f4f6; padding-bottom: 12px; }
@@ -61,11 +57,11 @@
         .przelot-widget .stops { font-weight: bold; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
         .przelot-widget .infobubble { background: #eff6ff; color: #1e40af; padding: 8px 12px; border-radius: 6px; text-align: center; font-size: 0.875rem; font-weight: bold; margin: 16px 0; border: 1px dashed #bfdbfe; }
         .przelot-widget .footer { border-top: 1px solid #f3f4f6; padding-top: 12px; font-size: 0.875rem; color: #374151; }
-        
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
     </style>
-
+    
     <?= $settings['custom_head'] ?? '' ?>
 </head>
 <body class="bg-white text-gray-800 flex flex-col min-h-screen overflow-x-hidden">

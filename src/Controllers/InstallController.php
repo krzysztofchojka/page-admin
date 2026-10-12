@@ -43,50 +43,51 @@ class InstallController {
         $safePass = htmlspecialchars($pass);
 
         echo <<<HTML
-        <!DOCTYPE html>
-        <html lang="pl">
-        <head>
-            <meta charset="UTF-8">
-            <title>Kreator Instalacji CMS</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-        </head>
-        <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white p-8 md:p-10 rounded-2xl shadow-xl max-w-lg w-full border-t-4 border-blue-600">
-                <div class="text-center mb-8">
-                    <div class="text-5xl mb-3">🚀</div>
-                    <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">Kreator CMS</h1>
-                    <p class="text-sm text-gray-500 mt-2 leading-relaxed">Połączmy Twój nowy system z bazą danych. System automatycznie wygeneruje klucze bezpieczeństwa.</p>
-                </div>
-                
-                $errorHtml
-                
-                <form action="/install" method="POST" class="space-y-5">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Serwer Bazy Danych (Host)</label>
-                        <input type="text" name="db_host" value="$safeHost" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nazwa Bazy Danych</label>
-                        <input type="text" name="db_name" value="$safeName" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="np. strona_db">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Użytkownik MySQL</label>
-                        <input type="text" name="db_user" value="$safeUser" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="np. root">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Hasło</label>
-                        <input type="password" name="db_pass" value="$safePass" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="Wpisz hasło...">
-                    </div>
-                    <div class="pt-4 mt-6 border-t border-gray-100">
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 text-lg">
-                            Zainstaluj System
-                        </button>
-                    </div>
-                </form>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Kreator Instalacji CMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 md:p-10 rounded-2xl shadow-xl max-w-lg w-full border-t-4 border-blue-600">
+        <div class="text-center mb-8">
+            <div class="text-5xl mb-3">🚀</div>
+            <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">Kreator CMS</h1>
+            <p class="text-sm text-gray-500 mt-2 leading-relaxed">Połączmy Twój nowy system z bazą danych. System automatycznie wygeneruje klucze bezpieczeństwa.</p>
+        </div>
+
+        $errorHtml
+
+        <form action="/install" method="POST" class="space-y-5">
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Serwer Bazy Danych (Host)</label>
+                <input type="text" name="db_host" value="$safeHost" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800">
             </div>
-        </body>
-        </html>
-        HTML;
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nazwa Bazy Danych</label>
+                <input type="text" name="db_name" value="$safeName" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="np. strona_db">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Użytkownik MySQL</label>
+                <input type="text" name="db_user" value="$safeUser" required class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="np. root">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Hasło</label>
+                <input type="password" name="db_pass" value="$safePass" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 focus:bg-white text-gray-800" placeholder="Wpisz hasło...">
+            </div>
+
+            <div class="pt-4 mt-6 border-t border-gray-100">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition transform hover:-translate-y-0.5 text-lg">
+                    Zainstaluj System
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+HTML;
     }
 
     public function process() {
@@ -108,11 +109,11 @@ class InstallController {
             return $this->index("Błąd połączenia z bazą: " . $e->getMessage(), $host, $name, $user, $pass);
         }
 
-        // 2. Generowanie 256-bitowego klucza i zapis pliku .env
+        // 2. Generowanie 256-bitowego klucza i zapis pliku .env w cudzysłowach
         $key = 'base64:' . base64_encode(random_bytes(32));
-        $envContent = "DB_HOST={$host}\nDB_NAME={$name}\nDB_USER={$user}\nDB_PASS={$pass}\nAPP_ENV=production\nAPP_KEY=\"{$key}\"\n";
-        
+        $envContent = "DB_HOST=\"{$host}\"\nDB_NAME=\"{$name}\"\nDB_USER=\"{$user}\"\nDB_PASS=\"{$pass}\"\nAPP_ENV=\"production\"\nAPP_KEY=\"{$key}\"\n";
         $envPath = __DIR__ . '/../../.env';
+
         if (@file_put_contents($envPath, $envContent) === false) {
             return $this->index("Błąd zapisu! Brak uprawnień do utworzenia pliku .env. Zmień uprawnienia CHMOD na 775.", $host, $name, $user, $pass);
         }
@@ -129,15 +130,18 @@ class InstallController {
 
     private function runInstallation(PDO $pdo) {
         // Tabele Główne
-        $pdo->exec("CREATE TABLE IF NOT EXISTS pa_users (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, uname VARCHAR(50) NOT NULL UNIQUE, pass VARCHAR(255) NOT NULL, email VARCHAR(100), admin TINYINT(1) DEFAULT 0, pass_expired TINYINT(1) DEFAULT 1, reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS pa_users (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, uname VARCHAR(50) NOT NULL UNIQUE, pass VARCHAR(255) NOT NULL, email VARCHAR(100), admin TINYINT(1) DEFAULT 0, pass_expired TINYINT(1) DEFAULT 1, is_verified TINYINT(1) DEFAULT 1, verification_token VARCHAR(64) NULL, reg_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
         $pdo->exec("CREATE TABLE IF NOT EXISTS pa_data (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, slug VARCHAR(255), field_type VARCHAR(50) NOT NULL, contents LONGTEXT, template_id INT DEFAULT NULL, editor VARCHAR(50), create_date DATETIME, edit_date DATETIME)");
         
         // Utworzenie tabeli z nową kolumną
         $pdo->exec("CREATE TABLE IF NOT EXISTS pa_templates (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), html_content LONGTEXT, compiled_css LONGTEXT NULL, is_active TINYINT(1) DEFAULT 1)");
         
         // Uodpornienie na nadpisywanie starych baz (wymuszenie dodania kolumny, ignoruje błąd jeśli już istnieje)
+        try { $pdo->exec("ALTER TABLE pa_templates ADD COLUMN compiled_css LONGTEXT NULL AFTER html_content"); } catch (\Exception $e) {}
+        try { $pdo->exec("ALTER TABLE pa_posts ADD COLUMN template_id INT NULL AFTER category_id"); } catch (\Exception $e) {}
         try {
-            $pdo->exec("ALTER TABLE pa_templates ADD COLUMN compiled_css LONGTEXT NULL AFTER html_content");
+            $pdo->exec("ALTER TABLE pa_users ADD COLUMN is_verified TINYINT(1) DEFAULT 1 AFTER pass_expired");
+            $pdo->exec("ALTER TABLE pa_users ADD COLUMN verification_token VARCHAR(64) NULL AFTER is_verified");
         } catch (\Exception $e) {}
 
         // Architektura Systemowa
@@ -152,7 +156,7 @@ class InstallController {
 
         // Blog / Posty
         $pdo->exec("CREATE TABLE IF NOT EXISTS pa_post_categories (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), slug VARCHAR(255))");
-        $pdo->exec("CREATE TABLE IF NOT EXISTS pa_posts (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, category_id INT NULL, title VARCHAR(255), slug VARCHAR(255), excerpt TEXT, contents LONGTEXT, thumbnail VARCHAR(255), tags VARCHAR(255), status VARCHAR(20) DEFAULT 'published', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS pa_posts (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, category_id INT NULL, template_id INT NULL, title VARCHAR(255), slug VARCHAR(255), excerpt TEXT, contents LONGTEXT, thumbnail VARCHAR(255), tags VARCHAR(255), status VARCHAR(20) DEFAULT 'published', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
 
         // System Mailingowy
         $pdo->exec("CREATE TABLE IF NOT EXISTS pa_email_templates (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), subject VARCHAR(255), body LONGTEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
@@ -178,8 +182,8 @@ class InstallController {
         // ---------------------------------------------------------
         $templatePath = __DIR__ . '/../DefaultTemplates/tech_startup.html';
         $cssPath = __DIR__ . '/../DefaultTemplates/tech_startup.css';
-        $templateId = 'NULL'; 
-        
+        $templateId = 'NULL';
+
         if (file_exists($templatePath)) {
             $htmlContent = file_get_contents($templatePath);
             $cssContent = file_exists($cssPath) ? file_get_contents($cssPath) : '';
@@ -196,7 +200,7 @@ class InstallController {
         // Rekordy domyślne (Strona główna)
         $stmtPage = $pdo->prepare("INSERT IGNORE INTO pa_data (id, title, slug, field_type, contents, template_id, create_date, edit_date) VALUES (1, 'Strona Główna', '/', 'page', '[]', :tid, NOW(), NOW())");
         $stmtPage->execute(['tid' => $templateId !== 'NULL' ? $templateId : null]);
-        
+
         $pdo->exec("INSERT IGNORE INTO pa_mailing_lists (id, name, is_default) VALUES (1, 'Użytkownicy Systemu', 1)");
 
         // Dodanie domyślnego użytkownika ADMIN
