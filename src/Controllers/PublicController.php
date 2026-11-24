@@ -29,7 +29,8 @@ class PublicController {
                 )");
             } catch (\Exception $e) {}
 
-            if (!Session::get('site_unlocked')) {
+            // Administrator widzi stronę bez hasła lockdown (potrzebne m.in. do podglądu w edytorze)
+            if (!Session::get('site_unlocked') && Session::get('is_admin') != 1) {
                 // Twarda blokada (30 błędów)
                 $ipFails =$db->query("SELECT COUNT(*) as c FROM pa_login_attempts WHERE ip_address = ? AND attempt_time > DATE_SUB(NOW(), INTERVAL 60 MINUTE)", [$ip])->fetch()['c'];
                 if ($ipFails >= 30) {
@@ -203,7 +204,7 @@ class PublicController {
 
         // --- GATE 1: LOCKDOWN (Hasło globalne) ---
         if (($settings['lockdown_enabled'] ?? 0) == 1) {
-            if (!Session::get('site_unlocked')) {
+            if (!Session::get('site_unlocked') && Session::get('is_admin') != 1) {
                 header('Location: /');
                 exit;
             }

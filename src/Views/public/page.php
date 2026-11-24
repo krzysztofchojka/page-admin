@@ -75,14 +75,14 @@ foreach ($menuTree as $item) {
         
         $userName = htmlspecialchars(\CMS\Core\Session::get('user_name'));
         $adminNavHtml = '
-        <div style="background:#111827; color:#f3f4f6; font-size:13px; padding:8px 16px; display:flex; justify-content:space-between; align-items:center; position:relative; z-index:99999; border-bottom: 2px solid #3b82f6;">
-            <div style="display:flex; gap: 15px; align-items:center;">
-                <span style="font-weight:bold; color:#60a5fa;">CMS Admin</span>
-                <span>Witaj, <b>'.$userName.'</b></span>
+        <div class="pa-adminbar">
+            <div class="pa-adminbar-left">
+                <span class="pa-adminbar-brand">CMS Admin</span>
+                <span class="pa-adminbar-hello">Witaj, <b>'.$userName.'</b></span>
             </div>
-            <div>
-                <a href="'.$editLink.'" style="background:#3b82f6; color:#fff; padding:4px 12px; border-radius:4px; text-decoration:none; font-weight:bold; transition: background 0.2s;" onmouseover="this.style.background=\'#2563eb\'" onmouseout="this.style.background=\'#3b82f6\'">'.$editLabel.'</a>
-                <a href="/admin" style="margin-left:15px; color:#9ca3af; text-decoration:none; font-weight:bold;" onmouseover="this.style.color=\'#fff\'" onmouseout="this.style.color=\'#9ca3af\'">⚙️ Panel CMS</a>
+            <div class="pa-adminbar-right">
+                <a href="'.$editLink.'" class="pa-adminbar-edit">'.$editLabel.'</a>
+                <a href="/admin" class="pa-adminbar-panel">⚙️ <span>Panel CMS</span></a>
             </div>
         </div>';
     }

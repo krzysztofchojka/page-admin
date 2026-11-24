@@ -7,8 +7,92 @@ const availableCategories = window.CMS_CONFIG.availableCategories || [];
 // Definicja obrazka zastępczego
 const defaultPlaceholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect width='100%25' height='100%25' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239ca3af'%3EWybierz lub wgraj obraz%3C/text%3E%3C/svg%3E";
 
-const blockIcons = { text: 'T', image: '🖼', video: '▶️', button: '🔘', divider: '➖', quote: '❝', columns_2: '◫', columns_3: '☰', banner: '🏔', image_cards: '🗂', carousel: '🎠', accordion: '⇕', map: '📍', countdown: '⏳', table: '🗄️', flight: '✈️', form: '📝', gallery: '📷', raw_html: '</>', system_login: '🔐', system_register: '📝', system_change_password: '🔑', system_lockdown: '🚧', posts_grid: '📰' };
-const blockNames = { text: 'Tekst', image: 'Obrazek', video: 'Wideo', button: 'Przycisk', divider: 'Odstęp', quote: 'Cytat', columns_2: '2 Kolumny', columns_3: '3 Kolumny', banner: 'Baner', image_cards: 'Siatka Kart', carousel: 'Karuzela', accordion: 'Akordeon', map: 'Mapa', countdown: 'Odliczanie', table: 'Tabela', flight: 'Loty', form: 'Formularz', gallery: 'Galeria', raw_html: 'HTML', system_login: 'Logowanie', system_register: 'Rejestracja', system_change_password: 'Zmień Hasło', system_lockdown: 'Lockdown', posts_grid: 'Posty' };
+const blockIcons = { text: 'T', image: '🖼', video: '▶️', button: '🔘', divider: '➖', quote: '❝', columns_2: '◫', columns_3: '☰', banner: '🏔', image_cards: '🗂', carousel: '🎠', accordion: '⇕', map: '📍', countdown: '⏳', table: '🗄️', flight: '✈️', form: '📝', gallery: '📷', raw_html: '</>', system_login: '🔐', system_register: '📝', system_change_password: '🔑', system_lockdown: '🚧', posts_grid: '📰', section: '▭', grid: '▦', heading: 'H', ticker: '📣', switcher: '⇆', schedule: '🕒', translate: '🌐' };
+const blockNames = { text: 'Tekst', image: 'Obrazek', video: 'Wideo', button: 'Przycisk', divider: 'Odstęp', quote: 'Cytat', columns_2: '2 Kolumny', columns_3: '3 Kolumny', banner: 'Baner', image_cards: 'Siatka Kart', carousel: 'Karuzela', accordion: 'Akordeon', map: 'Mapa', countdown: 'Odliczanie', table: 'Tabela', flight: 'Loty', form: 'Formularz', gallery: 'Galeria', raw_html: 'HTML', system_login: 'Logowanie', system_register: 'Rejestracja', system_change_password: 'Zmień Hasło', system_lockdown: 'Lockdown', posts_grid: 'Posty', section: 'Sekcja', grid: 'Siatka', heading: 'Nagłówek', ticker: 'Pasek NEWS', switcher: 'Przełącznik', schedule: 'Harmonogram', translate: 'Tłumacz' };
+
+// ==========================================
+// 0. HELPERY (formatowanie, pola wyboru, kolory)
+// ==========================================
+
+function esc(v) {
+    return String(v === undefined || v === null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function selectTpl(cls, value, options) {
+    return `<select class="${cls} w-full border p-2 rounded bg-white text-sm">` +
+        options.map(([v, l]) => `<option value="${esc(v)}" ${String(value ?? '') === String(v) ? 'selected' : ''}>${l}</option>`).join('') +
+        `</select>`;
+}
+
+function colorInputTpl(cls, value = '', placeholder = 'brak') {
+    const hex = /^#[0-9a-f]{6}$/i.test(value || '') ? value : '#ffffff';
+    return `<div class="flex items-center gap-1">
+        <input type="color" value="${hex}" class="w-9 h-9 p-0.5 border rounded cursor-pointer shrink-0 bg-white" title="Wybierz kolor" oninput="this.nextElementSibling.value=this.value; this.nextElementSibling.dispatchEvent(new Event('input', {bubbles:true}))">
+        <input type="text" class="${cls} w-full border p-2 rounded text-xs font-mono" placeholder="${placeholder}" value="${esc(value)}">
+    </div>`;
+}
+
+function fieldTpl(label, inner, extra = '') {
+    return `<div class="${extra}"><label class="block text-[11px] font-bold text-gray-500 mb-1">${label}</label>${inner}</div>`;
+}
+
+function checkTpl(cls, checked, label) {
+    return `<label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer select-none"><input type="checkbox" class="${cls}" ${checked ? 'checked' : ''}> ${label}</label>`;
+}
+
+const FMT_FIELDS = ['align', 'maxw', 'pad', 'mt', 'mb', 'bg', 'color', 'radius', 'shadow', 'show', 'pos'];
+const SPACE_OPTS = [['', '— domyślny —'], ['none', 'Brak'], ['sm', 'Mały'], ['md', 'Średni'], ['lg', 'Duży'], ['xl', 'Bardzo duży']];
+
+function formatPanelTpl(s) {
+    return `
+        <div class="text-[10px] font-bold uppercase text-blue-700 mt-4 mb-2 border-t border-blue-200 pt-3 tracking-wider">🎨 Formatowanie i układ (działa na telefonach i komputerach)</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            ${fieldTpl('Wyrównanie tekstu', selectTpl('set-align', s.align, [['', '— domyślne —'], ['left', 'Do lewej'], ['center', 'Wyśrodkowane'], ['right', 'Do prawej'], ['justify', 'Wyjustowane']]))}
+            ${fieldTpl('Maks. szerokość', selectTpl('set-maxw', s.maxw, [['', 'Pełna'], ['sm', 'Wąska (640px)'], ['md', 'Średnia (768px)'], ['lg', 'Szeroka (1024px)'], ['xl', 'Bardzo szeroka (1200px)'], ['2xl', '1400px']]))}
+            ${fieldTpl('Wewnętrzny odstęp', selectTpl('set-pad', s.pad, SPACE_OPTS))}
+            ${fieldTpl('Odstęp nad / pod', `<div class="flex gap-1">${selectTpl('set-mt', s.mt, SPACE_OPTS)}${selectTpl('set-mb', s.mb, SPACE_OPTS)}</div>`)}
+            ${fieldTpl('Kolor tła', colorInputTpl('set-bg', s.bg))}
+            ${fieldTpl('Kolor tekstu', colorInputTpl('set-color', s.color))}
+            ${fieldTpl('Zaokrąglenie', selectTpl('set-radius', s.radius, [['', 'Brak'], ['sm', 'Małe'], ['md', 'Średnie'], ['lg', 'Duże'], ['xl', 'Bardzo duże'], ['full', 'Pigułka']]))}
+            ${fieldTpl('Cień', selectTpl('set-shadow', s.shadow, [['', 'Brak'], ['sm', 'Delikatny'], ['md', 'Średni'], ['lg', 'Mocny']]))}
+            ${fieldTpl('Widoczność', selectTpl('set-show', s.show, [['', 'Wszędzie'], ['desktop', 'Tylko komputer'], ['mobile', 'Tylko telefon']]))}
+            ${fieldTpl('Pozycja', selectTpl('set-pos', s.pos, [['', 'Normalna'], ['sticky', 'Przyklejona u góry (sticky)'], ['fixed-bl', 'Stała: lewy dół'], ['fixed-br', 'Stała: prawy dół'], ['fixed-tl', 'Stała: lewa góra'], ['fixed-tr', 'Stała: prawa góra']]))}
+        </div>`;
+}
+
+function readSettings(el) {
+    const p = el.querySelector(':scope > .block-settings-panel');
+    if (!p) return {};
+    const s = {
+        id: p.querySelector('.set-id').value,
+        css: p.querySelector('.set-css').value,
+        style: p.querySelector('.set-style').value
+    };
+    FMT_FIELDS.forEach(f => {
+        const inp = p.querySelector('.set-' + f);
+        if (inp && inp.value !== '') s[f] = inp.value;
+    });
+    return s;
+}
+
+// Starsze zapisy mogły dublować zakładki wewnętrznych karuzel w karuzeli nadrzędnej
+function filterNestedCarouselTabs(tabs) {
+    if (!Array.isArray(tabs)) return [];
+    const nested = new Set();
+    const walk = (blocks) => {
+        if (!Array.isArray(blocks)) return;
+        blocks.forEach(b => {
+            if (!b) return;
+            if (b.type === 'carousel' && b.content && Array.isArray(b.content.tabs)) b.content.tabs.forEach(t => nested.add(t.label || ''));
+            if (b.type === 'switcher' && b.content && Array.isArray(b.content.tabs)) b.content.tabs.forEach(t => walk(t.children));
+            if (Array.isArray(b.children)) walk(b.children);
+            else if (b.children && typeof b.children === 'object') Object.values(b.children).forEach(walk);
+        });
+    };
+    tabs.forEach(t => walk(t.children));
+    return tabs.filter(t => !nested.has(t.label || ''));
+}
 
 let navSortables = [];
 
@@ -94,7 +178,17 @@ function buildNavTree(domContainer, navContainer) {
                 if(dz.className.includes('col-left')) zoneName = 'Lewa kolumna';
                 if(dz.className.includes('col-center')) zoneName = 'Środkowa kolumna';
                 if(dz.className.includes('col-right')) zoneName = 'Prawa kolumna';
-                if(dz.className.includes('tab-content')) zoneName = 'Zakładka';
+                if(dz.className.includes('tab-content')) {
+                    const lbl = dz.closest('.carousel-tab')?.querySelector('.tab-label')?.value;
+                    zoneName = lbl ? 'Zakładka: ' + lbl : 'Zakładka';
+                }
+                if(dz.className.includes('intro-content')) zoneName = 'Ekran startowy';
+                if(dz.className.includes('section-content')) zoneName = 'Zawartość sekcji';
+                if(dz.className.includes('grid-cell')) zoneName = 'Komórka ' + (Array.from(dz.parentElement.children).indexOf(dz) + 1);
+                if(dz.className.includes('switcher-content')) {
+                    const lbl = dz.closest('.switcher-tab')?.querySelector('.sw-label')?.value;
+                    zoneName = 'Wariant: ' + (lbl || '');
+                }
 
                 const zoneLabel = document.createElement('div');
                 zoneLabel.className = 'text-[9px] text-gray-400 font-bold uppercase mb-1 mt-1';
@@ -280,8 +374,30 @@ function renderRecursive(blocks, container) {
     if (!blocks || !container) return;
     
     blocks.forEach(block => {
+        if (!block || !block.type) return;
+        if (block.type === 'carousel' && block.content && Array.isArray(block.content.tabs)) {
+            block.content.tabs = filterNestedCarouselTabs(block.content.tabs);
+        }
         const el = renderBlock(block.type, block.content, block.settings);
         container.appendChild(el);
+
+        if (block.type === 'section' && Array.isArray(block.children)) {
+            renderRecursive(block.children, el.querySelector(':scope > .section-content'));
+        }
+        if (block.type === 'grid' && block.children && typeof block.children === 'object') {
+            el.querySelectorAll(':scope > .grid-cells > .grid-cell').forEach((cell, i) => {
+                if (Array.isArray(block.children['col_' + i])) renderRecursive(block.children['col_' + i], cell);
+            });
+        }
+        if (block.type === 'switcher' && block.content && Array.isArray(block.content.tabs)) {
+            el.querySelectorAll(':scope > .switcher-tabs-container > .switcher-tab').forEach((tabEl, i) => {
+                const t = block.content.tabs[i];
+                if (t && Array.isArray(t.children)) renderRecursive(t.children, tabEl.querySelector(':scope > .switcher-content'));
+            });
+        }
+        if (block.type === 'carousel' && block.content && Array.isArray(block.content.intro)) {
+            renderRecursive(block.content.intro, el.querySelector(':scope > .carousel-intro-wrap > .intro-content'));
+        }
 
         if (block.type === 'text') initQuill(el.querySelector('.quill-editor'), block.content);
         
@@ -295,7 +411,7 @@ function renderRecursive(blocks, container) {
             if(block.children.right) renderRecursive(block.children.right, el.querySelector('.col-right'));
         }
         if (block.type === 'carousel' && block.content && block.content.tabs) {
-            const tabZones = el.querySelectorAll('.tab-content');
+            const tabZones = el.querySelectorAll(':scope > .carousel-tabs-container > .carousel-tab > .tab-content');
             block.content.tabs.forEach((tab, idx) => {
                 if (tab.children && tabZones[idx]) {
                     renderRecursive(tab.children, tabZones[idx]);
@@ -313,11 +429,40 @@ function renderRecursive(blocks, container) {
 // ==========================================
 const Size = typeof Quill !== 'undefined' ? Quill.import('attributors/style/size') : null;
 if(Size) {
-    Size.whitelist = ['12px', '16px', '20px', '24px', '32px'];
+    Size.whitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '40px', '48px'];
     Quill.register(Size, true);
 }
 const Align = typeof Quill !== 'undefined' ? Quill.import('attributors/style/align') : null;
 if(Align) Quill.register(Align, true);
+// Krój pisma jako styl inline (działa na stronie publicznej bez dodatkowych klas CSS)
+const Font = typeof Quill !== 'undefined' ? Quill.import('attributors/style/font') : null;
+if(Font) {
+    Font.whitelist = ['lato', 'montserrat', 'arial', 'georgia', 'monospace'];
+    Quill.register(Font, true);
+}
+
+// Quill nie obsługuje "miękkich" <br> wewnątrz akapitu i po cichu je usuwa
+// (np. w treściach wklejonych ze starych stron). Rozbijamy je na osobne akapity.
+function splitSoftBreaks(html) {
+    if (!html || html.indexOf('<br') === -1) return html;
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    tpl.content.querySelectorAll('p, h1, h2, h3, h4, h5, h6').forEach(block => {
+        const hasInnerBr = Array.from(block.childNodes).some((n, i, arr) => n.nodeName === 'BR' && i < arr.length - 1);
+        if (!hasInnerBr) return;
+        const parts = [[]];
+        block.childNodes.forEach(n => { if (n.nodeName === 'BR') parts.push([]); else parts[parts.length - 1].push(n); });
+        const frag = document.createDocumentFragment();
+        parts.forEach(nodes => {
+            const el = block.cloneNode(false);
+            nodes.forEach(n => el.appendChild(n.cloneNode(true)));
+            if (!el.textContent.trim() && !el.querySelector('img')) el.innerHTML = '<br>';
+            frag.appendChild(el);
+        });
+        block.replaceWith(frag);
+    });
+    return tpl.innerHTML;
+}
 
 function initQuill(element, content) {
     if (!element) return;
@@ -334,16 +479,42 @@ function initQuill(element, content) {
         modules: {
             toolbar: {
                 container: [
-                    [{ 'header': [1, 2, 3, false] }],
-                    [{ 'size': Size ? Size.whitelist : [] }],
+                    [{ 'header': [1, 2, 3, 4, false] }],
+                    [{ 'font': Font ? [false, ...Font.whitelist] : [] }],
+                    [{ 'size': Size ? [false, ...Size.whitelist] : [] }],
                     [{ 'color': [] }, { 'background': [] }],
                     ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'script': 'sub' }, { 'script': 'super' }],
                     [{ 'align': [] }],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    ['link', 'code-block'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                    ['blockquote', 'link', 'image', 'video'],
+                    ['code-block'],
                     ['clean']
                 ],
                 handlers: {
+                    // Obrazek wgrywany do Mediów zamiast base64 w treści strony
+                    'image': function() {
+                        const q = this.quill;
+                        const inp = document.createElement('input');
+                        inp.type = 'file';
+                        inp.accept = 'image/*';
+                        inp.onchange = () => {
+                            const file = inp.files && inp.files[0];
+                            if (!file) return;
+                            const fd = new FormData();
+                            fd.append('file', file);
+                            fd.append('shortcut', '1');
+                            fetch('/admin/media/upload', { method: 'POST', body: fd })
+                                .then(r => r.json())
+                                .then(d => {
+                                    if (!d.url) { alert('Nie udało się wgrać obrazka.'); return; }
+                                    const range = q.getSelection(true);
+                                    q.insertEmbed(range ? range.index : q.getLength(), 'image', d.url, 'user');
+                                })
+                                .catch(() => alert('Błąd wgrywania obrazka.'));
+                        };
+                        inp.click();
+                    },
                     'code-block': function() {
                         const isSourceMode = txtArea.style.display === 'block';
                         if (!isSourceMode) {
@@ -361,7 +532,7 @@ function initQuill(element, content) {
         }
     });
 
-    if (content) quill.root.innerHTML = content;
+    if (content) quill.root.innerHTML = splitSoftBreaks(content);
     // Zapisujemy instancję bezpośrednio w elemencie DOM, żeby ułatwić pobieranie
     element.__quill = quill; 
 }
@@ -373,7 +544,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     div.dataset.type = type;
     div.className = "group relative border border-gray-200 hover:border-blue-400 rounded-xl p-5 mb-4 bg-white transition-all duration-300 shadow-sm block-item";
     
-    const settings = blockSettings || { id: '', css: '', style: '' };
+    const settings = (blockSettings && typeof blockSettings === 'object' && !Array.isArray(blockSettings)) ? blockSettings : { id: '', css: '', style: '' };
 
     const controls = `
     <div class="absolute -top-3 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-50">
@@ -383,10 +554,11 @@ function renderBlock(type, content = '', blockSettings = null) {
     </div>
     <div class="block-settings-panel hidden bg-blue-50 p-4 mt-6 mb-4 border border-blue-200 rounded text-sm shadow-inner">
         <div class="grid grid-cols-3 gap-4">
-            <div><label class="block font-bold text-gray-600 mb-1">ID HTML</label><input type="text" class="set-id w-full border p-2 rounded" placeholder="np. sekcja-1" value="${settings.id || ''}"></div>
-            <div><label class="block font-bold text-gray-600 mb-1">Klasy CSS (Tailwind)</label><input type="text" class="set-css w-full border p-2 rounded" placeholder="np. mt-10 text-center" value="${settings.css || ''}"></div>
-            <div><label class="block font-bold text-gray-600 mb-1">Style wew. (Inline)</label><input type="text" class="set-style w-full border p-2 rounded" placeholder="np. background: #000;" value="${settings.style || ''}"></div>
+            <div><label class="block font-bold text-gray-600 mb-1">ID HTML</label><input type="text" class="set-id w-full border p-2 rounded" placeholder="np. sekcja-1" value="${esc(settings.id)}"></div>
+            <div><label class="block font-bold text-gray-600 mb-1">Klasy CSS (Tailwind)</label><input type="text" class="set-css w-full border p-2 rounded" placeholder="np. mt-10 text-center" value="${esc(settings.css)}"></div>
+            <div><label class="block font-bold text-gray-600 mb-1">Style wew. (Inline)</label><input type="text" class="set-style w-full border p-2 rounded" placeholder="np. background: #000;" value="${esc(settings.style)}"></div>
         </div>
+        ${formatPanelTpl(settings)}
     </div>`;
 
     let innerHTML = '';
@@ -642,31 +814,168 @@ function renderBlock(type, content = '', blockSettings = null) {
     }
     else if (type === 'carousel') {
         div.className += " border-2 border-dashed border-blue-300 bg-blue-50/30";
-        const data = typeof content === 'object' ? content : { arrows: true, tabs: [] };
-        let tabsHTML = '';
-        if(data.tabs) {
-            data.tabs.forEach((tab) => {
-                tabsHTML += `
-                <div class="carousel-tab border border-gray-200 bg-white p-3 mb-2 rounded-lg shadow-sm relative group">
-                    <button type="button" onclick="this.closest('.carousel-tab').remove(); window.updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10 shadow">X</button>
-                    <div class="flex gap-2 mb-2 w-full">
-                        <div class="w-1/3">${imgInputTpl('tab-icon', 'Ikona/Emoji', tab.icon)}</div>
-                        <input type="text" class="tab-label w-2/3 border p-2 text-sm rounded font-bold h-[38px]" placeholder="Tytuł zakładki" value="${tab.label || ''}">
-                    </div>
-                    <div class="tab-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded p-4 min-h-[100px]"></div>
-                </div>`;
-            });
-        }
+        const data = (typeof content === 'object' && content) ? content : { arrows: true, tabs: [] };
+        const tabsHTML = (data.tabs || []).map(tab => carouselTabTpl(tab)).join('');
+        const invert = data.invertIcons === undefined ? true : !!data.invertIcons;
         innerHTML = `
         <div class="flex justify-between items-center mb-3">
             <span class="text-xs font-bold text-blue-800 uppercase tracking-wider">🎠 Karuzela / Zakładki</span>
             <label class="text-sm font-bold text-gray-700 flex items-center gap-2"><input type="checkbox" class="carousel-arrows" ${data.arrows ? 'checked' : ''}> Pokaż strzałki</label>
         </div>
+        <details class="carousel-opts no-drag bg-white border border-blue-100 rounded-lg p-3 mb-3">
+            <summary class="text-xs font-bold text-blue-700 cursor-pointer">🎨 Wygląd kafelków i panelu</summary>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                ${fieldTpl('Styl kafelków', selectTpl('car-style', data.style || 'default', [['default', 'Standardowy'], ['tiles', 'Duże kafelki (gradient)']]))}
+                ${fieldTpl('Panel treści', selectTpl('car-panel', data.panel || 'card', [['card', 'Biała karta'], ['plain', 'Bez tła']]))}
+                ${fieldTpl('Kolor kafelka (góra)', colorInputTpl('car-from', data.tileFrom || '', 'auto'))}
+                ${fieldTpl('Kolor kafelka (dół)', colorInputTpl('car-to', data.tileTo || '', 'auto'))}
+                ${fieldTpl('Kolor aktywnego', colorInputTpl('car-active', data.activeColor || '', 'auto'))}
+                ${fieldTpl('Kolor tekstu', colorInputTpl('car-text', data.textColor || '', '#ffffff'))}
+                <div class="flex items-end pb-2">${checkTpl('car-invert', invert, 'Odwróć kolory ikon')}</div>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-2">Każda zakładka ma kotwicę – link <code>#agenda</code> (albo własna kotwica) otworzy ją z dowolnego miejsca strony.</p>
+        </details>
+        <div class="carousel-intro-wrap mb-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div class="text-xs font-bold text-amber-800 mb-2">🏁 Ekran startowy <span class="font-normal">(widoczny, zanim użytkownik kliknie kafelek – zostaw pusty, by od razu otwierać 1. zakładkę)</span></div>
+            <div class="intro-content drop-zone bg-white border-2 border-dashed border-amber-200 rounded p-4 min-h-[70px]"></div>
+        </div>
         <div class="carousel-tabs-container min-h-[5px] mb-3">${tabsHTML}</div>
         <button type="button" onclick="window.addCarouselTab(this)" class="bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 text-sm px-4 py-2 rounded-lg font-bold w-full transition">+ Dodaj Zakładkę / Kafelek</button>`;
         setTimeout(() => {
-            div.querySelectorAll('.tab-content').forEach(el => initSortable(el));
+            div.querySelectorAll(':scope > .carousel-tabs-container > .carousel-tab > .tab-content').forEach(el => initSortable(el));
+            initSortable(div.querySelector(':scope > .carousel-intro-wrap > .intro-content'));
         }, 0);
+    }
+    else if (type === 'section') {
+        div.className += " border-2 border-dashed border-cyan-300 bg-cyan-50/20";
+        const d = (typeof content === 'object' && content) ? content : { inner: 'xl', padY: 'md', padX: 'md' };
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-cyan-700 uppercase tracking-wider">▭ Sekcja / Kontener</span></div>
+        <details class="section-opts no-drag bg-white border border-cyan-100 rounded-lg p-3 mb-3" ${content ? '' : 'open'}>
+            <summary class="text-xs font-bold text-cyan-700 cursor-pointer">🎨 Tło, szerokość i wysokość sekcji</summary>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                ${fieldTpl('Kolor tła', colorInputTpl('sec-bgcolor', d.bgColor))}
+                ${fieldTpl('Zdjęcie w tle', imgInputTpl('sec-bgimage', 'URL zdjęcia', d.bgImage || ''), 'col-span-2 md:col-span-3')}
+                ${fieldTpl('Dopasowanie zdjęcia', selectTpl('sec-bgsize', d.bgSize || 'cover', [['cover', 'Wypełnij (przytnij)'], ['contain', 'Zmieść całe'], ['100% auto', 'Pełna szerokość'], ['auto', 'Oryginalny rozmiar']]))}
+                ${fieldTpl('Kadr zdjęcia', selectTpl('sec-bgpos', d.bgPos || 'center', [['center', 'Środek'], ['top', 'Góra'], ['bottom', 'Dół'], ['left', 'Lewo'], ['right', 'Prawo']]))}
+                ${fieldTpl('Kadr poziomy (np. 58%)', `<input type="text" class="sec-bgposx w-full border p-2 rounded text-sm" placeholder="np. 58%" value="${esc(d.bgPosX)}">`)}
+                ${fieldTpl('Nakładka (kolor)', colorInputTpl('sec-overlay', d.overlay))}
+                ${fieldTpl('Krycie nakładki %', `<input type="number" min="0" max="100" class="sec-overlayop w-full border p-2 rounded text-sm" value="${esc(d.overlayOpacity ?? 40)}">`)}
+                ${fieldTpl('Kolor tekstu', colorInputTpl('sec-textcolor', d.textColor))}
+                ${fieldTpl('Szerokość treści', selectTpl('sec-inner', d.inner || 'xl', [['full', 'Pełna'], ['sm', '640px'], ['md', '768px'], ['lg', '1024px'], ['xl', '1200px'], ['2xl', '1400px']]))}
+                ${fieldTpl('Odstęp pionowy', selectTpl('sec-pady', d.padY || 'md', [['none', 'Brak'], ['sm', 'Mały'], ['md', 'Średni'], ['lg', 'Duży'], ['xl', 'Bardzo duży']]))}
+                ${fieldTpl('Odstęp poziomy', selectTpl('sec-padx', d.padX || 'md', [['none', 'Brak'], ['sm', 'Mały'], ['md', 'Średni'], ['lg', 'Duży']]))}
+                ${fieldTpl('Min. wysokość', `<input type="text" class="sec-minh w-full border p-2 rounded text-sm" placeholder="np. 300px / 50vh" value="${esc(d.minHeight)}">`)}
+                ${fieldTpl('Proporcje (szer/wys)', `<input type="text" class="sec-ratio w-full border p-2 rounded text-sm" placeholder="np. 1680/268" value="${esc(d.ratio)}">`)}
+                <div class="flex flex-col gap-2 justify-end pb-1">
+                    ${checkTpl('sec-fullbleed', d.fullBleed, 'Na całą szerokość ekranu')}
+                    ${checkTpl('sec-vcenter', d.vCenter, 'Wyśrodkuj w pionie')}
+                    ${checkTpl('sec-bgfixed', d.bgFixed, 'Tło nieruchome (parallax)')}
+                </div>
+            </div>
+        </details>
+        <div class="section-content drop-zone bg-white border-2 border-dashed border-cyan-200 rounded p-4 min-h-[100px]"></div>`;
+        setTimeout(() => {
+            initSortable(div.querySelector(':scope > .section-content'));
+            window.sectionPreview(div);
+            div.querySelector(':scope > .section-opts').addEventListener('input', () => window.sectionPreview(div));
+        }, 0);
+    }
+    else if (type === 'grid') {
+        div.className += " border-2 border-dashed border-violet-300 bg-violet-50/20";
+        const d = (typeof content === 'object' && content) ? content : { count: 3, cols: 3, colsTablet: 2, colsMobile: 1, gap: 'md', valign: 'stretch' };
+        const count = Math.max(1, Math.min(12, parseInt(d.count || 2, 10)));
+        const nums = (max) => Array.from({ length: max }, (_, i) => [String(i + 1), String(i + 1)]);
+        let cells = '';
+        for (let i = 0; i < count; i++) cells += gridCellTpl();
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-violet-700 uppercase tracking-wider">▦ Siatka (responsywne kolumny)</span></div>
+        <div class="grid-opts no-drag grid grid-cols-3 md:grid-cols-6 gap-2 mb-3 bg-white border border-violet-100 rounded-lg p-3">
+            ${fieldTpl('Liczba komórek', `<input type="number" min="1" max="12" class="grid-count w-full border p-2 rounded text-sm" value="${count}" onchange="window.gridSetCount(this.closest('.block-item'))">`)}
+            ${fieldTpl('🖥 Kolumny', selectTpl('grid-cols', d.cols || count, nums(6)))}
+            ${fieldTpl('📟 Tablet', selectTpl('grid-cols-t', d.colsTablet || 2, nums(4)))}
+            ${fieldTpl('📱 Telefon', selectTpl('grid-cols-m', d.colsMobile || 1, nums(3)))}
+            ${fieldTpl('Odstęp', selectTpl('grid-gap', d.gap || 'md', [['none', 'Brak'], ['sm', 'Mały'], ['md', 'Średni'], ['lg', 'Duży'], ['xl', 'Bardzo duży']]))}
+            ${fieldTpl('Wyrównanie pion.', selectTpl('grid-valign', d.valign || 'stretch', [['stretch', 'Rozciągnij'], ['start', 'Góra'], ['center', 'Środek'], ['end', 'Dół']]))}
+        </div>
+        <div class="grid-cells grid gap-3">${cells}</div>`;
+        setTimeout(() => {
+            div.querySelectorAll(':scope > .grid-cells > .grid-cell').forEach(c => initSortable(c));
+            window.gridPreview(div);
+            div.querySelector(':scope > .grid-opts').addEventListener('change', () => window.gridPreview(div));
+        }, 0);
+    }
+    else if (type === 'heading') {
+        const d = (typeof content === 'object' && content) ? content : { text: typeof content === 'string' ? content : '', level: 'h2' };
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-slate-700 uppercase">H Nagłówek</span></div>
+        <textarea class="hd-text w-full border p-2 rounded text-xl font-bold mb-3 no-drag" rows="2" placeholder="Treść nagłówka (Enter = nowa linia)">${esc(d.text)}</textarea>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            ${fieldTpl('Poziom (SEO)', selectTpl('hd-level', d.level || 'h2', [['h1', 'H1 – tytuł strony'], ['h2', 'H2'], ['h3', 'H3'], ['h4', 'H4'], ['h5', 'H5'], ['h6', 'H6']]))}
+            ${fieldTpl('Rozmiar', selectTpl('hd-size', d.size || '', [['', 'Wg poziomu'], ['sm', 'S'], ['md', 'M'], ['lg', 'L'], ['xl', 'XL'], ['2xl', '2XL'], ['3xl', '3XL'], ['4xl', '4XL (hero)']]))}
+            ${fieldTpl('Wyrównanie', selectTpl('hd-align', d.align || '', [['', 'Domyślne'], ['left', 'Lewo'], ['center', 'Środek'], ['right', 'Prawo']]))}
+            ${fieldTpl('Grubość', selectTpl('hd-weight', d.weight || '700', [['300', 'Cienka'], ['400', 'Normalna'], ['600', 'Półgruba'], ['700', 'Gruba'], ['900', 'Bardzo gruba']]))}
+            ${fieldTpl('Krój pisma', selectTpl('hd-font', d.font || '', [['', 'Domyślny strony'], ['lato', 'Lato'], ['montserrat', 'Montserrat'], ['serif', 'Szeryfowy'], ['mono', 'Maszynowy']]))}
+            ${fieldTpl('Kolor', colorInputTpl('hd-color', d.color))}
+            ${fieldTpl('Rozstrzelenie', selectTpl('hd-spacing', d.spacing || '', [['', 'Normalne'], ['tight', 'Ciasne'], ['wide', 'Szerokie'], ['wider', 'Szersze'], ['widest', 'Najszersze']]))}
+            <div class="flex flex-col gap-2 justify-end pb-1">${checkTpl('hd-upper', d.upper, 'WERSALIKI')}${checkTpl('hd-shadow', d.shadow, 'Cień tekstu')}</div>
+        </div>`;
+    }
+    else if (type === 'ticker') {
+        const d = (typeof content === 'object' && content) ? content : { label: 'NEWS', items: '', speed: 60, shape: 'bar', bg: '#1e40af' };
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-blue-700 uppercase">📣 Pasek wiadomości (NEWS)</span></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            ${fieldTpl('Etykieta', `<input type="text" class="tk-label w-full border p-2 rounded text-sm font-bold" value="${esc(d.label ?? 'NEWS')}">`)}
+            ${fieldTpl('Kształt', selectTpl('tk-shape', d.shape || 'bar', [['bar', 'Pasek'], ['tab', 'Zakładka (zaokrąglony dół)'], ['pill', 'Pigułka']]))}
+            ${fieldTpl('Prędkość (px/s)', `<input type="number" min="10" max="300" class="tk-speed w-full border p-2 rounded text-sm" value="${esc(d.speed || 60)}">`)}
+            ${fieldTpl('Separator', `<input type="text" maxlength="3" class="tk-sep w-full border p-2 rounded text-sm" value="${esc(d.separator ?? '•')}">`)}
+            ${fieldTpl('Tło', colorInputTpl('tk-bg', d.bg))}
+            ${fieldTpl('Tło – gradient do', colorInputTpl('tk-bg2', d.bg2))}
+            ${fieldTpl('Kolor tekstu', colorInputTpl('tk-color', d.color, '#ffffff'))}
+        </div>
+        ${fieldTpl('Wiadomości (każda w nowej linii, można użyć &lt;b&gt; i &lt;a&gt;)', `<textarea class="tk-items w-full border p-2 rounded text-sm h-24 no-drag" placeholder="Zbiórka na lotnisku o 7:00\nPamiętajcie o paszportach!">${esc(d.items)}</textarea>`)}`;
+    }
+    else if (type === 'switcher') {
+        div.className += " border-2 border-dashed border-sky-300 bg-sky-50/20";
+        const d = (typeof content === 'object' && content) ? content : { tabs: [{ label: 'Wariant A' }, { label: 'Wariant B' }], remember: true, key: '' };
+        const tabsHTML = (d.tabs || []).map(t => switcherTabTpl(t)).join('');
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-sky-700 uppercase tracking-wider">⇆ Przełącznik wariantów (np. Wariant A / Wariant B)</span></div>
+        <div class="switcher-opts no-drag grid grid-cols-2 md:grid-cols-6 gap-3 mb-3 bg-white border border-sky-100 rounded-lg p-3">
+            ${fieldTpl('Klucz wspólny', `<input type="text" class="sw-key w-full border p-2 rounded text-sm" placeholder="np. grupa" value="${esc(d.key)}" title="Przełączniki z tym samym kluczem zmieniają się razem na całej stronie">`)}
+            ${fieldTpl('Wyrównanie', selectTpl('sw-align', d.align || 'center', [['left', 'Lewo'], ['center', 'Środek'], ['right', 'Prawo']]))}
+            ${fieldTpl('Kolor przycisku', colorInputTpl('sw-color', d.color, '#0064fa'))}
+            ${fieldTpl('Kolor aktywnego', colorInputTpl('sw-active', d.activeColor, '#1e2e65'))}
+            ${fieldTpl('Kolor tekstu', colorInputTpl('sw-text', d.textColor, '#ffffff'))}
+            <div class="flex items-end pb-2">${checkTpl('sw-remember', d.remember === undefined ? true : d.remember, 'Zapamiętaj wybór')}</div>
+        </div>
+        <div class="switcher-tabs-container">${tabsHTML}</div>
+        <button type="button" onclick="window.addSwitcherTab(this)" class="bg-white border-2 border-sky-500 text-sky-700 hover:bg-sky-50 text-sm px-4 py-2 rounded-lg font-bold w-full transition">+ Dodaj wariant</button>`;
+        setTimeout(() => {
+            div.querySelectorAll(':scope > .switcher-tabs-container > .switcher-tab > .switcher-content').forEach(z => initSortable(z));
+        }, 0);
+    }
+    else if (type === 'schedule') {
+        const d = (typeof content === 'object' && content) ? content : { title: '', rows: '' };
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-emerald-700 uppercase">🕒 Harmonogram / Agenda</span></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            ${fieldTpl('Tytuł (np. Dzień 1)', `<input type="text" class="sch-title w-full border p-2 rounded text-sm font-bold" value="${esc(d.title)}">`, 'col-span-2')}
+            ${fieldTpl('Kolor godzin', colorInputTpl('sch-accent', d.accent, '#1e40af'))}
+            <div class="flex items-end pb-2">${checkTpl('sch-striped', d.striped, 'Paski co drugi wiersz')}</div>
+        </div>
+        ${fieldTpl('Pozycje: <code>godzina | opis</code> – linia bez „|” to śródtytuł', `<textarea class="sch-rows w-full border p-2 rounded text-sm font-mono h-40 no-drag" placeholder="Sesja poranna\n09:00 | Rejestracja uczestników\n10:30 | Przerwa kawowa">${esc(d.rows)}</textarea>`)}`;
+    }
+    else if (type === 'translate') {
+        const d = (typeof content === 'object' && content) ? content : { pageLang: 'pl', langs: 'en,ru,it,es,pl' };
+        innerHTML = `
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-gray-700 uppercase">🌐 Google Tłumacz</span></div>
+        <div class="grid grid-cols-2 gap-3">
+            ${fieldTpl('Język strony', `<input type="text" class="tr-page w-full border p-2 rounded text-sm" value="${esc(d.pageLang || 'pl')}">`)}
+            ${fieldTpl('Dostępne języki (po przecinku)', `<input type="text" class="tr-langs w-full border p-2 rounded text-sm" value="${esc(d.langs || 'en,pl')}">`)}
+        </div>
+        <p class="text-[11px] text-gray-500 mt-2">Wskazówka: w ⚙️ → Pozycja ustaw „Stała: prawy dół”, aby widżet był zawsze w rogu ekranu.</p>`;
     }
     else if (type === 'video') {
         innerHTML = `
@@ -677,25 +986,18 @@ function renderBlock(type, content = '', blockSettings = null) {
         `;
     }
     else if (type === 'button') {
-        const data = typeof content === 'object' ? content : { label: 'Kliknij tutaj', url: '', style: 'primary' };
+        const data = (typeof content === 'object' && content) ? content : { label: 'Kliknij tutaj', url: '', style: 'primary' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-indigo-500 uppercase">🔘 Przycisk (CTA)</span></div>
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Tekst na Przycisku</label>
-                <input type="text" class="btn-label w-full border p-2 rounded" placeholder="Dowiedz się więcej" value="${data.label}">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Adres URL (Link)</label>
-                <input type="text" class="btn-url w-full border p-2 rounded" placeholder="https://..." value="${data.url}">
-            </div>
-            <div class="col-span-2">
-                <label class="block text-xs font-bold text-gray-500 mb-1">Styl (Wizualizacja)</label>
-                <select class="btn-style w-full border p-2 rounded">
-                    <option value="primary" ${data.style === 'primary' ? 'selected' : ''}>Główny Akcent (Pełny kolor)</option>
-                    <option value="secondary" ${data.style === 'secondary' ? 'selected' : ''}>Drugorzędny (Outlined)</option>
-                </select>
-            </div>
+        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-indigo-500 uppercase">🔘 Przycisk / Link</span></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            ${fieldTpl('Tekst na przycisku', `<input type="text" class="btn-label w-full border p-2 rounded" placeholder="Dowiedz się więcej" value="${esc(data.label)}">`)}
+            ${fieldTpl('Adres URL (lub #kotwica)', `<input type="text" class="btn-url w-full border p-2 rounded" placeholder="https://... / #agenda / /logout" value="${esc(data.url)}">`)}
+            ${fieldTpl('Styl', selectTpl('btn-style', data.style || 'primary', [['primary', 'Pełny kolor'], ['secondary', 'Obrys'], ['pill', 'Pigułka'], ['tab', 'Zakładka (zaokrąglony dół)'], ['link', 'Zwykły link (tekst)']]))}
+            ${fieldTpl('Rozmiar', selectTpl('btn-size', data.size || 'md', [['sm', 'Mały'], ['md', 'Średni'], ['lg', 'Duży']]))}
+            ${fieldTpl('Kolor', colorInputTpl('btn-color', data.color, 'kolor główny'))}
+            ${fieldTpl('Kolor tekstu', colorInputTpl('btn-textcolor', data.textColor, 'auto'))}
+            ${fieldTpl('Pozycja pozioma (%)', `<input type="number" min="0" max="100" step="0.5" class="btn-offset w-full border p-2 rounded" placeholder="wg wyrównania" value="${esc(data.offsetX)}" title="Np. 58 = środek przycisku na 58% szerokości. Skaluje się z ekranem.">`)}
+            <div class="flex flex-col gap-2 justify-end pb-1">${checkTpl('btn-full', data.full, 'Na całą szerokość')}${checkTpl('btn-newtab', data.newTab, 'Otwórz w nowej karcie')}</div>
         </div>`;
     }
     else if (type === 'divider') {
@@ -796,7 +1098,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     div.innerHTML = controls + innerHTML;
     
     if(type === 'form' || type === 'gallery') {
-        const sel = div.querySelector('select');
+        const sel = div.querySelector(':scope > div > .block-select');
         if(sel) sel.value = content || '';
     }
     
@@ -807,21 +1109,99 @@ function renderBlock(type, content = '', blockSettings = null) {
 // 3. EVENTY (DODAWANIE TABÓW, KART)
 // ==========================================
 
+function carouselTabTpl(tab = {}) {
+    return `
+    <div class="carousel-tab border border-gray-200 bg-white p-3 mb-2 rounded-lg shadow-sm relative group">
+        <button type="button" onclick="if(confirm('Usunąć zakładkę wraz z zawartością?')) { this.closest('.carousel-tab').remove(); window.updateNavigator(); }" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10 shadow">X</button>
+        <div class="flex gap-2 mb-2 w-full">
+            <div class="w-1/3">${imgInputTpl('tab-icon', 'Ikona/Emoji', tab.icon || '')}</div>
+            <input type="text" class="tab-label w-2/3 border p-2 text-sm rounded font-bold h-[38px]" placeholder="Tytuł zakładki" value="${esc(tab.label)}" oninput="window.updateNavigator()">
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <input type="text" class="tab-anchor border p-1.5 text-xs rounded" placeholder="Kotwica (auto z tytułu), np. agenda" value="${esc(tab.anchor)}">
+            <input type="text" class="tab-link border p-1.5 text-xs rounded" placeholder="Zamiast treści: link (np. /rejestracja)" value="${esc(tab.link)}">
+        </div>
+        <div class="tab-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded p-4 min-h-[100px]"></div>
+    </div>`;
+}
+
 window.addCarouselTab = function(btn) {
     const container = btn.previousElementSibling;
-    const div = document.createElement('div');
-    div.className = "carousel-tab border border-gray-200 bg-white p-3 mb-2 rounded shadow-sm relative group";
-    div.innerHTML = `
-    <button type="button" onclick="this.closest('.carousel-tab').remove(); window.updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10 shadow">X</button>
-    <div class="flex gap-2 mb-2 w-full">
-        <div class="w-1/3">${imgInputTpl('tab-icon', 'Ikona/URL')}</div>
-        <input type="text" class="tab-label w-2/3 border p-2 text-sm rounded font-bold h-[38px]" placeholder="Tytuł Zakładki">
-    </div>
-    <div class="tab-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded p-4 min-h-[100px]"></div>
-    `;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = carouselTabTpl();
+    const div = tmp.firstElementChild;
     container.appendChild(div);
-    initSortable(div.querySelector('.tab-content'));
+    initSortable(div.querySelector(':scope > .tab-content'));
     window.updateNavigator();
+};
+
+function switcherTabTpl(tab = {}) {
+    return `
+    <div class="switcher-tab border border-sky-200 bg-white p-3 mb-2 rounded-lg shadow-sm relative group">
+        <button type="button" onclick="if(confirm('Usunąć wariant wraz z zawartością?')) { this.closest('.switcher-tab').remove(); window.updateNavigator(); }" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10 shadow">X</button>
+        <input type="text" class="sw-label w-full border p-2 text-sm rounded font-bold mb-2" placeholder="Napis na przycisku, np. Wariant A" value="${esc(tab.label)}" oninput="window.updateNavigator()">
+        <div class="switcher-content drop-zone bg-gray-50 border-2 border-dashed border-gray-200 rounded p-4 min-h-[80px]"></div>
+    </div>`;
+}
+
+window.addSwitcherTab = function(btn) {
+    const container = btn.previousElementSibling;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = switcherTabTpl({ label: 'WARIANT ' + (container.children.length + 1) });
+    const div = tmp.firstElementChild;
+    container.appendChild(div);
+    initSortable(div.querySelector(':scope > .switcher-content'));
+    window.updateNavigator();
+};
+
+function gridCellTpl() {
+    return `<div class="grid-cell drop-zone bg-white border-2 border-dashed border-violet-200 rounded-lg p-3 min-h-[100px]"></div>`;
+}
+
+window.gridSetCount = function(block) {
+    const wrap = block.querySelector(':scope > .grid-cells');
+    const input = block.querySelector(':scope > .grid-opts .grid-count');
+    const target = Math.max(1, Math.min(12, parseInt(input.value, 10) || 1));
+    let cells = Array.from(wrap.querySelectorAll(':scope > .grid-cell'));
+
+    while (cells.length > target) {
+        const last = cells[cells.length - 1];
+        if (last.querySelector('.block-item') && !confirm('Ostatnia komórka zawiera bloki – usunąć ją razem z zawartością?')) {
+            input.value = cells.length;
+            break;
+        }
+        last.remove();
+        cells.pop();
+    }
+    while (cells.length < target) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = gridCellTpl();
+        const cell = tmp.firstElementChild;
+        wrap.appendChild(cell);
+        initSortable(cell);
+        cells.push(cell);
+    }
+    window.gridPreview(block);
+    window.updateNavigator();
+};
+
+window.gridPreview = function(block) {
+    const wrap = block.querySelector(':scope > .grid-cells');
+    const cols = parseInt(block.querySelector(':scope > .grid-opts .grid-cols').value, 10) || 1;
+    wrap.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+};
+
+window.sectionPreview = function(block) {
+    const zone = block.querySelector(':scope > .section-content');
+    const opts = block.querySelector(':scope > .section-opts');
+    if (!zone || !opts) return;
+    const v = (c) => (opts.querySelector('.' + c) || {}).value || '';
+    const img = v('sec-bgimage');
+    zone.style.backgroundColor = v('sec-bgcolor');
+    zone.style.backgroundImage = img ? `url("${img.replace(/"/g, '%22')}")` : '';
+    zone.style.backgroundSize = v('sec-bgsize') || 'cover';
+    zone.style.backgroundPosition = v('sec-bgposx') ? v('sec-bgposx') + ' center' : (v('sec-bgpos') || 'center');
+    zone.style.backgroundRepeat = 'no-repeat';
 };
 
 function buildOptions(list, selected) {
@@ -874,17 +1254,50 @@ function getBlocksFromContainer(container) {
         let content = '';
         let children = {};
         
-        const settingsPanel = el.querySelector('.block-settings-panel');
-        let settings = {};
-        if (settingsPanel) {
-            settings = {
-                id: settingsPanel.querySelector('.set-id').value,
-                css: settingsPanel.querySelector('.set-css').value,
-                style: settingsPanel.querySelector('.set-style').value
-            };
-        }
+        const settings = readSettings(el);
+        const q = (sel) => el.querySelector(sel);
 
-        if(type === 'columns_2') {
+        if (type === 'section') {
+            const o = (c) => (q(':scope > .section-opts .' + c) || {});
+            content = {
+                bgColor: o('sec-bgcolor').value, bgImage: o('sec-bgimage').value, bgSize: o('sec-bgsize').value,
+                bgPos: o('sec-bgpos').value, bgPosX: o('sec-bgposx').value, overlay: o('sec-overlay').value,
+                overlayOpacity: o('sec-overlayop').value, textColor: o('sec-textcolor').value, inner: o('sec-inner').value,
+                padY: o('sec-pady').value, padX: o('sec-padx').value, minHeight: o('sec-minh').value, ratio: o('sec-ratio').value,
+                fullBleed: !!o('sec-fullbleed').checked, vCenter: !!o('sec-vcenter').checked, bgFixed: !!o('sec-bgfixed').checked
+            };
+            children = getBlocksFromContainer(q(':scope > .section-content'));
+        } else if (type === 'grid') {
+            const o = (c) => q(':scope > .grid-opts .' + c).value;
+            content = { count: o('grid-count'), cols: o('grid-cols'), colsTablet: o('grid-cols-t'), colsMobile: o('grid-cols-m'), gap: o('grid-gap'), valign: o('grid-valign') };
+            children = {};
+            el.querySelectorAll(':scope > .grid-cells > .grid-cell').forEach((cell, i) => { children['col_' + i] = getBlocksFromContainer(cell); });
+        } else if (type === 'heading') {
+            content = {
+                text: q('.hd-text').value, level: q('.hd-level').value, size: q('.hd-size').value, align: q('.hd-align').value,
+                weight: q('.hd-weight').value, font: q('.hd-font').value, color: q('.hd-color').value, spacing: q('.hd-spacing').value,
+                upper: q('.hd-upper').checked, shadow: q('.hd-shadow').checked
+            };
+        } else if (type === 'ticker') {
+            content = {
+                label: q('.tk-label').value, shape: q('.tk-shape').value, speed: q('.tk-speed').value, separator: q('.tk-sep').value,
+                bg: q('.tk-bg').value, bg2: q('.tk-bg2').value, color: q('.tk-color').value, items: q('.tk-items').value
+            };
+        } else if (type === 'switcher') {
+            const o = (c) => q(':scope > .switcher-opts .' + c);
+            const tabs = [];
+            el.querySelectorAll(':scope > .switcher-tabs-container > .switcher-tab').forEach(t => {
+                tabs.push({ label: t.querySelector(':scope > .sw-label').value, children: getBlocksFromContainer(t.querySelector(':scope > .switcher-content')) });
+            });
+            content = {
+                key: o('sw-key').value, align: o('sw-align').value, color: o('sw-color').value, activeColor: o('sw-active').value,
+                textColor: o('sw-text').value, remember: o('sw-remember').checked, tabs
+            };
+        } else if (type === 'schedule') {
+            content = { title: q('.sch-title').value, accent: q('.sch-accent').value, striped: q('.sch-striped').checked, rows: q('.sch-rows').value };
+        } else if (type === 'translate') {
+            content = { pageLang: q('.tr-page').value, langs: q('.tr-langs').value };
+        } else if(type === 'columns_2') {
             children = {
                 left: getBlocksFromContainer(el.querySelector('.col-left')),
                 right: getBlocksFromContainer(el.querySelector('.col-right'))
@@ -908,21 +1321,35 @@ function getBlocksFromContainer(container) {
         } else if (type === 'image') {
             content = el.querySelector('.block-content').value;
         } else if (type === 'form' || type === 'gallery') {
-            content = el.querySelector('select').value;
+            content = el.querySelector(':scope > div > .block-select').value;
         } else if (type === 'linked_image') {
             content = { url: el.querySelector('.block-img-url').value, link: el.querySelector('.block-link-url').value };
         } else if (type === 'banner') {
             content = { bg: el.querySelector('.ban-bg').value, title: el.querySelector('.ban-title').value, subtitle: el.querySelector('.ban-subtitle').value };
         } else if (type === 'carousel') {
+            // :scope – tylko WŁASNE zakładki (wcześniej łapało też zakładki zagnieżdżonych karuzel)
             const tabs = [];
-            el.querySelectorAll('.carousel-tab').forEach(tabEl => {
-                tabs.push({
+            el.querySelectorAll(':scope > .carousel-tabs-container > .carousel-tab').forEach(tabEl => {
+                const tab = {
                     icon: tabEl.querySelector('.tab-icon').value,
                     label: tabEl.querySelector('.tab-label').value,
-                    children: getBlocksFromContainer(tabEl.querySelector('.tab-content'))
-                });
+                    children: getBlocksFromContainer(tabEl.querySelector(':scope > .tab-content'))
+                };
+                const anchor = tabEl.querySelector(':scope > div > .tab-anchor');
+                const link = tabEl.querySelector(':scope > div > .tab-link');
+                if (anchor && anchor.value) tab.anchor = anchor.value;
+                if (link && link.value) tab.link = link.value;
+                tabs.push(tab);
             });
-            content = { arrows: el.querySelector('.carousel-arrows').checked, tabs: tabs };
+            const o = (c) => q(':scope > .carousel-opts .' + c);
+            content = {
+                arrows: q(':scope > div > label > .carousel-arrows').checked,
+                style: o('car-style').value, panel: o('car-panel').value,
+                tileFrom: o('car-from').value, tileTo: o('car-to').value, activeColor: o('car-active').value, textColor: o('car-text').value,
+                invertIcons: o('car-invert').checked,
+                intro: getBlocksFromContainer(q(':scope > .carousel-intro-wrap > .intro-content')),
+                tabs: tabs
+            };
         } else if (type === 'map') {
             content = { lat: el.querySelector('.map-lat').value, lng: el.querySelector('.map-lng').value, zoom: el.querySelector('.map-zoom').value, tooltip: el.querySelector('.map-tooltip').value };
         } else if (type === 'countdown') {
@@ -954,7 +1381,11 @@ function getBlocksFromContainer(container) {
         } else if (type === 'video') {
             content = el.querySelector('.block-video').value;
         } else if (type === 'button') {
-            content = { label: el.querySelector('.btn-label').value, url: el.querySelector('.btn-url').value, style: el.querySelector('.btn-style').value };
+            content = {
+                label: q('.btn-label').value, url: q('.btn-url').value, style: q('.btn-style').value, size: q('.btn-size').value,
+                color: q('.btn-color').value, textColor: q('.btn-textcolor').value, full: q('.btn-full').checked, newTab: q('.btn-newtab').checked,
+                offsetX: q('.btn-offset') ? q('.btn-offset').value : ''
+            };
         } else if (type === 'divider') {
             content = { height: el.querySelector('.div-height').value };
         } else if (type === 'quote') {
@@ -974,7 +1405,9 @@ function getBlocksFromContainer(container) {
 window.getBlocksFromContainer = getBlocksFromContainer;
 
 window.savePage = function() {
-    const zones = document.querySelectorAll('div[data-zone-uid]');
+    // Tylko strefy główne szablonu – strefy zagnieżdżone (kolumny, zakładki) zapisują się w swoich blokach.
+    // Wcześniej trafiały tu też jako osobne klucze "b_xxx_zone_N" i dublowały treść.
+    const zones = Array.from(document.querySelectorAll('div[data-zone-uid]')).filter(z => !z.closest('.block-item'));
     let dataToSave;
 
     if (zones.length > 0) {
@@ -1001,7 +1434,7 @@ window.savePage = function() {
     const oldText = btn.innerText;
     btn.innerText = "Zapisywanie...";
 
-    fetch('/admin/pages/save', {
+    return fetch('/admin/pages/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1292,7 +1725,7 @@ function handleInputUpload(inputEl, file) {
     .then(r=>r.json()).then(d => {
         inputEl.value = d.url || '';
         inputEl.disabled = false;
-        inputEl.dispatchEvent(new Event('input'));
+        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
     }).catch(() => {
         inputEl.value = '';
         inputEl.disabled = false;
@@ -1303,7 +1736,7 @@ function imgInputTpl(className, placeholder, value = '') {
     const uniqueId = 'img_in_' + Math.random().toString(36).substr(2, 9);
     return `
     <div class="flex w-full mb-1">
-        <input type="text" id="${uniqueId}" class="${className} w-full border border-r-0 p-2 text-sm rounded-l bg-gray-50 focus:bg-white focus:outline-none" placeholder="${placeholder}" value="${value}" oninput="const p = this.closest('.block-item'); if(p){ const img = p.querySelector('.img-preview'); if(img) img.src = this.value || defaultPlaceholder; }">
+        <input type="text" id="${uniqueId}" class="${className} w-full border border-r-0 p-2 text-sm rounded-l bg-gray-50 focus:bg-white focus:outline-none" placeholder="${placeholder}" value="${esc(value)}" oninput="const p = this.closest('.block-item'); if(p){ const img = p.querySelector('.img-preview'); if(img && img.closest('.block-item') === p) img.src = this.value || defaultPlaceholder; }">
         <button type="button" onclick="window.openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media">📂</button>
         <button type="button" onclick="window.triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik">⬆️</button>
     </div>`;
@@ -1327,7 +1760,7 @@ window.addEventListener('message', function(event) {
             const inputEl = document.getElementById(activePickerInputId);
             if(inputEl) {
                 inputEl.value = event.data.url;
-                inputEl.dispatchEvent(new Event('input')); 
+                inputEl.dispatchEvent(new Event('input', { bubbles: true })); 
             }
         }
         window.closeMediaPicker();

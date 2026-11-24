@@ -1,3 +1,260 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =====================================================================
+   page-admin 2.1 – style bloków układu i formatowania
+   (poza @layer, żeby purge Tailwinda ich nie usuwał)
+   ===================================================================== */
+
+/* ---------- Uniwersalne formatowanie (panel ⚙️) ---------- */
+@media (max-width: 767px) { .pa-only-desktop { display: none !important; } }
+@media (min-width: 768px) { .pa-only-mobile { display: none !important; } }
+
+.pa-pos-fixed-bl, .pa-pos-fixed-br, .pa-pos-fixed-tl, .pa-pos-fixed-tr { position: fixed; z-index: 150; margin: 0 !important; }
+.pa-pos-fixed-bl { left: max(10px, env(safe-area-inset-left)); bottom: max(10px, env(safe-area-inset-bottom)); }
+.pa-pos-fixed-br { right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); }
+.pa-pos-fixed-tl { left: max(10px, env(safe-area-inset-left)); top: 10px; }
+.pa-pos-fixed-tr { right: max(10px, env(safe-area-inset-right)); top: 10px; }
+.pa-pos-sticky { position: sticky; top: 0; z-index: 150; }
+
+/* ---------- Sekcja ---------- */
+.pa-section { box-sizing: border-box; }
+.pa-full-bleed { width: 100vw; max-width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
+.pa-section-vcenter { display: flex; flex-direction: column; justify-content: center; }
+
+/* ---------- Siatka ---------- */
+.pa-grid { display: grid; grid-template-columns: repeat(var(--pa-cm, 1), minmax(0, 1fr)); }
+@media (min-width: 640px)  { .pa-grid { grid-template-columns: repeat(var(--pa-ct, 2), minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .pa-grid { grid-template-columns: repeat(var(--pa-cd, 2), minmax(0, 1fr)); } }
+
+/* ---------- Tekst sformatowany (edytor wizualny) ---------- */
+.pa-prose { line-height: 1.6; overflow-wrap: break-word; }
+.pa-prose h1 { font-size: clamp(1.8rem, 4.5vw, 2.6rem); font-weight: 700; line-height: 1.2; margin: .5em 0 .4em; }
+.pa-prose h2 { font-size: clamp(1.5rem, 3.5vw, 2rem); font-weight: 700; line-height: 1.25; margin: .6em 0 .4em; }
+.pa-prose h3 { font-size: clamp(1.25rem, 2.6vw, 1.5rem); font-weight: 700; line-height: 1.3; margin: .6em 0 .35em; }
+.pa-prose h4 { font-size: 1.125rem; font-weight: 700; margin: .6em 0 .3em; }
+.pa-prose p { margin: 0 0 .5em; }
+.pa-prose ul { list-style: disc; padding-left: 1.5em; margin: 0 0 .75em; }
+.pa-prose ol { list-style: decimal; padding-left: 1.5em; margin: 0 0 .75em; }
+.pa-prose li { margin: .15em 0; }
+.pa-prose a { color: #1d4ed8; text-decoration: underline; }
+.pa-prose blockquote { border-left: 4px solid #cbd5e1; padding: .25em 0 .25em 1em; margin: .75em 0; color: #475569; font-style: italic; }
+.pa-prose img { max-width: 100%; height: auto; }
+.pa-prose table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.pa-prose td, .pa-prose th { padding: .35em .6em; vertical-align: top; }
+.pa-prose pre, .pa-prose .ql-syntax { background: #0f172a; color: #e2e8f0; padding: 1em; border-radius: .5rem; overflow-x: auto; }
+.pa-prose iframe, .pa-prose .ql-video { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; }
+.pa-prose .ql-align-center { text-align: center; } .pa-prose .ql-align-right { text-align: right; } .pa-prose .ql-align-justify { text-align: justify; }
+.pa-prose .ql-indent-1 { padding-left: 2em; } .pa-prose .ql-indent-2 { padding-left: 4em; } .pa-prose .ql-indent-3 { padding-left: 6em; }
+.pa-prose .ql-indent-4 { padding-left: 8em; } .pa-prose .ql-indent-5 { padding-left: 10em; } .pa-prose .ql-indent-6 { padding-left: 12em; }
+@media (max-width: 640px) { .pa-prose [class*="ql-indent-"] { padding-left: 1.25em; } }
+
+/* ---------- Przycisk ---------- */
+.pa-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; font-weight: 700; border-radius: .5rem; line-height: 1.2; text-align: center; text-decoration: none; transition: filter .2s, background .2s, color .2s, box-shadow .2s, transform .2s; }
+.pa-btn-sm { padding: .45rem .9rem; font-size: .875rem; }
+.pa-btn-md { padding: .75rem 1.75rem; }
+.pa-btn-lg { padding: 1rem 2.25rem; font-size: 1.1rem; }
+.pa-btn-primary, .pa-btn-pill { background: var(--btn-c); color: var(--btn-t, #fff); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+.pa-btn-pill { border-radius: 9999px; }
+.pa-btn-primary:hover, .pa-btn-pill:hover { filter: brightness(1.1); box-shadow: 0 6px 14px rgba(0,0,0,.2); }
+.pa-btn-secondary { border: 2px solid var(--btn-c); color: var(--btn-t, var(--btn-c)); background: transparent; }
+.pa-btn-secondary:hover { background: var(--btn-c); color: #fff; }
+.pa-btn-link { padding-left: 0; padding-right: 0; color: var(--btn-t, var(--btn-c)); background: none; }
+.pa-btn-link:hover { text-decoration: underline; }
+.pa-btn-full { display: flex; width: 100%; }
+.pa-btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+
+/* ---------- Pasek wiadomości (NEWS) ---------- */
+.pa-ticker { display: flex; align-items: center; gap: 1rem; min-height: 3rem; overflow: hidden; font-weight: 700; box-sizing: border-box; }
+.pa-ticker-tab { border-radius: 0 0 2rem 2rem; box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+.pa-ticker-pill { border-radius: 9999px; }
+.pa-ticker-label { flex: none; padding: 0 clamp(1rem, 4vw, 3rem); font-family: 'Arial Black', 'Arial Bold', Arial, sans-serif; font-weight: 900; font-size: clamp(1.05rem, 2.2vw, 1.6rem); letter-spacing: .02em; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.pa-ticker-viewport { flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); }
+.pa-ticker-track { display: flex; width: max-content; animation: pa-ticker 30s linear infinite; }
+.pa-ticker:hover .pa-ticker-track, .pa-ticker:focus-within .pa-ticker-track { animation-play-state: paused; }
+.pa-ticker-group { display: flex; flex: none; align-items: center; gap: 1.25rem; padding-right: 1.25rem; white-space: nowrap; }
+.pa-ticker-item a { color: inherit; text-decoration: underline; }
+.pa-ticker-sep { opacity: .6; }
+@keyframes pa-ticker { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .pa-ticker-track { animation: none; width: auto; }
+  .pa-ticker-group[aria-hidden="true"] { display: none; }
+  .pa-ticker-group { white-space: normal; flex-wrap: wrap; }
+}
+
+/* ---------- Przełącznik wariantów (grupy) ---------- */
+.pa-switcher-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1.25rem; }
+.pa-switcher-btn { flex: 1 1 140px; max-width: 300px; min-height: 44px; padding: 10px 15px; border-radius: 6px; background: var(--sw-c); color: var(--sw-t); font-weight: 700; cursor: pointer; text-align: center; transition: background .2s, filter .2s; }
+.pa-switcher-btn[aria-selected="true"] { background: var(--sw-a); }
+.pa-switcher-btn:hover { filter: brightness(1.12); }
+.pa-switcher-btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.pa-switcher-panel { animation: paFade .3s ease-out; }
+@keyframes paFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Harmonogram ---------- */
+.pa-schedule-title { font-size: 1.15rem; font-weight: 700; margin: 0 0 .5rem; color: var(--sch-accent); }
+.pa-schedule-list { margin: 0; }
+.pa-schedule-row { display: grid; grid-template-columns: minmax(3.5rem, max-content) 1fr; gap: .2rem 1rem; padding: .45rem .25rem; border-bottom: 1px solid #e5e7eb; }
+.pa-schedule-row dt { font-weight: 700; color: var(--sch-accent); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pa-schedule-row dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.pa-schedule-sub { font-weight: 700; padding: .9rem .25rem .35rem; }
+.pa-schedule-striped .pa-schedule-row:nth-child(even) { background: #f8fafc; }
+
+/* ---------- Karuzela / kafelki ---------- */
+.pa-carousel-nav { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; align-items: center; margin-bottom: 2rem; }
+.pa-carousel-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--c-text); text-decoration: none; cursor: pointer; transition: transform .3s, background .3s, box-shadow .3s, filter .3s; }
+.pa-carousel-btn:focus-visible, .pa-carousel-arrow:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.pa-carousel-invert .pa-carousel-icon { filter: invert(1); }
+.pa-carousel-emoji { font-size: 1.875rem; line-height: 1; margin-bottom: .5rem; display: block; }
+.pa-carousel-label { font-weight: 700; text-align: center; line-height: 1.2; text-transform: uppercase; }
+.pa-carousel-arrow { width: 2.5rem; height: 2.5rem; border-radius: .5rem; background: var(--c-active); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+
+/* styl domyślny (jak dotychczas) */
+.pa-carousel-default .pa-carousel-btn { width: 8rem; padding: 1rem; border-radius: .75rem; background: var(--c-from); box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -4px rgba(0,0,0,.1); }
+.pa-carousel-default .pa-carousel-btn:hover { filter: brightness(.92); }
+.pa-carousel-default .pa-carousel-btn.is-active { background: var(--c-active); transform: scale(1.05); }
+.pa-carousel-default .pa-carousel-icon { width: 2rem; height: 2rem; margin-bottom: .5rem; object-fit: contain; }
+.pa-carousel-default .pa-carousel-label { font-size: .75rem; }
+@media (min-width: 768px) { .pa-carousel-default .pa-carousel-btn { width: 10rem; } .pa-carousel-default .pa-carousel-label { font-size: .875rem; } }
+
+/* styl "kafelki" – duże kafelki z gradientem */
+.pa-carousel-tiles .pa-carousel-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 128px)); justify-content: center; gap: clamp(8px, 1.5vw, 14px); }
+.pa-carousel-tiles .pa-carousel-btn { aspect-ratio: 118 / 150; justify-content: flex-start; gap: 10%; padding: 20% 6px 8px; border-radius: 20px; background: linear-gradient(0deg, var(--c-to) 16%, var(--c-from) 100%); box-shadow: 0 4px 9px rgba(60,60,60,.55); }
+.pa-carousel-tiles .pa-carousel-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 16px rgba(60,60,60,.5); }
+.pa-carousel-tiles .pa-carousel-btn.is-active { background: var(--c-active); box-shadow: inset 0 0 0 3px rgba(255,255,255,.55), 0 4px 9px rgba(60,60,60,.55); }
+.pa-carousel-tiles .pa-carousel-icon { width: 40%; aspect-ratio: 1; object-fit: contain; }
+.pa-carousel-tiles .pa-carousel-emoji { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+.pa-carousel-tiles .pa-carousel-label { font-size: clamp(11px, 1.4vw, 15px); }
+.pa-carousel-tiles .pa-carousel-arrow { display: none; }
+@media (max-width: 640px) {
+  .pa-carousel-tiles .pa-carousel-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 420px; margin-left: auto; margin-right: auto; }
+  .pa-carousel-tiles .pa-carousel-btn { aspect-ratio: 1 / 1.08; border-radius: 16px; padding-top: 14%; }
+  .pa-carousel-tiles .pa-carousel-icon { width: 38%; }
+  .pa-carousel-tiles .pa-carousel-label { font-size: 10.5px; }
+}
+
+/* panel treści + auto-wysokość */
+.pa-carousel-panel { position: relative; overflow: hidden; }
+.pa-carousel-panel-card { background: #fff; border-radius: .75rem; border-top: 4px solid var(--c-active); box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06); }
+.pa-carousel-track { display: flex; align-items: flex-start; }
+.pa-carousel-animate { transition: transform .5s ease-in-out, height .35s ease; }
+.pa-carousel-slide { flex: 0 0 100%; max-width: 100%; width: 100%; min-width: 0; box-sizing: border-box; padding: clamp(1rem, 4vw, 2.5rem); }
+.pa-carousel-panel:not(.pa-carousel-panel-card) .pa-carousel-slide { padding: clamp(.5rem, 2vw, 1rem) 0; }
+.pa-carousel-slide[aria-hidden="true"] { visibility: hidden; }
+.pa-carousel-animate .pa-carousel-slide[aria-hidden="true"] { transition: visibility 0s .5s; }
+.pa-carousel-intro { animation: paFade .4s ease-out; }
+@media (prefers-reduced-motion: reduce) { .pa-carousel-animate { transition: none; } }
+
+/* ---------- Google Tłumacz ---------- */
+.pa-translate .goog-te-gadget { font-size: 11px; color: #555; }
+.pa-translate select.goog-te-combo { padding: .3rem .5rem; border: 1px solid #cbd5e1; border-radius: .375rem; background: #fff; font-size: 14px; }
+
+/* przycisk-zakładka (np. "Formularz Rejestracyjny" zwisający z górnej krawędzi) */
+.pa-btn-tab { background: var(--btn-c); color: var(--btn-t, #fff); border-radius: 0 0 1rem 1rem; padding-top: .55rem; padding-bottom: .6rem; box-shadow: 0 4px 10px rgba(0,0,0,.25); }
+.pa-btn-tab:hover { filter: brightness(1.15); }
+
+/* =====================================================================
+   Formularze – siatka 6-kolumnowa (szerokości 1/6, 1/3, 1/2, 2/3, pełna)
+   ===================================================================== */
+.pa-form-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .9rem 1rem; }
+.pa-form-grid-roomy { gap: 2rem 1.5rem; }
+.pa-fw { grid-column: span 6; min-width: 0; }
+.pa-fw-sixth { grid-column: span 3; }               /* np. imię + nazwisko obok siebie nawet na telefonie */
+@media (min-width: 640px) {
+  .pa-fw-third, .pa-fw-semi { grid-column: span 3; }
+}
+@media (min-width: 768px) {
+  .pa-fw-sixth { grid-column: span 1; }
+  .pa-fw-third { grid-column: span 2; }
+  .pa-fw-semi  { grid-column: span 3; }
+  .pa-fw-half  { grid-column: span 4; }             /* historycznie "half" = 2/3 */
+}
+.pa-locked .pa-input, .pa-locked select, .pa-locked textarea { cursor: not-allowed; }
+.pa-lock { font-size: .8em; opacity: .7; }
+.pa-form-lockinfo { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; padding: .6rem .8rem; border-radius: .5rem; font-size: .875rem; margin-bottom: 1rem; }
+.pa-form-buttons { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; justify-content: flex-end; }
+.pa-form-buttons > * { flex: 1 1 auto; }
+.pa-btn-partial { padding: .75rem 1.25rem; border: 1px solid #cbd5e1; background: #fff; color: #334155; font-weight: 700; border-radius: .5rem; cursor: pointer; }
+.pa-btn-partial:hover { border-color: #1e40af; color: #1e40af; }
+.pa-form-note { font-size: .75rem; color: #6b7280; margin-top: .5rem; text-align: right; }
+.pa-file-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .7rem; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: .4rem; font-size: .85rem; color: #1e3a8a; text-decoration: none; overflow-wrap: anywhere; }
+
+/* ---------- Wygląd "kompaktowy" (jak klasyczne formularze rejestracyjne) ---------- */
+.pa-form-compact { background: #fafafa; color: #333; padding: clamp(14px, 3.5vw, 34px) clamp(12px, 4vw, 48px) clamp(16px, 3vw, 30px); box-shadow: 0 0 30px rgba(0,0,0,.18); font-size: 15px; }
+.pa-form-compact .pa-form-title { color: #1a1a8c; font-weight: 700; font-size: 15px; text-transform: uppercase; margin: 0 0 .9rem; }
+.pa-form-compact .pa-form-account { max-width: 360px; margin: 0 0 1rem; }
+.pa-form-compact .pa-form-account + form, .pa-form-compact .pa-form-lockinfo + form { border-top: 0; }
+.pa-form-compact .pa-label { display: block; color: #9a9a9a; font-size: 14px; font-weight: 400; margin: 0 0 4px; line-height: 1.3; }
+.pa-form-compact .pa-input { display: block; width: 100%; box-sizing: border-box; background: #fff; border: 1px solid #c9c9c9; border-radius: 0; padding: 7px 10px; font-size: 15px; line-height: 1.4; color: #333; min-height: 38px; outline: none; transition: border-color .15s, box-shadow .15s; }
+.pa-form-compact .pa-input:focus { border-color: #1a1a8c; box-shadow: 0 0 0 2px rgba(26,26,140,.15); }
+.pa-form-compact .pa-input:disabled { background: #eee; color: #555; }
+.pa-form-compact .pa-input::placeholder { color: #aaa; }
+.pa-form-compact select.pa-input { padding-right: 28px; }
+.pa-form-compact .pa-form-html { font-size: 14px; color: #333; white-space: pre-line; line-height: 1.45; }
+.pa-form-compact .pa-opts-inline { align-items: center; min-height: 38px; }
+.pa-form-compact .pa-opt { display: inline-flex; align-items: center; gap: .35rem; font-size: 14px; color: #555; cursor: pointer; }
+.pa-form-compact .pa-form-section { border-top: 1px solid #9a9a9a; margin: 1rem calc(-1 * clamp(12px, 4vw, 48px)) 0; padding: 1.1rem clamp(12px, 4vw, 48px) 0; }
+.pa-form-compact .pa-form-section h4 { color: #1a1a8c; font-weight: 700; font-size: clamp(16px, 2.2vw, 19px); text-transform: uppercase; margin: 0; }
+.pa-form-compact .pa-form-section p { color: #9a9a9a; font-size: 14px; margin: .35rem 0 0; }
+.pa-form-compact .pa-drop { border-radius: 0; padding: .6rem 1rem; border-width: 1px; border-color: #c9c9c9; background: #fff; }
+.pa-form-compact .pa-form-actions { border-top: 1px solid #9a9a9a; margin: 1rem calc(-1 * clamp(12px, 4vw, 48px)) 0; padding: 1.1rem clamp(12px, 4vw, 48px) 0; }
+.pa-form-compact .pa-form-buttons > * { flex: 0 1 auto; }
+.pa-form-compact .pa-btn-submit { min-width: 150px; padding: 14px 32px; background: linear-gradient(90deg, #0d1a9c, #2234c4); color: #fff; font-weight: 700; text-transform: uppercase; border: 0; border-radius: 0; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,.2); }
+.pa-form-compact .pa-btn-submit:hover { filter: brightness(1.15); }
+.pa-form-compact .pa-btn-partial { border-radius: 0; }
+@media (max-width: 639px) {
+  .pa-form-compact .pa-form-buttons > * { flex: 1 1 100%; }
+  .pa-form-compact .pa-form-note { text-align: left; }
+}
+
+/* =====================================================================
+   Pasek administratora (widoczny tylko dla zalogowanego admina)
+   ===================================================================== */
+.pa-adminbar { background: #111827; color: #f3f4f6; font-size: 13px; padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: space-between; align-items: center; position: relative; z-index: 99999; border-bottom: 2px solid #3b82f6; font-family: system-ui, sans-serif; line-height: 1.3; }
+.pa-adminbar-left, .pa-adminbar-right { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.pa-adminbar-brand { font-weight: 700; color: #60a5fa; white-space: nowrap; }
+.pa-adminbar-hello { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pa-adminbar-edit { background: #3b82f6; color: #fff; padding: 4px 12px; border-radius: 4px; text-decoration: none; font-weight: 700; white-space: nowrap; }
+.pa-adminbar-edit:hover { background: #2563eb; }
+.pa-adminbar-panel { color: #9ca3af; text-decoration: none; font-weight: 700; white-space: nowrap; }
+.pa-adminbar-panel:hover { color: #fff; }
+@media (max-width: 480px) {
+  .pa-adminbar { padding: 6px 10px; font-size: 12px; }
+  .pa-adminbar-hello, .pa-adminbar-panel span { display: none; }
+}
+
+/* =====================================================================
+   Dopracowanie telefonów (≤ 640px) – mniejsze odstępy i czcionki
+   ===================================================================== */
+html { overflow-x: clip; }
+@media (max-width: 640px) {
+  .pa-ticker { min-height: 2.5rem; gap: .5rem; font-size: .875rem; }
+  .pa-ticker-tab { border-radius: 0 0 1.1rem 1.1rem; }
+  .pa-ticker-label { padding: 0 .5rem 0 .9rem; font-size: .95rem; }
+
+  .pa-carousel-nav { margin-bottom: 1.25rem; }
+  .pa-carousel-tiles .pa-carousel-nav { gap: 8px; max-width: 360px; }
+  .pa-carousel-tiles .pa-carousel-btn { aspect-ratio: auto; min-height: 92px; padding: 12px 4px 8px; gap: 6px; border-radius: 14px; }
+  .pa-carousel-tiles .pa-carousel-icon { width: 34px; max-width: 40%; }
+  .pa-carousel-tiles .pa-carousel-label { font-size: clamp(9px, 2.7vw, 11px); overflow-wrap: anywhere; hyphens: auto; }
+  .pa-carousel-slide { padding: 1rem .85rem; }
+  .pa-carousel-panel-card { border-radius: .5rem; }
+
+  .pa-switcher-btns { gap: 6px; margin-bottom: .9rem; }
+  .pa-switcher-btn { flex: 1 1 calc(50% - 6px); max-width: none; min-height: 40px; padding: 8px 6px; font-size: .8rem; line-height: 1.25; }
+
+  .pa-schedule-row { gap: .1rem .6rem; padding: .4rem .1rem; font-size: .9rem; }
+  .pa-schedule-row dt { min-width: 3rem; }
+  .pa-prose { font-size: .95rem; }
+
+  /* Tłumacz: zwarty, żeby nie zasłaniał treści */
+  .pa-translate .goog-te-gadget { font-size: 9px; line-height: 1.2; }
+  .pa-translate select.goog-te-combo { font-size: 13px; padding: .2rem .3rem; margin: 0 !important; }
+}
+/* bardzo wąskie ekrany (np. powiększony widok iPhone ~320px) */
+@media (max-width: 359px) {
+  .pa-carousel-tiles .pa-carousel-label { font-size: 8.5px; }
+  .pa-switcher-btn { flex-basis: 100%; }
+}
+.pa-form-terms { max-height: 260px; overflow-y: auto; padding: .75rem; background: #fff; border: 1px solid #ddd; font-size: 12.5px; color: #1a1a8c; line-height: 1.45; white-space: pre-line; }

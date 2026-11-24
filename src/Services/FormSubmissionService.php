@@ -13,7 +13,39 @@ class FormSubmissionService {
         } catch (\Exception $e) { /* Kolumna już istnieje */ }
     }
 
+    /** Pola, które w trybie "uzupełniania" blokują się po wypełnieniu. */
+    public static function isLockable(array $f): bool {
+        $type = $f['type'] ?? 'text';
+        if (in_array($type, ['html', 'section', 'account', 'honeypot', 'captcha_image', 'captcha_turnstile'], true)) return false;
+        return empty($f['alwaysEditable']);
+    }
+
+    public static function isEmptyValue($v): bool {
+        if ($v === null) return true;
+        if (is_array($v)) {
+            foreach ($v as $x) if (!self::isEmptyValue($x)) return false;
+            return true;
+        }
+        return trim((string)$v) === '';
+    }
+
+    /**
+     * Zwraca wpis tylko jeśli należy do tego formularza i do bieżącego użytkownika
+     * (zalogowany: user_id, gość: szkic zapamiętany w jego sesji). Chroni przed
+     * nadpisaniem cudzego zgłoszenia przez podmianę submission_id w POST.
+     */
+    private function loadOwnedSubmission($db, $formId, $submissionId, $userId) {
+        $sub = $db->query("SELECT * FROM pa_submissions WHERE id = :id", ['id' => (int)$submissionId])->fetch();
+        if (!$sub || (int)$sub['form_id'] !== (int)$formId) return null;
+        if ($userId) {
+            return ((int)$sub['user_id'] === (int)$userId) ? $sub : null;
+        }
+        $guestDraft = \CMS\Core\Session::get('draft_' . $formId);
+        return ($guestDraft && (int)$guestDraft === (int)$sub['id'] && empty($sub['user_id'])) ? $sub : null;
+    }
+
     public function handleSubmission($formId, $submissionId, $formData, $files, $userId) {
+        if (!is_array($formData)) $formData = [];
         $vault = new Vault();
         $db = Database::getInstance();
         $this->ensureStatusColumnExists($db);
@@ -62,13 +94,39 @@ class FormSubmissionService {
         }
         // -----------------------------------
 
-        $encryptedData = $vault->encrypt(json_encode($formData));
-        $savedFiles = [];
-
+        // --- 1b. KONTROLA DOSTĘPU DO ISTNIEJĄCEGO WPISU ---
+        $oldSub = null;
         if ($submissionId) {
-            $oldSub = $db->query("SELECT files_json FROM pa_submissions WHERE id = :id", ['id' => $submissionId])->fetch();
-            if ($oldSub && $oldSub['files_json']) $savedFiles = json_decode($oldSub['files_json'], true) ?? [];
+            $oldSub = $this->loadOwnedSubmission($db, $formId, $submissionId, $userId);
+            if (!$oldSub) return ['status' => 'error', 'msg' => 'Nie masz uprawnień do edycji tego zgłoszenia.'];
+            if ($oldSub['status'] === 'submitted' && empty($formSettings['editable']) && empty($formSettings['lockFilled'])) {
+                return ['status' => 'error', 'msg' => 'To zgłoszenie zostało już wysłane i nie może być edytowane.'];
+            }
         }
+
+        // --- 1c. TRYB UZUPEŁNIANIA: pola już wysłane są zablokowane (wymuszane po stronie serwera) ---
+        $lockedFileKeys = [];
+        $oldFiles = ($oldSub && $oldSub['files_json']) ? (json_decode($oldSub['files_json'], true) ?? []) : [];
+        if ($oldSub && $oldSub['status'] === 'submitted' && !empty($formSettings['lockFilled'])) {
+            $oldData = json_decode($vault->decrypt($oldSub['data_json']) ?: '[]', true) ?? [];
+            foreach ($fields as $f) {
+                if (!self::isLockable($f)) continue;
+                $key = $f['custom_id'] ?? $f['id'] ?? null;
+                if (!$key) continue;
+                if (($f['type'] ?? '') === 'file') {
+                    if (!empty($oldFiles[$key])) $lockedFileKeys[] = $key;
+                } elseif (!self::isEmptyValue($oldData[$key] ?? null)) {
+                    $formData[$key] = $oldData[$key];
+                }
+            }
+            // Zachowujemy też dane spoza aktualnej definicji formularza (np. usunięte pola)
+            foreach ($oldData as $k => $v) {
+                if (!array_key_exists($k, $formData)) $formData[$k] = $v;
+            }
+        }
+
+        $encryptedData = $vault->encrypt(json_encode($formData));
+        $savedFiles = $oldFiles;
 
         // --- 2. ZARZĄDZANIE ASYNCHRONICZNYMI PLIKAMI ---
         foreach ($fields as $f) {
@@ -91,6 +149,8 @@ class FormSubmissionService {
                 }
             }
         }
+        // Zablokowane załączniki zostają bez zmian, niezależnie od tego co przyszło w POST
+        foreach ($lockedFileKeys as $k) $savedFiles[$k] = $oldFiles[$k];
 
         $filesJson = json_encode($savedFiles);
         $userIp = $_SERVER['REMOTE_ADDR'];
@@ -115,6 +175,7 @@ class FormSubmissionService {
 
     // --- NOWA METODA AUTOSAVE DLA WERSJI ROBOCZYCH ---
     public function handleAutosave($formId, $submissionId, $formData, $userId) {
+        if (!is_array($formData)) $formData = [];
         $vault = new Vault();
         $db = Database::getInstance();
         $this->ensureStatusColumnExists($db);
@@ -124,14 +185,13 @@ class FormSubmissionService {
         $filesJson = '[]';
 
         if ($submissionId) {
-            $oldSub = $db->query("SELECT files_json, status FROM pa_submissions WHERE id = :id", ['id' => $submissionId])->fetch();
-            if ($oldSub) {
-                // Jeśli wpis został już całkowicie wysłany - BLOKUJEMY auto-save aby nie uszkodzić publicznych danych przyciskiem "edytuj"
-                if ($oldSub['status'] === 'submitted') {
-                    return ['status' => 'success', 'submission_id' => $submissionId];
-                }
-                $filesJson = $oldSub['files_json'];
+            $oldSub = $this->loadOwnedSubmission($db, $formId, $submissionId, $userId);
+            if (!$oldSub) return ['status' => 'error', 'msg' => 'Brak dostępu do wersji roboczej.'];
+            // Jeśli wpis został już całkowicie wysłany - BLOKUJEMY auto-save aby nie uszkodzić publicznych danych przyciskiem "edytuj"
+            if ($oldSub['status'] === 'submitted') {
+                return ['status' => 'success', 'submission_id' => $submissionId];
             }
+            $filesJson = $oldSub['files_json'];
         }
 
         // Obsługa załączników w tle - żeby nie zniknęły przy zapisywaniu tekstu

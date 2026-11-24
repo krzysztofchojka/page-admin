@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Montserrat:wght@400;700&display=swap">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -51,6 +52,14 @@
 .ql-snow .ql-picker.ql-size .ql-picker-item::before {
   content: attr(data-value) !important;
 }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value]::before { content: attr(data-value) !important; text-transform: capitalize; }
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="lato"]::before { font-family: 'Lato'; }
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="montserrat"]::before { font-family: 'Montserrat'; }
+.ql-snow .ql-picker.ql-size .ql-picker-label:not([data-value])::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item:not([data-value])::before { content: 'Rozmiar' !important; }
+.ql-snow .ql-picker.ql-font { width: 120px; }
+.ql-editor ol, .ql-editor ul { padding-left: 1.5em; }
 .quill-source-area {
   width: 100%;
   height: 300px;
@@ -109,6 +118,7 @@
         <option value="lockdown_page_id" <?= $currentRole == 'lockdown_page_id' ? 'selected' : '' ?>>🚧 Ekran Lockdown</option>
     </select>
 
+    <button type="button" onclick="openResponsivePreview()" class="bg-white border border-gray-300 hover:border-blue-500 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm font-bold transition" title="Zapisz i zobacz stronę na telefonie / tablecie / komputerze">📱 Podgląd</button>
     <button onclick="savePage()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg shadow font-bold transition">Zapisz stronę</button>
 </div>
     </div>
@@ -180,7 +190,12 @@
     <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="divider"><span class="text-lg text-gray-400">➖</span>Odstęp</div>
     <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="quote"><span class="text-lg text-yellow-500">❝</span>Cytat</div>
 
+    <div class="sidebar-block border bg-white hover:border-slate-500 hover:bg-slate-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="heading"><span class="text-lg text-slate-600">H</span>Nagłówek</div>
+
     <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Układ</div>
+    <div class="sidebar-block border bg-white hover:border-cyan-500 hover:bg-cyan-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="section"><span class="text-lg text-cyan-600">▭</span>Sekcja / Tło</div>
+    <div class="sidebar-block border bg-white hover:border-violet-500 hover:bg-violet-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="grid"><span class="text-lg text-violet-600">▦</span>Siatka (N kolumn)</div>
+    <div class="sidebar-block border bg-white hover:border-sky-500 hover:bg-sky-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="switcher"><span class="text-lg text-sky-600">⇆</span>Przełącznik grup</div>
     <div class="sidebar-block border bg-white hover:border-indigo-500 hover:bg-indigo-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="columns_2"><span class="text-lg text-indigo-400">◫</span>2 Kolumny</div>
     <div class="sidebar-block border bg-white hover:border-emerald-500 hover:bg-emerald-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="columns_3"><span class="text-lg text-emerald-400">☰</span>3 Kolumny</div>
     <div class="sidebar-block border bg-white hover:border-orange-500 hover:bg-orange-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="banner"><span class="text-lg text-orange-400">🏔</span>Baner (Hero)</div>
@@ -193,12 +208,15 @@
     <div class="sidebar-block border bg-white hover:border-orange-500 hover:bg-orange-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="image_cards"><span class="text-lg text-orange-500">🗂</span>Siatka Kart</div>
     <div class="sidebar-block border bg-white hover:border-teal-500 hover:bg-teal-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="form"><span class="text-lg text-teal-500">📝</span>Formularz</div>
     <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="table"><span class="text-lg text-blue-500">🗄️</span>Tabela</div>
+    <div class="sidebar-block border bg-white hover:border-emerald-500 hover:bg-emerald-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="schedule"><span class="text-lg text-emerald-600">🕒</span>Harmonogram</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="ticker"><span class="text-lg text-blue-600">📣</span>Pasek NEWS</div>
 
     <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Dodatki</div>
     <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="map"><span class="text-lg text-red-500">📍</span>Mapa</div>
     <div class="sidebar-block border bg-white hover:border-purple-500 hover:bg-purple-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="countdown"><span class="text-lg text-purple-500">⏳</span>Odliczanie</div>
     <div class="sidebar-block border bg-white hover:border-sky-500 hover:bg-sky-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="flight"><span class="text-lg text-sky-500">✈️</span>Loty</div>
     <div class="sidebar-block border bg-white hover:border-gray-800 hover:bg-gray-100 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="raw_html"><span class="text-lg text-gray-800">&lt;/&gt;</span>HTML</div>
+    <div class="sidebar-block border bg-white hover:border-gray-500 hover:bg-gray-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="translate"><span class="text-lg">🌐</span>Tłumacz</div>
 
     <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Systemowe</div>
     <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="system_login"><span class="text-lg text-red-500">🔐</span>Logowanie</div>
@@ -212,6 +230,46 @@
             </div>
         </div>
     </div>
+
+    <div id="previewModal" class="hidden fixed inset-0 bg-gray-900/90 z-[110] flex flex-col">
+        <div class="flex items-center justify-between gap-3 p-3 bg-gray-900 text-white shrink-0">
+            <div class="font-bold text-sm">Podgląd responsywny</div>
+            <div class="flex gap-2" id="previewDevices">
+                <button type="button" data-w="390" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold">📱 Telefon</button>
+                <button type="button" data-w="820" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold">📟 Tablet</button>
+                <button type="button" data-w="1366" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold">🖥 Komputer</button>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="document.getElementById('previewFrame').contentWindow.location.reload()" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold">↻ Odśwież</button>
+                <button type="button" onclick="closeResponsivePreview()" class="px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-sm font-bold">✕ Zamknij</button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-auto flex justify-center p-4">
+            <iframe id="previewFrame" class="bg-white shadow-2xl rounded-lg border-0 h-full transition-all duration-300" style="width:390px"></iframe>
+        </div>
+    </div>
+    <script>
+        function openResponsivePreview() {
+            const modal = document.getElementById('previewModal');
+            const frame = document.getElementById('previewFrame');
+            const go = () => {
+                modal.classList.remove('hidden');
+                frame.src = '/?id=' + window.CMS_CONFIG.pageId + '&preview=' + Date.now();
+            };
+            const p = window.savePage ? window.savePage() : null;
+            if (p && typeof p.then === 'function') p.then(go, go); else go();
+        }
+        function closeResponsivePreview() {
+            document.getElementById('previewModal').classList.add('hidden');
+            document.getElementById('previewFrame').src = 'about:blank';
+        }
+        document.getElementById('previewDevices').addEventListener('click', (e) => {
+            const b = e.target.closest('button[data-w]');
+            if (!b) return;
+            document.getElementById('previewFrame').style.width = b.dataset.w + 'px';
+            document.querySelectorAll('#previewDevices button').forEach(x => x.classList.toggle('bg-blue-600', x === b));
+        });
+    </script>
 
     <div id="mediaPickerModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-[100] flex justify-center items-center p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[80vh] flex flex-col overflow-hidden">

@@ -115,27 +115,89 @@ class SettingsController {
 
         $db = Database::getInstance()->getConnection();
 
+        // Kompatybilność MariaDB <-> MySQL: kolacje uca1400 (MariaDB 10.10+) nie istnieją w MySQL.
+        $isMaria = stripos((string)$db->getAttribute(\PDO::ATTR_SERVER_VERSION), 'mariadb') !== false;
+        if (!$isMaria) {
+            $fileContent = preg_replace('/\butf8mb4_uca1400_[a-z_]+\b/i', 'utf8mb4_unicode_ci', $fileContent);
+            $fileContent = preg_replace('/\butf8mb3_uca1400_[a-z_]+\b/i', 'utf8mb3_unicode_ci', $fileContent);
+        }
+
+        $statements = self::splitSql($fileContent);
+        $done = 0;
+
         try {
             $db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            $db->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
-
-            // Wyłączamy sprawdzanie kluczy obcych
             $db->exec("SET FOREIGN_KEY_CHECKS = 0");
-            
-            // Wykonujemy cały wsad SQL bez instrukcji beginTransaction() i commit(), 
-            // ponieważ DROP TABLE i tak wymusza auto-commit w MySQL.
-            $db->exec($fileContent);
-            
-            // Włączamy sprawdzanie z powrotem
-            $db->exec("SET FOREIGN_KEY_CHECKS = 1");
 
-            Session::setFlash('Sukces! Baza danych została pomyślnie przywrócona.', 'success');
+            // Każde zapytanie osobno – PDO::exec() z wieloma zapytaniami naraz
+            // zgłasza błąd tylko pierwszego, a resztę po cichu porzuca.
+            foreach ($statements as $stmt) {
+                $db->exec($stmt);
+                $done++;
+            }
+
+            $db->exec("SET FOREIGN_KEY_CHECKS = 1");
+            Session::setFlash("Sukces! Baza danych została przywrócona ($done zapytań).", 'success');
         } catch (\Exception $e) {
-            // Rejestrujemy dokładny błąd SQL, z pominięciem rollBack()
-            Session::setFlash('Błąd SQL podczas przywracania: ' . $e->getMessage(), 'error');
+            $failed = mb_substr($statements[$done] ?? '', 0, 120);
+            Session::setFlash('Błąd SQL podczas przywracania (zapytanie #' . ($done + 1) . ': ' . $failed . '…): ' . $e->getMessage(), 'error');
+        }
+
+        $cacheFiles = glob(__DIR__ . '/../../public/cache/*.html');
+        foreach ($cacheFiles ?: [] as $file) {
+            if (is_file($file)) unlink($file);
         }
 
         header('Location: /admin/settings');
         exit;
+    }
+
+    /**
+     * Dzieli zrzut SQL na pojedyncze zapytania z uwzględnieniem
+     * stringów ('...', "...", `...`) i komentarzy (--, #, /* *\/).
+     */
+    private static function splitSql(string $sql): array {
+        $out = [];
+        $buf = '';
+        $len = strlen($sql);
+        $quote = null;
+
+        for ($i = 0; $i < $len; $i++) {
+            $c = $sql[$i];
+
+            if ($quote !== null) {
+                $buf .= $c;
+                if ($c === '\\' && $quote !== '`' && $i + 1 < $len) {
+                    $buf .= $sql[++$i];
+                } elseif ($c === $quote) {
+                    if ($i + 1 < $len && $sql[$i + 1] === $quote) { $buf .= $sql[++$i]; }
+                    else { $quote = null; }
+                }
+                continue;
+            }
+
+            if ($c === "'" || $c === '"' || $c === '`') { $quote = $c; $buf .= $c; continue; }
+
+            if (($c === '-' && substr($sql, $i, 3) === '-- ') || $c === '#' || ($c === '-' && substr($sql, $i, 3) === "--\n")) {
+                $nl = strpos($sql, "\n", $i);
+                $i = $nl === false ? $len : $nl;
+                $buf .= "\n";
+                continue;
+            }
+            if ($c === '/' && ($sql[$i + 1] ?? '') === '*') {
+                $end = strpos($sql, '*/', $i + 2);
+                $i = $end === false ? $len : $end + 1;
+                continue;
+            }
+
+            if ($c === ';') {
+                if (trim($buf) !== '') $out[] = trim($buf);
+                $buf = '';
+                continue;
+            }
+            $buf .= $c;
+        }
+        if (trim($buf) !== '') $out[] = trim($buf);
+        return $out;
     }
 }

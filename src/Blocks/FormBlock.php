@@ -20,6 +20,12 @@ class FormBlock implements BlockInterface {
         return min($maxUpload, $maxPost);
     }
 
+    /** Klasa szerokości pola w siatce 6-kolumnowej (patrz .pa-form-grid w input.css). */
+    private function widthClass(array $field): string {
+        $w = $field['width'] ?? 'full';
+        return 'pa-fw pa-fw-' . (in_array($w, ['sixth', 'third', 'semi', 'half', 'full'], true) ? $w : 'full');
+    }
+
     public function render(array $block, $db): string {
         try {
             $db->query("ALTER TABLE pa_submissions ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'submitted' AFTER user_ip");
@@ -28,32 +34,65 @@ class FormBlock implements BlockInterface {
         $form = $db->query("SELECT * FROM pa_forms WHERE id = :id", ['id' => $block['content']])->fetch();
         if (!$form) return '';
 
-        $formSettings = json_decode($form['settings'] ?? '{}', true);
+        $formSettings = json_decode($form['settings'] ?? '{}', true) ?: [];
         $userId = \CMS\Core\Session::get('user_id');
-        $html = '<div class="bg-gray-50 border border-gray-200 p-6 md:p-10 rounded-2xl mb-8 shadow-sm" id="form-container-'.$form['id'].'">';
-        $html .= '<h3 class="text-2xl font-extrabold mb-8 text-gray-800">' . htmlspecialchars($form['title']) . '</h3>';
+        $compact = ($formSettings['style'] ?? 'default') === 'compact';
+        $lockFilled = !empty($formSettings['lockFilled']);
+        $fid = (int)$form['id'];
+
+        // Zestaw klas zależny od wyglądu formularza
+        $ui = $compact ? [
+            'box'   => 'pa-form pa-form-compact',
+            'title' => 'pa-form-title',
+            'label' => 'pa-label',
+            'input' => 'pa-input',
+            'grid'  => 'pa-form-grid',
+            'html'  => 'pa-form-html',
+            'opt'   => 'pa-opt',
+            'card'  => 'pa-form-card',
+        ] : [
+            'box'   => 'pa-form bg-gray-50 border border-gray-200 p-6 md:p-10 rounded-2xl mb-8 shadow-sm',
+            'title' => 'text-2xl font-extrabold mb-8 text-gray-800',
+            'label' => 'block text-sm font-bold text-gray-800 mb-2',
+            'input' => 'pa-input w-full border border-gray-200 bg-gray-50/50 text-gray-800 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white block p-3.5 shadow-sm transition-all outline-none',
+            'grid'  => 'pa-form-grid pa-form-grid-roomy',
+            'html'  => 'prose max-w-none text-sm bg-white p-6 whitespace-pre-line rounded-xl border border-gray-100',
+            'opt'   => 'flex items-center gap-2 text-sm p-3 border rounded-xl bg-white',
+            'card'  => 'bg-white p-5 rounded-2xl border border-gray-200 shadow-sm',
+        ];
+
+        $html = '<div class="' . $ui['box'] . '" id="form-container-' . $fid . '">';
+        $html .= '<h3 class="' . $ui['title'] . '">' . htmlspecialchars($form['title']) . '</h3>';
 
         if (!empty($formSettings['reqLogin']) && !$userId) {
             $html .= '<div class="bg-yellow-50 p-6 rounded-xl text-yellow-800 border border-yellow-200 flex items-center gap-4"><span class="text-3xl">🔐</span><div>Zaloguj się, aby wypełnić formularz.<br><a href="/login" class="font-bold underline text-yellow-900 mt-1 inline-block">Zaloguj się</a></div></div></div>';
             return $html;
         }
 
-        $isSubmittedNow = isset($_GET['submitted']) && $_GET['submitted'] == $form['id'];
-        $isEditing = isset($_GET['edit']) && $_GET['edit'] == $form['id'];
-        
+        $isSubmittedNow = isset($_GET['submitted']) && $_GET['submitted'] == $fid;
+        // Edycja tylko gdy formularz na to pozwala (wcześniej wystarczył parametr ?edit=)
+        $canEdit = !empty($formSettings['editable']) || $lockFilled;
+        $isEditing = $canEdit && isset($_GET['edit']) && $_GET['edit'] == $fid;
+
         $existingSubmission = null; $draftSubmission = null;
         if ($userId) {
-            $existingSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? AND status = 'submitted' ORDER BY id DESC LIMIT 1", [$form['id'], $userId])->fetch();
-            $draftSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? AND status = 'draft' ORDER BY id DESC LIMIT 1", [$form['id'], $userId])->fetch();
+            $existingSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? AND status = 'submitted' ORDER BY id DESC LIMIT 1", [$fid, $userId])->fetch();
+            $draftSubmission = $db->query("SELECT * FROM pa_submissions WHERE form_id = ? AND user_id = ? AND status = 'draft' ORDER BY id DESC LIMIT 1", [$fid, $userId])->fetch();
         } else {
-            $guestDraftId = \CMS\Core\Session::get('draft_' . $form['id']);
+            $guestDraftId = \CMS\Core\Session::get('draft_' . $fid);
             if ($guestDraftId) $draftSubmission = $db->query("SELECT * FROM pa_submissions WHERE id = ? AND status = 'draft'", [$guestDraftId])->fetch();
         }
 
+        // Tryb uzupełniania: zalogowany użytkownik z wysłanym zgłoszeniem od razu widzi swój formularz
+        if ($lockFilled && $existingSubmission && !$isSubmittedNow) $isEditing = true;
+
         $flash = \CMS\Core\Session::getFlash();
-        if ($flash && isset($_GET['err_form']) && $_GET['err_form'] == $form['id']) {
-            $html .= '<div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-5 py-4 rounded-r-lg mb-8 text-sm font-bold shadow-sm">⚠️ ' . htmlspecialchars($flash['msg']) . '</div>';
+        if ($flash && isset($_GET['err_form']) && $_GET['err_form'] == $fid) {
+            $html .= '<div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-5 py-4 rounded-r-lg mb-6 text-sm font-bold shadow-sm">⚠️ ' . htmlspecialchars($flash['msg']) . '</div>';
         }
+
+        $vault = new \CMS\Core\Vault();
+        $fields = json_decode($form['form_json'], true) ?? [];
 
         $showThankYou = false;
         if ($userId) {
@@ -63,27 +102,43 @@ class FormBlock implements BlockInterface {
         }
 
         if ($showThankYou) {
-            $html .= '<div class="bg-green-50 border border-green-200 text-green-800 px-8 py-8 rounded-xl mb-4 shadow-sm text-center"><span class="text-5xl mb-4 block">🎉</span> <strong class="text-2xl block mb-2">Dziękujemy!</strong><p class="text-green-700">Twój formularz został zapisany.</p></div>';
-            $html .= '<div class="flex flex-wrap justify-center gap-4 mt-6">';
-            if (!empty($formSettings['editable']) && $existingSubmission) {
-                $html .= '<a href="?edit='.$form['id'].'#form-container-'.$form['id'].'" class="bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-700 font-bold py-3 px-8 rounded-xl shadow-sm transition-all">✏️ Edytuj</a>';
+            // Ile pól jeszcze czeka na uzupełnienie?
+            $missing = 0;
+            if ($lockFilled && $existingSubmission) {
+                $d = json_decode($vault->decrypt($existingSubmission['data_json']) ?: '[]', true) ?? [];
+                $f = json_decode($existingSubmission['files_json'] ?? '{}', true) ?? [];
+                foreach ($fields as $fd) {
+                    if (!\CMS\Services\FormSubmissionService::isLockable($fd)) continue;
+                    $k = $fd['custom_id'] ?? $fd['id'] ?? '';
+                    $empty = ($fd['type'] ?? '') === 'file' ? empty($f[$k]) : \CMS\Services\FormSubmissionService::isEmptyValue($d[$k] ?? null);
+                    if ($empty) $missing++;
+                }
             }
-            if (empty($formSettings['fillOnce'])) {
-                $html .= '<a href="?#form-container-'.$form['id'].'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow-md transition-all">🔄 Wyślij ponownie</a>';
+            $html .= '<div class="pa-form-thanks bg-green-50 border border-green-200 text-green-800 px-6 py-6 rounded-xl mb-4 text-center"><span class="text-4xl mb-3 block">🎉</span><strong class="text-xl block mb-1">Dziękujemy!</strong><p class="text-green-700">Twój formularz został zapisany.</p>';
+            if ($missing > 0) $html .= '<p class="text-green-900 font-bold mt-2">Do uzupełnienia zostało pól: ' . $missing . '</p>';
+            $html .= '</div><div class="flex flex-wrap justify-center gap-3 mt-4">';
+            if ($canEdit && $existingSubmission) {
+                $label = $lockFilled ? ($missing > 0 ? '✏️ Uzupełnij brakujące dane' : '👁 Zobacz przesłane dane') : '✏️ Edytuj';
+                $html .= '<a href="?edit=' . $fid . '#form-container-' . $fid . '" class="bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-700 font-bold py-3 px-6 rounded-xl shadow-sm transition-all">' . $label . '</a>';
+            }
+            if (empty($formSettings['fillOnce']) && !$lockFilled) {
+                $html .= '<a href="?#form-container-' . $fid . '" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all">🔄 Wyślij ponownie</a>';
             }
             $html .= '</div></div>';
             return $html;
         }
 
-        $prefill = []; $existingFiles = []; $vault = new \CMS\Core\Vault();
+        $prefill = []; $existingFiles = [];
         $activeSubmissionToLoad = ($draftSubmission && !$isEditing) ? $draftSubmission : ($isEditing ? $existingSubmission : null);
-        
+
         if ($activeSubmissionToLoad) {
             $prefill = json_decode($vault->decrypt($activeSubmissionToLoad['data_json']), true) ?? [];
             $existingFiles = json_decode($activeSubmissionToLoad['files_json'] ?? '{}', true) ?? [];
         }
+        // Blokujemy tylko dane z WYSŁANEGO zgłoszenia (szkic można dowolnie poprawiać)
+        $lockActive = $lockFilled && $activeSubmissionToLoad && ($activeSubmissionToLoad['status'] ?? '') === 'submitted';
 
-        $subs = $db->query("SELECT data_json FROM pa_submissions WHERE form_id = :id", ['id' => $form['id']])->fetchAll();
+        $subs = $db->query("SELECT data_json FROM pa_submissions WHERE form_id = :id", ['id' => $fid])->fetchAll();
         $optionCounts = [];
         foreach ($subs as $s) {
             $d = json_decode($vault->decrypt($s['data_json']), true) ?? [];
@@ -93,21 +148,42 @@ class FormBlock implements BlockInterface {
             }
         }
 
-        $inputClasses = "w-full border border-gray-200 bg-gray-50/50 text-gray-800 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white block p-3.5 shadow-sm transition-all outline-none";
-        $html .= '<form action="/submit-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-8">';
-        
+        $inputClasses = $ui['input'];
+
+        if ($lockActive) {
+            $html .= '<div class="pa-form-lockinfo">🔒 Pola, które już przesłałeś, są zablokowane. Możesz uzupełnić tylko brakujące dane. Aby zmienić przesłane informacje, skontaktuj się z organizatorem.</div>';
+        }
+
+        $html .= '<form action="/submit-form" method="POST" enctype="multipart/form-data" class="' . $ui['grid'] . '">';
         $html .= '<input type="hidden" name="csrf_token" value="'.\CMS\Core\Session::generateCsrfToken().'">';
-        $html .= '<input type="hidden" name="form_id" value="'.$form['id'].'">';
+        $html .= '<input type="hidden" name="form_id" value="'.$fid.'">';
         $html .= '<input type="hidden" name="return_url" value="'.htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/').'">';
         if ($activeSubmissionToLoad) $html .= '<input type="hidden" name="submission_id" value="'.$activeSubmissionToLoad['id'].'">';
 
-        $fields = json_decode($form['form_json'], true) ?? [];
+        $lockedCount = 0;
+        $editableCount = 0;
         foreach ($fields as $field) {
             $type = $field['type'] ?? 'text';
-            $widthClass = ($field['width']??'full') === 'full' ? 'md:col-span-3' : (($field['width']??'full')==='half'?'md:col-span-2':'md:col-span-1');
-            
+            $widthClass = $this->widthClass($field);
+
+            if ($type === 'section') {
+                $html .= '<div class="pa-fw pa-fw-full pa-form-section"><h4>' . htmlspecialchars($field['label'] ?? '') . '</h4>';
+                if (!empty($field['desc'])) $html .= '<p>' . nl2br(htmlspecialchars($field['desc'])) . '</p>';
+                $html .= '</div>';
+                continue;
+            }
             if ($type === 'html') {
-                $html .= "<div class='{$widthClass} prose max-w-none text-sm bg-white p-6 rounded-xl border border-gray-100'>" . ($field['html'] ?? '') . "</div>"; continue;
+                $html .= "<div class='{$widthClass} {$ui['html']}'>" . ($field['html'] ?? '') . "</div>"; continue;
+            }
+            if ($type === 'account') {
+                // Pole "Konto (e-mail)" – tylko do odczytu, pokazuje adres zalogowanego użytkownika (nie jest wysyłane)
+                if (!$userId) continue;
+                $email = $db->query("SELECT email FROM pa_users WHERE id = ?", [$userId])->fetchColumn();
+                if (!$email) continue;
+                $lbl = trim((string)($field['label'] ?? ''));
+                $html .= "<div class='{$widthClass} pa-form-account'>" . ($lbl !== '' ? "<label class='{$ui['label']}'>" . htmlspecialchars($lbl) . "</label>" : '')
+                       . "<input type='text' class='{$inputClasses}' value='" . htmlspecialchars($email, ENT_QUOTES) . "' disabled aria-label='Konto'></div>";
+                continue;
             }
             if ($type === 'honeypot') {
                 $fieldId = $field['custom_id'] ?? $field['id'] ?? md5('hp' . rand());
@@ -116,8 +192,8 @@ class FormBlock implements BlockInterface {
             if ($type === 'captcha_image') {
                 if (class_exists('\Gregwar\Captcha\CaptchaBuilder')) {
                     $builder = new \Gregwar\Captcha\CaptchaBuilder; $builder->build();
-                    \CMS\Core\Session::set('captcha_img_' . $form['id'], $builder->getPhrase());
-                    $html .= "<div class='{$widthClass} bg-white p-5 rounded-2xl border border-gray-200 shadow-sm'><label class='block text-sm font-bold text-gray-700 mb-3'>Weryfikacja *</label><div class='flex gap-4 items-center'><img src='{$builder->inline()}' class='rounded-xl border h-[56px]'><input type='text' name='captcha_answer' required class='{$inputClasses} flex-1'></div></div>";
+                    \CMS\Core\Session::set('captcha_img_' . $fid, $builder->getPhrase());
+                    $html .= "<div class='{$widthClass} {$ui['card']}'><label class='{$ui['label']}'>Weryfikacja *</label><div class='flex gap-4 items-center'><img src='{$builder->inline()}' class='rounded-xl border h-[56px]'><input type='text' name='captcha_answer' required class='{$inputClasses} flex-1'></div></div>";
                 } continue;
             }
             if ($type === 'captcha_turnstile') {
@@ -128,42 +204,62 @@ class FormBlock implements BlockInterface {
                 } continue;
             }
 
-            $fieldId = $field['custom_id'] ?? $field['id'] ?? md5($field['label']);
+            $fieldId = $field['custom_id'] ?? $field['id'] ?? md5($field['label'] ?? '');
             $val = $prefill[$fieldId] ?? '';
             $req = !empty($field['required']);
+            $placeholder = trim((string)($field['placeholder'] ?? ''));
+            $phAttr = $placeholder !== '' ? " placeholder='" . htmlspecialchars($placeholder, ENT_QUOTES) . "'" : '';
+
+            // Czy to pole jest zablokowane (tryb uzupełniania)?
+            $hasValue = $type === 'file' ? !empty($existingFiles[$fieldId]) : !\CMS\Services\FormSubmissionService::isEmptyValue($val);
+            $locked = $lockActive && $hasValue && \CMS\Services\FormSubmissionService::isLockable($field);
+            if ($locked) { $lockedCount++; $req = false; } else { $editableCount++; }
+            $dis = $locked ? ' disabled' : '';
+            $lockCls = $locked ? ' pa-locked' : '';
+            $lockIcon = $locked ? " <span class='pa-lock' title='Dane przesłane – pole zablokowane'>🔒</span>" : '';
+
             $reqAttr = $req ? 'required' : '';
             $reqStar = $req ? '<span class="text-red-500 ml-1">*</span>' : '';
+            $label = trim((string)($field['label'] ?? ''));
+            $labelHtml = $label !== '' ? htmlspecialchars($label) . $reqStar . $lockIcon : '&nbsp;';
 
             // POLE PLIKÓW - ASYNCHRONICZNE
             if ($type === 'file') {
+                if ($locked) {
+                    $html .= "<div class='{$widthClass}{$lockCls}'><label class='{$ui['label']}'>{$labelHtml}</label><div class='uploaded-files-list flex flex-col gap-2'>";
+                    $eFiles = isset($existingFiles[$fieldId]['original_name']) ? [$existingFiles[$fieldId]] : $existingFiles[$fieldId];
+                    foreach ($eFiles as $eFile) {
+                        if (empty($eFile['original_name']) || empty($eFile['storage_name'])) continue;
+                        $dlUrl = "/form-download?file=" . urlencode($eFile['storage_name']) . "&orig=" . urlencode($eFile['original_name']);
+                        $html .= "<a href='{$dlUrl}' target='_blank' class='pa-file-chip'>📎 " . htmlspecialchars($eFile['original_name']) . "</a>";
+                    }
+                    $html .= "</div></div>";
+                    continue;
+                }
                 $allowMultiple = !empty($formSettings['allowMultipleFiles']) ? 'multiple' : '';
-                
+
                 // --- OBLICZANIE MAX ROZMIARU PLIKU ---
                 $serverMaxBytes = $this->getServerMaxUploadBytes();
                 $serverMaxMB = floor($serverMaxBytes / (1024 * 1024));
                 $adminMaxMB = !empty($field['maxSize']) ? (int)$field['maxSize'] : $serverMaxMB;
-                // Wybieramy mniejszą wartość
                 $effectiveMaxMB = min($serverMaxMB, $adminMaxMB);
                 $effectiveMaxBytes = $effectiveMaxMB * 1024 * 1024;
-                // -------------------------------------
 
                 $html .= "<div class='{$widthClass} async-file-upload' data-field-id='{$fieldId}'>";
-                $html .= "<label class='block text-sm font-bold text-gray-800 mb-2' for='{$fieldId}'>".htmlspecialchars($field['label']).$reqStar."</label>";
-                
+                $html .= "<label class='{$ui['label']}' for='{$fieldId}'>{$labelHtml}</label>";
+
                 $hasExisting = isset($existingFiles[$fieldId]) && !empty($existingFiles[$fieldId]);
                 $currentReqAttr = ($hasExisting) ? '' : $reqAttr;
-                
+
                 $allowedExtsRaw = $field['allowedExts'] ?? 'jpg, png, pdf, zip, doc, docx';
                 $allowedExtsRawEscaped = htmlspecialchars($allowedExtsRaw, ENT_QUOTES);
                 $exts = array_filter(array_map('trim', explode(',', $allowedExtsRaw)));
                 $accepts = array_map(function($ext) { return '.' . ltrim($ext, '.'); }, $exts);
                 $acceptAttr = !empty($accepts) ? 'accept="' . htmlspecialchars(implode(',', $accepts), ENT_QUOTES) . '"' : '';
 
-                $html .= "<div class='relative border-2 border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-100/50 rounded-xl py-4 px-6 text-center transition-all group overflow-hidden focus-within:ring-4 focus-within:ring-blue-100 focus-within:border-blue-500 flex flex-col items-center justify-center'>";
+                $html .= "<div class='pa-drop relative border-2 border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-100/50 rounded-xl py-4 px-6 text-center transition-all group overflow-hidden focus-within:ring-4 focus-within:ring-blue-100 focus-within:border-blue-500 flex flex-col items-center justify-center'>";
                 $html .= "<input type='file' id='{$fieldId}' class='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 file-input' {$currentReqAttr} {$allowMultiple} data-allowed-exts='{$allowedExtsRawEscaped}' data-max-size='{$effectiveMaxBytes}' {$acceptAttr}>";
-                
                 if ($req) $html .= "<input type='hidden' class='original-required-flag' value='1'>";
-                
                 $html .= "<div class='text-blue-500 mb-1 transition-transform group-hover:scale-110 flex justify-center'>
                             <svg class='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'></path></svg>
                           </div>";
@@ -199,13 +295,15 @@ class FormBlock implements BlockInterface {
                 continue;
             }
 
-            $html .= "<div class='$widthClass'><label class='block text-sm font-bold text-gray-800 mb-2'>".htmlspecialchars($field['label']).$reqStar."</label>";
+            // Pusta etykieta: przy polach obok siebie zostawiamy odstęp (wyrównanie), przy pełnej szerokości – nic
+            $labelTag = ($label === '' && ($field['width'] ?? 'full') === 'full') ? '' : "<label class='{$ui['label']}'>{$labelHtml}</label>";
+            $html .= "<div class='{$widthClass}{$lockCls}'>{$labelTag}";
             if (in_array($type, ['select', 'radio', 'checkbox'])) {
                 $optionsRaw = explode("\n", trim($field['options'] ?? ''));
                 $options = []; foreach ($optionsRaw as $opt) { if ($opt) { $parts = explode('|limit:', $opt); $options[] = ['label' => trim($parts[0]), 'limit' => isset($parts[1]) ? (int)trim($parts[1]) : 0]; } }
-                
+
                 if ($type === 'select') {
-                    $html .= "<select name='data[{$fieldId}]' class='{$inputClasses}' {$reqAttr}><option value=''>-- Wybierz --</option>";
+                    $html .= "<select name='data[{$fieldId}]' class='{$inputClasses}' {$reqAttr}{$dis}><option value=''>" . htmlspecialchars($placeholder !== '' ? $placeholder : '-- Wybierz --') . "</option>";
                     foreach ($options as $o) {
                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
                         $disabled = '';
@@ -223,63 +321,67 @@ class FormBlock implements BlockInterface {
                         $html .= "<option value='".htmlspecialchars($o['label'])."' {$disabled} {$selected}>".htmlspecialchars($o['label']) . $limitText . "</option>";
                     }
                     $html .= "</select>";
-                } elseif ($type === 'radio') {
-                    $html .= "<div class='flex flex-col gap-2'>";
-                    foreach ($options as $idx => $o) {
+                } else {
+                    $inline = !empty($field['inline']);
+                    $html .= "<div class='pa-opts " . ($inline ? 'pa-opts-inline flex flex-wrap gap-x-4 gap-y-2' : 'flex flex-col gap-2') . "'>";
+                    $valArr = $type === 'checkbox'
+                        ? (is_array($val) ? $val : (is_string($val) && strpos($val, ',') !== false ? explode(', ', $val) : [$val]))
+                        : [];
+                    foreach ($options as $o) {
                         $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
+                        $isChosen = $type === 'radio' ? ($val === $o['label']) : in_array($o['label'], $valArr);
                         $disabled = '';
                         $limitText = '';
                         if ($o['limit'] > 0) {
                             $left = $o['limit'] - $currentCount;
-                            if ($left <= 0 && $val !== $o['label']) {
+                            if ($left <= 0 && !$isChosen) {
                                 $disabled = 'disabled';
                                 $limitText = " <span class='text-xs text-red-500 font-bold ml-1'>(Brak miejsc)</span>";
                             } else {
                                 $limitText = " <span class='text-xs text-gray-500 ml-1'>(Zostało: {$left})</span>";
                             }
                         }
-                        $checked = ($val === $o['label']) ? 'checked' : '';
-                        $html .= "<label class='flex items-center gap-2 text-sm p-3 border rounded-xl bg-white ".($disabled?'opacity-50 cursor-not-allowed':'')."'><input type='radio' name='data[{$fieldId}]' value='".htmlspecialchars($o['label'])."' {$disabled} {$checked} {$reqAttr}><span>".htmlspecialchars($o['label']) . $limitText . "</span></label>";
-                    }
-                    $html .= "</div>";
-                } elseif ($type === 'checkbox') {
-                    $valArr = is_array($val) ? $val : (is_string($val) && strpos($val, ',') !== false ? explode(', ', $val) : [$val]);
-                    $html .= "<div class='flex flex-col gap-2'>";
-                    foreach ($options as $idx => $o) {
-                        $currentCount = $optionCounts[$fieldId][$o['label']] ?? 0;
-                        $disabled = '';
-                        $limitText = '';
-                        if ($o['limit'] > 0) {
-                            $left = $o['limit'] - $currentCount;
-                            if ($left <= 0 && !in_array($o['label'], $valArr)) {
-                                $disabled = 'disabled';
-                                $limitText = " <span class='text-xs text-red-500 font-bold ml-1'>(Brak miejsc)</span>";
-                            } else {
-                                $limitText = " <span class='text-xs text-gray-500 ml-1'>(Zostało: {$left})</span>";
-                            }
-                        }
-                        $checked = in_array($o['label'], $valArr) ? 'checked' : '';
-                        $html .= "<label class='flex items-center gap-2 text-sm p-3 border rounded-xl bg-white ".($disabled?'opacity-50 cursor-not-allowed':'')."'><input type='checkbox' name='data[{$fieldId}][]' value='".htmlspecialchars($o['label'])."' {$disabled} {$checked}><span>".htmlspecialchars($o['label']) . $limitText . "</span></label>";
+                        if ($locked) $disabled = 'disabled';
+                        $checked = $isChosen ? 'checked' : '';
+                        $name = $type === 'radio' ? "data[{$fieldId}]" : "data[{$fieldId}][]";
+                        $rq = $type === 'radio' ? $reqAttr : '';
+                        $html .= "<label class='{$ui['opt']} ".($disabled && !$locked ? 'opacity-50 cursor-not-allowed' : '')."'><input type='{$type}' name='{$name}' value='".htmlspecialchars($o['label'])."' {$disabled} {$checked} {$rq}><span>".htmlspecialchars($o['label']) . $limitText . "</span></label>";
                     }
                     $html .= "</div>";
                 }
             } elseif ($type === 'textarea') {
-                $html .= "<textarea name='data[{$fieldId}]' class='{$inputClasses}' rows='4' {$reqAttr}>".htmlspecialchars(is_array($val)?'':$val)."</textarea>";
+                $html .= "<textarea name='data[{$fieldId}]' class='{$inputClasses}' rows='4' {$reqAttr}{$phAttr}{$dis}>".htmlspecialchars(is_array($val)?'':$val)."</textarea>";
             } else {
-                $html .= "<input type='{$type}' name='data[{$fieldId}]' value='".htmlspecialchars(is_array($val)?'':$val)."' class='{$inputClasses}' {$reqAttr}>";
+                $inputType = $type === 'phone' ? 'tel' : $type;
+                $html .= "<input type='{$inputType}' name='data[{$fieldId}]' value='".htmlspecialchars(is_array($val)?'':$val)."' class='{$inputClasses}' {$reqAttr}{$phAttr}{$dis}>";
             }
             $html .= "</div>";
         }
 
-        $btnText = $isEditing ? 'Zaktualizuj formularz' : 'Wyślij formularz';
-        $html .= '<div class="md:col-span-3 mt-6 pt-6 border-t border-gray-200 relative">';
-        if (!$isEditing) $html .= "<div id='autosave-status-{$form['id']}' class='text-sm font-bold text-gray-500 mb-3 hidden transition-all flex items-center gap-2'></div>";
-        $html .= '<button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all" type="submit">'.$btnText.'</button>';
-        $html .= '</div></form>';
+        $submitLabel = trim((string)($formSettings['submitLabel'] ?? '')) ?: ($isEditing ? 'Zaktualizuj formularz' : 'Wyślij formularz');
+        if ($lockActive && $editableCount === 0) {
+            // Wszystko przesłane i zablokowane – nie ma czego wysyłać
+            $html .= '<div class="pa-fw pa-fw-full pa-form-actions"><div class="pa-form-lockinfo">✅ Wszystkie dane zostały przesłane.</div></div></form>';
+        } else {
+            $html .= '<div class="pa-fw pa-fw-full pa-form-actions">';
+            if (!$isEditing) $html .= "<div id='autosave-status-{$fid}' class='text-sm font-bold text-gray-500 mb-3 hidden transition-all flex items-center gap-2'></div>";
+            $html .= '<div class="pa-form-buttons">';
+            if ($lockFilled && $userId) {
+                // Zapis częściowy – pomija walidację wymaganych pól, resztę można uzupełnić później
+                $html .= '<button type="submit" name="partial" value="1" formnovalidate class="pa-btn-partial">💾 Zapisz – uzupełnię resztę później</button>';
+            }
+            $submitCls = $compact ? 'pa-btn-submit' : 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all';
+            $html .= '<button class="' . $submitCls . '" type="submit">' . htmlspecialchars($submitLabel) . '</button>';
+            $html .= '</div>';
+            if ($lockFilled && $userId) {
+                $html .= '<p class="pa-form-note">Uwaga: po zapisaniu wypełnione pola zostaną zablokowane do edycji.</p>';
+            }
+            $html .= '</div></form>';
+        }
 
         $html .= "<script>
         (function() {
-            const formContainer = document.getElementById('form-container-{$form['id']}');
+            const formContainer = document.getElementById('form-container-{$fid}');
             if (!formContainer) return;
             const form = formContainer.querySelector('form');
             if (!form) return;
@@ -288,7 +390,7 @@ class FormBlock implements BlockInterface {
             const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Wyślij';
             let activeUploads = 0;
             let autosaveTimeout;
-            const statusEl = document.getElementById('autosave-status-{$form['id']}');
+            const statusEl = document.getElementById('autosave-status-{$fid}');
         
             function triggerAutosave() {
                 if (!statusEl) return;

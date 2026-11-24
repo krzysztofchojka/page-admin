@@ -6,6 +6,13 @@ const savedSettings = window.CMS_CONFIG.savedSettings;
 document.getElementById('reqLogin').checked = savedSettings.reqLogin || false;
 document.getElementById('fillOnce').checked = savedSettings.fillOnce || false;
 document.getElementById('editable').checked = savedSettings.editable || false;
+if (document.getElementById('lockFilled')) document.getElementById('lockFilled').checked = savedSettings.lockFilled || false;
+if (document.getElementById('formStyle')) document.getElementById('formStyle').value = savedSettings.style || 'default';
+if (document.getElementById('submitLabel')) document.getElementById('submitLabel').value = savedSettings.submitLabel || '';
+
+const WIDTHS = [['sixth', '1/6'], ['third', '1/3'], ['semi', '1/2'], ['half', '2/3'], ['full', 'Full']];
+const NO_VALUE_TYPES = ['html', 'section', 'account', 'honeypot', 'captcha_image', 'captcha_turnstile'];
+const escAttr = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
 Sortable.create(document.getElementById('form-sidebar'), {
     group: { name: 'shared', pull: 'clone', put: false },
@@ -24,7 +31,7 @@ Sortable.create(canvas, {
         if (itemEl.classList.contains('sidebar-block')) {
             const type = itemEl.dataset.type;
             const defaultWidth = document.getElementById('defaultFieldWidth').value;
-            const newField = createFieldElement({ type: type, label: type === 'html' ? '' : 'Nowe pole', width: defaultWidth, required: false });
+            const newField = createFieldElement({ type: type, label: ['html', 'account'].includes(type) ? '' : (type === 'section' ? 'NOWA SEKCJA' : 'Nowe pole'), width: type === 'section' ? 'full' : defaultWidth, required: false });
             itemEl.parentNode.insertBefore(newField, itemEl);
             itemEl.parentNode.removeChild(itemEl);
         }
@@ -74,6 +81,25 @@ function createFieldElement(data) {
         </div>`;
     } else if (data.type === 'html') {
         visualHTML = `<div class="mt-3 w-full h-12 bg-gray-800 rounded flex items-center justify-center text-green-400 text-xs font-mono pointer-events-none">&lt; KOD HTML /&gt;</div>`;
+    } else if (data.type === 'section') {
+        visualHTML = `<div class="mt-2 border-t-2 border-indigo-300"></div>`;
+        extraSettings = `
+        <div class="mt-2">
+            <label class="text-xs font-bold text-gray-500 block">Opis pod nagłówkiem (opcjonalnie)</label>
+            <textarea class="field-desc w-full border p-2 rounded text-sm mt-1 bg-gray-50" rows="2" placeholder="np. Paszport musi być ważny min. 6 miesięcy">${escAttr(data.desc)}</textarea>
+        </div>`;
+    } else if (data.type === 'account') {
+        visualHTML = `<div class="mt-3 w-full h-9 bg-gray-200 border border-gray-300 rounded flex items-center px-3 text-gray-500 text-xs pointer-events-none">👤 e-mail zalogowanego użytkownika (tylko odczyt)</div>`;
+    } else if (data.type === 'date') {
+        visualHTML = `<div class="mt-3 w-full h-9 bg-gray-50 border border-gray-200 rounded pointer-events-none"></div>`;
+    }
+
+    if (['text', 'email', 'phone', 'textarea', 'date', 'select'].includes(data.type)) {
+        extraSettings += `
+        <div class="mt-2">
+            <label class="text-xs font-bold text-gray-500 block">Podpowiedź w polu (placeholder)</label>
+            <input type="text" class="field-placeholder w-full border p-2 rounded text-sm mt-1 bg-gray-50" placeholder="np. jeśli brak – pozostaw puste" value="${escAttr(data.placeholder)}">
+        </div>`;
     }
 
     if (['select', 'radio', 'checkbox'].includes(data.type)) {
@@ -82,7 +108,8 @@ function createFieldElement(data) {
                 <textarea class="field-options hidden">${data.options || ''}</textarea>
                 <button type="button" onclick="openOptionsEditor(this)" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold py-2 rounded shadow-sm transition">⚙️ Edytor opcji wyboru i limitów</button>
             </div>
-        `;
+            ${data.type !== 'select' ? `<label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer mt-2"><input type="checkbox" class="field-inline" ${data.inline ? 'checked' : ''}> Opcje w jednej linii (np. Tak / Nie)</label>` : ''}
+        ` + extraSettings;
     }
     if (data.type === 'html') {
         extraSettings = `
@@ -94,23 +121,25 @@ function createFieldElement(data) {
     }
 
     // Required checkbox doesn't apply to pure HTML
-    const requiredCheckbox = data.type !== 'html' ? `
-        <div class="mt-3 border-t border-gray-200 pt-3">
+    const requiredCheckbox = !NO_VALUE_TYPES.includes(data.type) ? `
+        <div class="mt-3 border-t border-gray-200 pt-3 flex flex-col gap-2">
             <label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer">
                 <input type="checkbox" class="field-required rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${isReq}>
                 Wymagane pole (użytkownik musi wypełnić)
+            </label>
+            <label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer" title="Działa, gdy w ustawieniach formularza włączone jest 'Uzupełnianie danych'">
+                <input type="checkbox" class="field-always-editable rounded border-gray-300 text-blue-600" ${data.alwaysEditable ? 'checked' : ''}>
+                🔓 Zawsze edytowalne (nie blokuj po wysłaniu)
             </label>
         </div>
     ` : '';
 
     div.innerHTML = `
-        <div class="flex justify-between items-center mb-3">
+        <div class="flex flex-wrap justify-between items-center gap-1 mb-3">
             <span class="text-[10px] font-bold uppercase text-blue-600 bg-blue-50 px-2 py-1 rounded cursor-move drag-handle">✥ ${data.type}</span>
-            <div class="flex gap-2">
-                <div class="flex bg-gray-100 p-0.5 rounded border border-gray-200">
-                    <button type="button" onclick="setWidth(this.closest('.field-card'), 'third')" class="px-2 py-0.5 text-[10px] font-bold rounded hover:bg-white hover:shadow-sm ${data.width === 'third' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}">1/3</button>
-                    <button type="button" onclick="setWidth(this.closest('.field-card'), 'half')" class="px-2 py-0.5 text-[10px] font-bold rounded hover:bg-white hover:shadow-sm ${data.width === 'half' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}">2/3</button>
-                    <button type="button" onclick="setWidth(this.closest('.field-card'), 'full')" class="px-2 py-0.5 text-[10px] font-bold rounded hover:bg-white hover:shadow-sm ${data.width === 'full' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}">Full</button>
+            <div class="flex flex-wrap gap-1">
+                <div class="width-btns flex bg-gray-100 p-0.5 rounded border border-gray-200">
+                    ${WIDTHS.map(([w, l]) => `<button type="button" data-w="${w}" onclick="setWidth(this.closest('.field-card'), '${w}')" class="px-1.5 py-0.5 text-[10px] font-bold rounded hover:bg-white hover:shadow-sm ${(data.width || 'full') === w ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}">${l}</button>`).join('')}
                 </div>
                 <div class="flex gap-1">
                     <button type="button" onclick="this.closest('.field-card').querySelector('.settings-panel').classList.toggle('hidden')" class="p-1.5 text-xs bg-white hover:bg-gray-100 rounded border shadow-sm" title="Ustawienia zaawansowane">⚙️</button>
@@ -120,7 +149,7 @@ function createFieldElement(data) {
         </div>
 
         <div>
-            <input type="text" class="field-label w-full font-bold bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none text-base text-gray-800" value="${data.label || ''}" placeholder="${data.type === 'html' ? 'Opis/Etykieta (dla Ciebie)' : 'Wpisz pytanie / etykietę pola...'}">
+            <input type="text" class="field-label w-full font-bold bg-transparent border-b border-gray-200 focus:border-blue-500 outline-none text-base ${data.type === 'section' ? 'text-indigo-800 uppercase' : 'text-gray-800'}" value="${escAttr(data.label)}" placeholder="${data.type === 'html' ? 'Opis/Etykieta (dla Ciebie)' : (data.type === 'section' ? 'Tytuł sekcji, np. DANE PASZPORTU' : 'Wpisz pytanie / etykietę pola (puste = bez etykiety)')}">
         </div>
         
         ${visualHTML}
@@ -141,21 +170,18 @@ function createFieldElement(data) {
 function setWidth(card, width) {
     card.dataset.width = width;
     updateWidthClasses(card, width);
-    const btns = card.querySelectorAll('.bg-gray-100 button');
-    btns.forEach(b => {
-        b.classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
-        b.classList.add('text-gray-500');
+    card.querySelectorAll('.width-btns button').forEach(b => {
+        const on = b.dataset.w === width;
+        b.classList.toggle('bg-white', on); b.classList.toggle('shadow-sm', on); b.classList.toggle('text-blue-600', on);
+        b.classList.toggle('text-gray-500', !on);
     });
-    if(width === 'third') btns[0].classList.add('bg-white', 'shadow-sm', 'text-blue-600');
-    if(width === 'half') btns[1].classList.add('bg-white', 'shadow-sm', 'text-blue-600');
-    if(width === 'full') btns[2].classList.add('bg-white', 'shadow-sm', 'text-blue-600');
 }
 
+// Podgląd w kreatorze: siatka 6-kolumnowa (tak jak na stronie publicznej)
 function updateWidthClasses(el, width) {
-    el.classList.remove('md:col-span-1', 'md:col-span-2', 'md:col-span-3');
-    if (width === 'third') el.classList.add('md:col-span-1');
-    if (width === 'half') el.classList.add('md:col-span-2');
-    if (width === 'full') el.classList.add('md:col-span-3');
+    el.classList.remove('md:col-span-1', 'md:col-span-2', 'md:col-span-3', 'md:col-span-4', 'md:col-span-6');
+    const map = { sixth: 'md:col-span-1', third: 'md:col-span-2', semi: 'md:col-span-3', half: 'md:col-span-4', full: 'md:col-span-6' };
+    el.classList.add(map[width] || 'md:col-span-6');
 }
 
 let activeOptionsTextarea = null;
@@ -231,6 +257,15 @@ function saveForm() {
         if (type === 'html') {
             field.html = card.querySelector('.field-html').value;
         }
+        if (type === 'section') {
+            field.desc = card.querySelector('.field-desc').value;
+        }
+        const ph = card.querySelector('.field-placeholder');
+        if (ph && ph.value.trim()) field.placeholder = ph.value.trim();
+        const inl = card.querySelector('.field-inline');
+        if (inl && inl.checked) field.inline = true;
+        const ae = card.querySelector('.field-always-editable');
+        if (ae && ae.checked) field.alwaysEditable = true;
         if (type === 'file') {
             field.allowedExts = card.querySelector('.field-allowed-exts') ? card.querySelector('.field-allowed-exts').value : 'jpg, png, pdf, zip, doc, docx';
             field.maxSize = card.querySelector('.field-max-size') ? card.querySelector('.field-max-size').value : '';
@@ -241,7 +276,10 @@ function saveForm() {
     const settings = {
         reqLogin: document.getElementById('reqLogin').checked,
         fillOnce: document.getElementById('fillOnce').checked,
-        editable: document.getElementById('editable').checked
+        editable: document.getElementById('editable').checked,
+        lockFilled: document.getElementById('lockFilled') ? document.getElementById('lockFilled').checked : false,
+        style: document.getElementById('formStyle') ? document.getElementById('formStyle').value : 'default',
+        submitLabel: document.getElementById('submitLabel') ? document.getElementById('submitLabel').value : ''
     };
 
     fetch('/admin/forms/save', {

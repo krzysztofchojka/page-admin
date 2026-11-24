@@ -24,8 +24,10 @@
             <label class="block text-xs font-bold text-gray-500 mb-1">Domyślna szerokość bloków</label>
             <select id="defaultFieldWidth" class="w-full border p-2 rounded text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
                 <option value="full">Pełna szerokość (Full)</option>
-                <option value="half">Dwie trzecie ekranu (2/3)</option>
+                <option value="half">Dwie trzecie (2/3)</option>
+                <option value="semi">Połowa (1/2)</option>
                 <option value="third">Jedna trzecia (1/3)</option>
+                <option value="sixth">Jedna szósta (1/6)</option>
             </select>
         </div>
 
@@ -45,6 +47,8 @@
             <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Zaawansowane</div>
             <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="file"><span class="text-lg">📎</span>Plik</div>
             <div class="sidebar-block border bg-white hover:border-gray-800 hover:bg-gray-100 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="html"><span class="text-lg">&lt;/&gt;</span>Custom HTML</div>
+            <div class="sidebar-block border bg-white hover:border-indigo-500 hover:bg-indigo-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1 col-span-2" data-type="section"><span class="text-lg">▬</span>Nagłówek sekcji</div>
+            <div class="sidebar-block border bg-white hover:border-indigo-500 hover:bg-indigo-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1 col-span-2" data-type="account" title="Pokazuje e-mail zalogowanego użytkownika (tylko do odczytu). Gościom się nie wyświetla."><span class="text-lg">👤</span>Konto (e-mail)</div>
 
             <div class="col-span-2 text-xs font-bold text-red-400 uppercase mt-4 mb-1 border-b border-red-100 pb-1">Anty-Spam (Boty)</div>
             <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="honeypot"><span class="text-lg">🍯</span>Honeypot</div>
@@ -52,7 +56,7 @@
             <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-[11px] font-bold transition flex flex-col items-center gap-1" data-type="captcha_turnstile"><span class="text-lg">🛡️</span>Turnstile</div>
         </div>
 
-        <div class="p-4 border-t bg-gray-50">
+        <div class="p-4 border-t bg-gray-50 max-h-[48vh] overflow-y-auto shrink-0">
             <h3 class="font-bold mb-3 text-sm text-gray-700">Ustawienia Formularza</h3>
             
             <label class="flex items-center gap-2 text-sm mb-2 cursor-pointer">
@@ -61,9 +65,21 @@
             <label class="flex items-center gap-2 text-sm mb-2 cursor-pointer">
                 <input type="checkbox" id="fillOnce" class="rounded text-blue-600"> Wypełnij tylko raz
             </label>
-            <label class="flex items-center gap-2 text-sm mb-4 cursor-pointer">
+            <label class="flex items-center gap-2 text-sm mb-2 cursor-pointer">
                 <input type="checkbox" id="editable" class="rounded text-blue-600"> Edytowalne po wysłaniu
             </label>
+            <label class="flex items-start gap-2 text-sm mb-1 cursor-pointer" title="Użytkownik może wysłać część danych i wrócić później. Pola już przesłane blokują się (wymuszane na serwerze). Wyjątki: zaznacz 'Zawsze edytowalne' w ustawieniach pola.">
+                <input type="checkbox" id="lockFilled" class="rounded text-blue-600 mt-1"> <span>Uzupełnianie danych – wypełnione pola blokują się</span>
+            </label>
+            <p class="text-[11px] text-gray-500 mb-3 ml-6">Wymaga logowania. Dodaje przycisk „Zapisz – uzupełnię resztę później”.</p>
+
+            <label class="block text-xs font-bold text-gray-500 mb-1">Wygląd formularza</label>
+            <select id="formStyle" class="w-full border p-2 rounded text-sm bg-white mb-2">
+                <option value="default">Standardowy (zaokrąglony)</option>
+                <option value="compact">Kompaktowy (klasyczny, mniejsze odstępy)</option>
+            </select>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Napis na przycisku wysyłki</label>
+            <input type="text" id="submitLabel" class="w-full border p-2 rounded text-sm bg-white mb-4" placeholder="np. WYŚLIJ">
 
             <label class="flex items-center gap-2 text-sm mb-4 cursor-pointer border-t border-gray-200 pt-3">
                 <input type="checkbox" id="allowMultipleFiles" class="rounded text-blue-600"> Wiele plików w inputach (Multi-upload)
@@ -88,7 +104,7 @@
             </div>
         </div>
         <div class="flex-1 overflow-y-auto p-8 relative">
-            <div id="form-canvas" class="max-w-4xl mx-auto min-h-[500px] border-2 border-dashed border-gray-300 bg-gray-50/50 p-6 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 content-start pb-24 drop-zone">
+            <div id="form-canvas" class="max-w-4xl mx-auto min-h-[500px] border-2 border-dashed border-gray-300 bg-gray-50/50 p-6 rounded-xl grid grid-cols-1 md:grid-cols-6 gap-4 content-start pb-24 drop-zone">
             </div>
         </div>
     </div>

@@ -29,6 +29,14 @@ class BlockRenderer {
         'system_change_password' => \CMS\Blocks\SystemChangePasswordBlock::class,
         'system_lockdown' => \CMS\Blocks\SystemLockdownBlock::class,
         'posts_grid' => \CMS\Blocks\PostsGridBlock::class,
+        // Bloki układu i formatowania (v2.1)
+        'section' => \CMS\Blocks\SectionBlock::class,
+        'grid' => \CMS\Blocks\GridBlock::class,
+        'heading' => \CMS\Blocks\HeadingBlock::class,
+        'ticker' => \CMS\Blocks\TickerBlock::class,
+        'switcher' => \CMS\Blocks\SwitcherBlock::class,
+        'schedule' => \CMS\Blocks\ScheduleBlock::class,
+        'translate' => \CMS\Blocks\TranslateBlock::class,
     ];
 
     public static function render($blocks, $db, $echo = true) {
@@ -39,10 +47,15 @@ class BlockRenderer {
             $bType = $block['type'] ?? '';
             if (empty($bType) || !isset(self::$registry[$bType])) continue;
 
-            $set = $block['settings'] ?? [];
+            $set = is_array($block['settings'] ?? null) ? $block['settings'] : [];
+            [$fmtClasses, $fmtStyles] = BlockStyle::fromSettings($set);
+
             $idAttr = !empty($set['id']) ? ' id="'.htmlspecialchars($set['id']).'"' : '';
-            $clsAttr = !empty($set['css']) ? ' ' . htmlspecialchars($set['css']) : '';
-            $styleAttr = !empty($set['style']) ? ' style="'.htmlspecialchars($set['style']).'"' : '';
+            $clsAttr = trim((!empty($set['css']) ? $set['css'] : '') . ' ' . $fmtClasses);
+            $clsAttr = $clsAttr !== '' ? ' ' . htmlspecialchars($clsAttr) : '';
+            // Ręczne style z pola "Style wew." mają pierwszeństwo przed presetami
+            $allStyles = trim($fmtStyles . ($fmtStyles !== '' && !empty($set['style']) ? ';' : '') . ($set['style'] ?? ''));
+            $styleAttr = $allStyles !== '' ? ' style="'.htmlspecialchars($allStyles).'"' : '';
 
             $output .= "<div{$idAttr} class=\"block-wrapper mb-0{$clsAttr}\"{$styleAttr}>";
             

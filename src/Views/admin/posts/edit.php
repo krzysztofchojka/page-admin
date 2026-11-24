@@ -83,6 +83,12 @@
             <div class="sidebar-block border bg-white hover:border-gray-800 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="divider"><span class="text-lg text-gray-400">➖</span>Odstęp</div>
             <div class="sidebar-block border bg-white hover:border-teal-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="form"><span class="text-lg text-teal-500">📝</span>Formularz</div>
             <div class="sidebar-block border bg-white hover:border-gray-800 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="raw_html"><span class="text-lg text-gray-800">&lt;/&gt;</span>HTML</div>
+            <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-2 mb-1 border-b pb-1">Układ i formatowanie</div>
+            <div class="sidebar-block border bg-white hover:border-slate-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="heading"><span class="text-lg text-slate-600">H</span>Nagłówek</div>
+            <div class="sidebar-block border bg-white hover:border-cyan-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="section"><span class="text-lg text-cyan-600">▭</span>Sekcja</div>
+            <div class="sidebar-block border bg-white hover:border-violet-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="grid"><span class="text-lg text-violet-600">▦</span>Siatka</div>
+            <div class="sidebar-block border bg-white hover:border-sky-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="switcher"><span class="text-lg text-sky-600">⇆</span>Przełącznik</div>
+            <div class="sidebar-block border bg-white hover:border-emerald-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="schedule"><span class="text-lg text-emerald-600">🕒</span>Harmonogram</div>
         </div>
     </div>
 
@@ -309,7 +315,8 @@ document.getElementById('postTemplate').addEventListener('change', function() {
 
         // Wyciągamy bloki ze wszystkich stref (drop-zone) przy pomocy logiki z page-builder.js
         const content = {};
-        const zones = document.querySelectorAll('.drop-zone');
+        // Tylko strefy główne – zagnieżdżone zapisują się wewnątrz swoich bloków
+        const zones = Array.from(document.querySelectorAll('.drop-zone')).filter(z => !z.closest('.block-item'));
         if (zones.length === 1 && zones[0].getAttribute('data-zone-uid') === 'editor') {
             content.editor = window.getBlocksFromContainer(zones[0]);
         } else {
