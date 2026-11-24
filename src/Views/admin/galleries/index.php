@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Manage Galleries</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
 </head>
 <body class="bg-gray-100 p-10">
 

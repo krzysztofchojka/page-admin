@@ -11,6 +11,7 @@ function isActive($path, $current) {
     <meta charset="UTF-8">
     <title>CMS Admin</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         #sidebar { transition: width 0.3s ease; }
@@ -23,54 +24,54 @@ function isActive($path, $current) {
     <aside id="sidebar" class="w-64 bg-gray-900 flex flex-col shadow-xl z-20 shrink-0">
         <div class="p-4 flex justify-between items-center border-b border-gray-800 text-white">
             <span class="font-bold text-lg menu-text truncate">CMS Admin</span>
-            <button onclick="document.getElementById('sidebar').classList.toggle('collapsed')" class="text-gray-400 hover:text-white">☰</button>
+            <button onclick="document.getElementById('sidebar').classList.toggle('collapsed')" class="text-gray-400 hover:text-white"><i class=i-menu></i></button>
         </div>
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
             <a href="/admin" class="block px-4 py-3 transition flex items-center gap-3 <?= $currentPath == '/admin' ? 'bg-gray-800 text-white border-l-4 border-blue-500' : 'hover:bg-gray-800 text-gray-300 border-l-4 border-transparent' ?>">
-                <span>📊</span> <span class="menu-text">Dashboard</span>
+                <span><i class=i-layout-dashboard></i></span> <span class="menu-text">Dashboard</span>
             </a>
             <a href="/admin/stats" class="block px-4 py-3 transition flex items-center gap-3 <?= $currentPath == '/admin/stats' ? 'bg-gray-800 text-white border-l-4 border-blue-500' : 'hover:bg-gray-800 text-gray-300 border-l-4 border-transparent' ?>">
-                <span>📈</span>
+                <span><i class=i-chart-line></i></span>
                 <span class="menu-text">Statystyki</span>
             </a>
             <a href="/admin/pages" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/pages', $currentPath) ?>">
-                <span>📄</span> <span class="menu-text">Strony</span>
+                <span><i class=i-file-text></i></span> <span class="menu-text">Strony</span>
             </a>
             <a href="/admin/forms" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/forms', $currentPath) ?>">
-                <span>📝</span> <span class="menu-text">Formularze</span>
+                <span><i class=i-file-pen></i></span> <span class="menu-text">Formularze</span>
             </a>
             <a href="/admin/galleries" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/galleries', $currentPath) ?>">
-                <span>🖼️</span> <span class="menu-text">Galerie</span>
+                <span><i class=i-image></i></span> <span class="menu-text">Galerie</span>
             </a>
             <a href="/admin/templates" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/templates', $currentPath) ?>">
-                <span>📐</span> <span class="menu-text">Szablony</span>
+                <span><i class=i-layout-template></i></span> <span class="menu-text">Szablony</span>
             </a>
             <a href="/admin/media" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/media', $currentPath) ?>">
-                <span>📂</span> <span class="menu-text">Pliki (Media)</span>
+                <span><i class=i-folder-open></i></span> <span class="menu-text">Pliki (Media)</span>
             </a>
             <a href="/admin/menu" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/menu', $currentPath) ?>">
-                <span>🍔</span> <span class="menu-text">Menu Strony</span>
+                <span><i class=i-menu></i></span> <span class="menu-text">Menu Strony</span>
             </a>
             <a href="/admin/posts" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/posts', $currentPath) ?>">
-                <span>📰</span> <span class="menu-text">Wpisy (Blog)</span>
+                <span><i class=i-newspaper></i></span> <span class="menu-text">Wpisy (Blog)</span>
             </a>
             <a href="/admin/users" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/users', $currentPath) ?>">
-                <span>👥</span> <span class="menu-text">Użytkownicy</span>
+                <span><i class=i-users></i></span> <span class="menu-text">Użytkownicy</span>
             </a>
             <a href="/admin/email" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/email', $currentPath) ?>">
-                <span>✉️</span> <span class="menu-text">Email</span>
+                <span><i class=i-mail></i></span> <span class="menu-text">Email</span>
             </a>
             <a href="/admin/settings" class="block px-4 py-3 transition flex items-center gap-3 <?= isActive('/admin/settings', $currentPath) ?>">
-                <span>⚙️</span> <span class="menu-text">Ustawienia</span>
+                <span><i class=i-settings></i></span> <span class="menu-text">Ustawienia</span>
             </a>
             <a href="/admin/help" class="block px-4 py-3 hover:bg-gray-800 text-green-400 transition flex items-center gap-3 mt-4 border-t border-gray-800">
-                <span>💡</span> <span class="menu-text font-bold">Pomoc</span>
+                <span><i class=i-lightbulb></i></span> <span class="menu-text font-bold">Pomoc</span>
             </a>
         </nav>
         <div class="p-4 border-t border-gray-800 text-sm">
             <div class="menu-text mb-2 text-gray-400">User: <b><?= htmlspecialchars(\CMS\Core\Session::get('user_name')) ?></b></div>
             <a href="/logout" class="text-red-400 hover:text-red-300 flex items-center gap-3">
-                <span>🚪</span> <span class="menu-text">Wyloguj</span>
+                <span><i class=i-log-out></i></span> <span class="menu-text">Wyloguj</span>
             </a>
         </div>
     </aside>
@@ -134,7 +135,7 @@ function isActive($path, $current) {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'bg-purple-100 hover:bg-purple-200 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition rounded-r';
-                btn.innerHTML = '📂';
+                btn.innerHTML = '<i class=i-folder-open></i>';
                 btn.title = 'Wybierz z menedżera mediów';
                 
                 btn.onclick = () => {

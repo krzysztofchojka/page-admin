@@ -29,7 +29,7 @@ $menuHtml = '';
 foreach ($menuTree as $item) {
     if (!empty($item['children'])) {
         $menuHtml .= '<div class="group relative inline-block menu-item-dropdown">';
-        $menuHtml .= '    <a href="'.htmlspecialchars($item['url']).'" class="menu-item-link inline-flex items-center gap-1 transition">'.htmlspecialchars($item['label']).' <span class="text-[10px]">▼</span></a>';
+        $menuHtml .= '    <a href="'.htmlspecialchars($item['url']).'" class="menu-item-link inline-flex items-center gap-1 transition">'.htmlspecialchars($item['label']).' <span class="text-[10px]"><i class=i-chevron-down></i></span></a>';
         $menuHtml .= '    <div class="absolute left-0 top-full mt-0 hidden group-hover:flex flex-col bg-white text-gray-800 min-w-[220px] shadow-xl rounded-b-lg border border-gray-200 z-[202] overflow-hidden">';
         foreach ($item['children'] as $child) {
             $menuHtml .= '        <a href="'.htmlspecialchars($child['url']).'" class="block px-5 py-3 hover:bg-gray-100 transition border-b border-gray-50 last:border-0">'.htmlspecialchars($child['label']).'</a>';
@@ -67,10 +67,10 @@ foreach ($menuTree as $item) {
         
         if (!empty($page['is_post']) && isset($page['id'])) {
             $editLink = '/admin/posts/edit?id=' . $page['id'];
-            $editLabel = '✏️ Edytuj ten wpis';
+            $editLabel = '<i class=i-pencil></i> Edytuj ten wpis';
         } else {
             $editLink = isset($page['id']) ? '/admin/pages/edit?id=' . $page['id'] : '/admin/pages';
-            $editLabel = '✏️ Edytuj tę stronę';
+            $editLabel = '<i class=i-pencil></i> Edytuj tę stronę';
         }
         
         $userName = htmlspecialchars(\CMS\Core\Session::get('user_name'));
@@ -82,7 +82,7 @@ foreach ($menuTree as $item) {
             </div>
             <div class="pa-adminbar-right">
                 <a href="'.$editLink.'" class="pa-adminbar-edit">'.$editLabel.'</a>
-                <a href="/admin" class="pa-adminbar-panel">⚙️ <span>Panel CMS</span></a>
+                <a href="/admin" class="pa-adminbar-panel"><i class=i-settings></i> <span>Panel CMS</span></a>
             </div>
         </div>';
     }

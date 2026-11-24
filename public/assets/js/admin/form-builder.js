@@ -61,15 +61,15 @@ function createFieldElement(data) {
     } else if (data.type === 'textarea') {
         visualHTML = `<div class="mt-3 w-full h-16 bg-gray-50 border border-gray-200 rounded pointer-events-none"></div>`;
     } else if (data.type === 'select') {
-        visualHTML = `<div class="mt-3 w-full h-9 bg-gray-50 border border-gray-200 rounded flex items-center justify-between px-3 text-gray-400 pointer-events-none"><span class="text-xs">Wybierz opcję...</span><span class="text-[10px]">▼</span></div>`;
+        visualHTML = `<div class="mt-3 w-full h-9 bg-gray-50 border border-gray-200 rounded flex items-center justify-between px-3 text-gray-400 pointer-events-none"><span class="text-xs">Wybierz opcję...</span><span class="text-[10px]"><i class=i-chevron-down></i></span></div>`;
     } else if (data.type === 'radio' || data.type === 'checkbox') {
-        const icon = data.type === 'radio' ? '○' : '□';
+        const icon = data.type === 'radio' ? '<i class=i-circle></i>' : '<i class=i-square></i>';
         visualHTML = `<div class="mt-3 flex flex-col gap-1.5 pointer-events-none text-gray-400 text-xs font-mono ml-1">
             <div class="flex items-center gap-2"><span class="text-base leading-none">${icon}</span> Przykładowa opcja 1</div>
             <div class="flex items-center gap-2"><span class="text-base leading-none">${icon}</span> Przykładowa opcja 2</div>
         </div>`;
     } else if (data.type === 'file') {
-        visualHTML = `<div class="mt-3 w-full h-12 border-2 border-dashed border-gray-300 bg-gray-50 rounded flex items-center justify-center text-gray-400 text-xs font-bold pointer-events-none">📎 Upuść plik tutaj</div>`;
+        visualHTML = `<div class="mt-3 w-full h-12 border-2 border-dashed border-gray-300 bg-gray-50 rounded flex items-center justify-center text-gray-400 text-xs font-bold pointer-events-none"><i class=i-paperclip></i> Upuść plik tutaj</div>`;
         extraSettings = `
         <div class="mt-2 mb-2">
             <label class="text-xs font-bold text-gray-500 block">Dozwolone rozszerzenia (po przecinku)</label>
@@ -89,7 +89,7 @@ function createFieldElement(data) {
             <textarea class="field-desc w-full border p-2 rounded text-sm mt-1 bg-gray-50" rows="2" placeholder="np. Paszport musi być ważny min. 6 miesięcy">${escAttr(data.desc)}</textarea>
         </div>`;
     } else if (data.type === 'account') {
-        visualHTML = `<div class="mt-3 w-full h-9 bg-gray-200 border border-gray-300 rounded flex items-center px-3 text-gray-500 text-xs pointer-events-none">👤 e-mail zalogowanego użytkownika (tylko odczyt)</div>`;
+        visualHTML = `<div class="mt-3 w-full h-9 bg-gray-200 border border-gray-300 rounded flex items-center px-3 text-gray-500 text-xs pointer-events-none"><i class=i-user></i> e-mail zalogowanego użytkownika (tylko odczyt)</div>`;
     } else if (data.type === 'date') {
         visualHTML = `<div class="mt-3 w-full h-9 bg-gray-50 border border-gray-200 rounded pointer-events-none"></div>`;
     }
@@ -106,7 +106,7 @@ function createFieldElement(data) {
         extraSettings = `
             <div class="mt-3">
                 <textarea class="field-options hidden">${data.options || ''}</textarea>
-                <button type="button" onclick="openOptionsEditor(this)" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold py-2 rounded shadow-sm transition">⚙️ Edytor opcji wyboru i limitów</button>
+                <button type="button" onclick="openOptionsEditor(this)" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold py-2 rounded shadow-sm transition"><i class=i-settings></i> Edytor opcji wyboru i limitów</button>
             </div>
             ${data.type !== 'select' ? `<label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer mt-2"><input type="checkbox" class="field-inline" ${data.inline ? 'checked' : ''}> Opcje w jednej linii (np. Tak / Nie)</label>` : ''}
         ` + extraSettings;
@@ -129,21 +129,21 @@ function createFieldElement(data) {
             </label>
             <label class="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer" title="Działa, gdy w ustawieniach formularza włączone jest 'Uzupełnianie danych'">
                 <input type="checkbox" class="field-always-editable rounded border-gray-300 text-blue-600" ${data.alwaysEditable ? 'checked' : ''}>
-                🔓 Zawsze edytowalne (nie blokuj po wysłaniu)
+                <i class=i-lock-open></i> Zawsze edytowalne (nie blokuj po wysłaniu)
             </label>
         </div>
     ` : '';
 
     div.innerHTML = `
         <div class="flex flex-wrap justify-between items-center gap-1 mb-3">
-            <span class="text-[10px] font-bold uppercase text-blue-600 bg-blue-50 px-2 py-1 rounded cursor-move drag-handle">✥ ${data.type}</span>
+            <span class="text-[10px] font-bold uppercase text-blue-600 bg-blue-50 px-2 py-1 rounded cursor-move drag-handle"><i class=i-grip-vertical></i> ${data.type}</span>
             <div class="flex flex-wrap gap-1">
                 <div class="width-btns flex bg-gray-100 p-0.5 rounded border border-gray-200">
                     ${WIDTHS.map(([w, l]) => `<button type="button" data-w="${w}" onclick="setWidth(this.closest('.field-card'), '${w}')" class="px-1.5 py-0.5 text-[10px] font-bold rounded hover:bg-white hover:shadow-sm ${(data.width || 'full') === w ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}">${l}</button>`).join('')}
                 </div>
                 <div class="flex gap-1">
-                    <button type="button" onclick="this.closest('.field-card').querySelector('.settings-panel').classList.toggle('hidden')" class="p-1.5 text-xs bg-white hover:bg-gray-100 rounded border shadow-sm" title="Ustawienia zaawansowane">⚙️</button>
-                    <button type="button" onclick="this.closest('.field-card').remove()" class="p-1.5 text-xs text-red-500 bg-white hover:bg-red-50 rounded border shadow-sm" title="Usuń pole">✕</button>
+                    <button type="button" onclick="this.closest('.field-card').querySelector('.settings-panel').classList.toggle('hidden')" class="p-1.5 text-xs bg-white hover:bg-gray-100 rounded border shadow-sm" title="Ustawienia zaawansowane"><i class=i-settings></i></button>
+                    <button type="button" onclick="this.closest('.field-card').remove()" class="p-1.5 text-xs text-red-500 bg-white hover:bg-red-50 rounded border shadow-sm" title="Usuń pole"><i class=i-x></i></button>
                 </div>
             </div>
         </div>
@@ -216,7 +216,7 @@ function addOptionRow(label = '', limit = '') {
     tr.innerHTML = `
         <td class="py-1.5 pr-2"><input type="text" class="opt-label w-full border border-gray-300 focus:border-blue-500 rounded p-1.5 text-sm outline-none" placeholder="Nazwa wyświetlana" value="${label}"></td>
         <td class="py-1.5 pr-2"><input type="number" class="opt-limit w-full border border-gray-300 focus:border-blue-500 rounded p-1.5 text-sm outline-none" placeholder="Bez limitu" value="${limit}"></td>
-        <td class="py-1.5 text-center"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 font-bold w-6 h-6 rounded hover:bg-red-50 transition">✕</button></td>
+        <td class="py-1.5 text-center"><button type="button" onclick="this.closest('tr').remove()" class="text-red-400 hover:text-red-600 font-bold w-6 h-6 rounded hover:bg-red-50 transition"><i class=i-x></i></button></td>
     `;
     document.getElementById('options-modal-list').appendChild(tr);
 }

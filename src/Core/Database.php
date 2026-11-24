@@ -52,7 +52,7 @@ class Database {
             echo "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Przerwa Techniczna</title></head>";
             echo "<body style='font-family:sans-serif;background:#f3f4f6;color:#374151;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;'>";
             echo "<div style='background:#fff;padding:40px;border-radius:10px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);text-align:center;'>";
-            echo "<h1 style='font-size:24px;color:#111827;margin-bottom:10px;'>🛠️ Przerwa Techniczna</h1>";
+            echo "<h1 style='font-size:24px;color:#111827;margin-bottom:10px;'>Przerwa Techniczna</h1>";
             echo "<p style='margin:0;'>Pracujemy nad optymalizacją systemu. Spróbuj odświeżyć stronę za kilka minut.</p>";
             echo "</div></body></html>";
             exit;

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Register</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
@@ -28,7 +29,7 @@
                 <label class="block text-sm font-bold mb-1">Password</label>
                 <div class="relative">
                     <input type="password" id="reg_pass" name="password" required class="w-full border p-2 pr-10 rounded">
-                    <button type="button" onclick="toggleVisibility('reg_pass')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                    <button type="button" onclick="toggleVisibility('reg_pass')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
                 </div>
             </div>
             
@@ -36,7 +37,7 @@
                 <label class="block text-sm font-bold mb-1">Confirm Password</label>
                 <div class="relative">
                     <input type="password" id="reg_pass2" name="confirm_password" required class="w-full border p-2 pr-10 rounded">
-                    <button type="button" onclick="toggleVisibility('reg_pass2')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                    <button type="button" onclick="toggleVisibility('reg_pass2')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
                 </div>
             </div>
             <button class="bg-green-600 text-white font-bold w-full py-2 rounded hover:bg-green-700">Register</button>

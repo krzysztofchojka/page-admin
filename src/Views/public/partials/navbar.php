@@ -24,7 +24,7 @@ if (!function_exists('renderNavMenuDesktop')) {
             if (!empty($item['children'])) {
                 echo '<div class="relative group">';
                 echo '  <a href="'.htmlspecialchars($item['url']).'" class="flex items-center gap-1 hover:text-gray-300 font-medium py-2 transition">';
-                echo        htmlspecialchars($item['label']) . ' <span class="text-[10px]">▼</span>';
+                echo        htmlspecialchars($item['label']) . ' <span class="text-[10px]"><i class=i-chevron-down></i></span>';
                 echo '  </a>';
                 echo '  <div class="absolute left-0 top-full mt-0 hidden group-hover:flex flex-col bg-gray-800 text-white min-w-[220px] shadow-xl rounded-b-lg border border-gray-700 z-[202] overflow-hidden">';
                 foreach ($item['children'] as $child) {
@@ -46,7 +46,7 @@ if (!function_exists('renderNavMenuMobile')) {
             if (!empty($item['children'])) {
                 echo '<div class="block">';
                 echo '  <a href="'.htmlspecialchars($item['url']).'" class="block hover:text-gray-300 py-3 border-b border-gray-800 font-bold text-gray-200">';
-                echo        htmlspecialchars($item['label']) . ' <span class="text-[10px] ml-1 text-gray-500">▼</span>';
+                echo        htmlspecialchars($item['label']) . ' <span class="text-[10px] ml-1 text-gray-500"><i class=i-chevron-down></i></span>';
                 echo '  </a>';
                 echo '  <div class="pl-4 border-l border-gray-700 bg-gray-800/50">';
                 foreach ($item['children'] as $child) {
@@ -74,7 +74,7 @@ if (!function_exists('renderNavMenuMobile')) {
 
         <?php if (!empty($menuTree)): ?>
             <button id="burger-btn" class="md:hidden text-3xl px-2 focus:outline-none hover:text-gray-300">
-                ☰
+                <i class=i-menu></i>
             </button>
         <?php endif; ?>
 

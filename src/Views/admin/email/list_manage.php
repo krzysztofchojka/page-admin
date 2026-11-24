@@ -1,7 +1,7 @@
 <div class="max-w-4xl mx-auto">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Lista: <?= htmlspecialchars($list['name']) ?></h1>
-        <a href="/admin/email/lists" class="text-gray-500 hover:text-black font-bold">← Wróć do list</a>
+        <a href="/admin/email/lists" class="text-gray-500 hover:text-black font-bold"><i class=i-arrow-left></i> Wróć do list</a>
     </div>
 
     <?php $flash = \CMS\Core\Session::getFlash(); if ($flash): ?>

@@ -6,11 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strona Zabezpieczona</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 md:p-10 rounded-2xl shadow-xl max-w-sm w-full border-t-4 border-blue-600">
         <div class="text-center mb-8">
-            <div class="text-5xl mb-3">🚧</div>
+            <div class="text-5xl mb-3"><i class=i-construction-thin></i></div>
             <h1 class="text-2xl font-extrabold text-gray-800 tracking-tight">Strona Zabezpieczona</h1>
             <p class="text-sm text-gray-500 mt-2 leading-relaxed">Podaj hasło globalne, aby uzyskać dostęp do zawartości.</p>
         </div>

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Page Builder</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
@@ -95,7 +96,7 @@
     
     <div class="bg-white shadow p-4 flex justify-between items-center z-50 shrink-0">
         <div class="flex items-center gap-4">
-            <a href="/admin/pages" class="text-gray-500 hover:text-black font-bold">← Back</a>
+            <a href="/admin/pages" class="text-gray-500 hover:text-black font-bold"><i class=i-arrow-left></i> Back</a>
             <input type="text" id="pageTitle" value="<?= htmlspecialchars($page['title']) ?>" class="text-2xl font-bold border-b border-transparent hover:border-gray-300 focus:outline-none px-2 text-gray-800" placeholder="Page Title" />
             <input type="text" id="pageSlug" value="<?= htmlspecialchars($page['slug'] ?? '') ?>" class="bg-gray-100 border-none text-sm px-3 py-1.5 rounded-full w-48 text-gray-500" placeholder="/slug-strony" />
             
@@ -109,16 +110,16 @@
     <?php endif; ?>
     
     <select id="pageRole" class="text-sm border border-gray-300 rounded-lg px-3 py-2 text-gray-700 font-bold bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
-        <option value="standard" <?= $currentRole == 'standard' ? 'selected' : '' ?>>📄 Zwykła strona</option>
-        <option value="home_page_id" <?= $currentRole == 'home_page_id' ? 'selected' : '' ?>>🏠 Strona Główna</option>
-        <option value="footer_page_id" <?= $currentRole == 'footer_page_id' ? 'selected' : '' ?>>🦶 Globalna Stopka</option>
-        <option value="login_page_id" <?= $currentRole == 'login_page_id' ? 'selected' : '' ?>>🔐 Logowanie</option>
-        <option value="register_page_id" <?= $currentRole == 'register_page_id' ? 'selected' : '' ?>>📝 Rejestracja</option>
-        <option value="change_password_page_id" <?= $currentRole == 'change_password_page_id' ? 'selected' : '' ?>>🔑 Zmiana Hasła</option>
-        <option value="lockdown_page_id" <?= $currentRole == 'lockdown_page_id' ? 'selected' : '' ?>>🚧 Ekran Lockdown</option>
+        <option value="standard" <?= $currentRole == 'standard' ? 'selected' : '' ?>>Zwykła strona</option>
+        <option value="home_page_id" <?= $currentRole == 'home_page_id' ? 'selected' : '' ?>>Strona Główna</option>
+        <option value="footer_page_id" <?= $currentRole == 'footer_page_id' ? 'selected' : '' ?>>Globalna Stopka</option>
+        <option value="login_page_id" <?= $currentRole == 'login_page_id' ? 'selected' : '' ?>>Logowanie</option>
+        <option value="register_page_id" <?= $currentRole == 'register_page_id' ? 'selected' : '' ?>>Rejestracja</option>
+        <option value="change_password_page_id" <?= $currentRole == 'change_password_page_id' ? 'selected' : '' ?>>Zmiana Hasła</option>
+        <option value="lockdown_page_id" <?= $currentRole == 'lockdown_page_id' ? 'selected' : '' ?>>Ekran Lockdown</option>
     </select>
 
-    <button type="button" onclick="openResponsivePreview()" class="bg-white border border-gray-300 hover:border-blue-500 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm font-bold transition" title="Zapisz i zobacz stronę na telefonie / tablecie / komputerze">📱 Podgląd</button>
+    <button type="button" onclick="openResponsivePreview()" class="bg-white border border-gray-300 hover:border-blue-500 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm font-bold transition" title="Zapisz i zobacz stronę na telefonie / tablecie / komputerze"><i class=i-smartphone></i> Podgląd</button>
     <button onclick="savePage()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg shadow font-bold transition">Zapisz stronę</button>
 </div>
     </div>
@@ -127,7 +128,7 @@
         <div class="w-64 bg-gray-50 border-r shadow-lg flex flex-col shrink-0 z-40 relative">
             <div class="p-4 bg-white border-b font-bold text-gray-700 uppercase tracking-wide text-sm flex justify-between items-center shadow-sm">
                 <span>Nawigator</span>
-                <span class="text-lg">🗺️</span>
+                <span class="text-lg"><i class=i-list-tree></i></span>
             </div>
             <div class="p-3 bg-blue-50 border-b text-xs text-blue-800 font-medium">
                 Przeciągaj elementy by zmienić ich kolejność.
@@ -154,7 +155,7 @@
                         if ($zoneId === 'post_header') {
                             return '<div class="min-h-[120px] border-2 border-dashed border-gray-300 bg-gray-50 p-4 rounded-lg relative flex flex-col items-center justify-center select-none" data-zone-uid="'.$zoneId.'">
                                 <span class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">STREFA SYSTEMOWA: '.$zoneId.'</span>
-                                <span class="text-2xl mb-1 opacity-50">📰</span>
+                                <span class="text-2xl mb-1 opacity-50"><i class=i-newspaper></i></span>
                                 <p class="text-gray-500 font-bold text-xs text-center uppercase tracking-wide">
                                     Tu pojawi się automatyczny nagłówek wpisu<br>
                                     <span class="font-normal text-[10px] normal-case">(Tytuł, kategoria, data. Upuszczanie bloków jest zablokowane)</span>
@@ -178,52 +179,52 @@
         <div class="w-80 bg-white border-l shadow-lg flex flex-col shrink-0 z-40">
             <div class="p-4 bg-gray-50 border-b font-bold text-gray-700 uppercase tracking-wide text-sm flex justify-between items-center">
                 <span>Dostępne Bloki</span>
-                <span class="text-xl">🧩</span>
+                <span class="text-xl"><i class=i-puzzle></i></span>
             </div>
             <div id="block-sidebar" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3 content-start">
     
     <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-2 mb-1 border-b pb-1">Podstawowe</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="text"><span class="text-lg text-blue-500">T</span>Tekst</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="image"><span class="text-lg text-green-500">🖼</span>Obrazek</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="video"><span class="text-lg text-red-500">▶️</span>Wideo</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="button"><span class="text-lg text-indigo-500">🔘</span>Przycisk</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="divider"><span class="text-lg text-gray-400">➖</span>Odstęp</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="quote"><span class="text-lg text-yellow-500">❝</span>Cytat</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="text"><span class="text-lg text-blue-500"><i class=i-type></i></span>Tekst</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="image"><span class="text-lg text-green-500"><i class=i-image></i></span>Obrazek</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="video"><span class="text-lg text-red-500"><i class=i-video></i></span>Wideo</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="button"><span class="text-lg text-indigo-500"><i class=i-mouse-pointer-click></i></span>Przycisk</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="divider"><span class="text-lg text-gray-400"><i class=i-separator-horizontal></i></span>Odstęp</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="quote"><span class="text-lg text-yellow-500"><i class=i-quote></i></span>Cytat</div>
 
-    <div class="sidebar-block border bg-white hover:border-slate-500 hover:bg-slate-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="heading"><span class="text-lg text-slate-600">H</span>Nagłówek</div>
+    <div class="sidebar-block border bg-white hover:border-slate-500 hover:bg-slate-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="heading"><span class="text-lg text-slate-600"><i class=i-heading></i></span>Nagłówek</div>
 
     <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Układ</div>
-    <div class="sidebar-block border bg-white hover:border-cyan-500 hover:bg-cyan-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="section"><span class="text-lg text-cyan-600">▭</span>Sekcja / Tło</div>
-    <div class="sidebar-block border bg-white hover:border-violet-500 hover:bg-violet-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="grid"><span class="text-lg text-violet-600">▦</span>Siatka (N kolumn)</div>
-    <div class="sidebar-block border bg-white hover:border-sky-500 hover:bg-sky-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="switcher"><span class="text-lg text-sky-600">⇆</span>Przełącznik grup</div>
-    <div class="sidebar-block border bg-white hover:border-indigo-500 hover:bg-indigo-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="columns_2"><span class="text-lg text-indigo-400">◫</span>2 Kolumny</div>
-    <div class="sidebar-block border bg-white hover:border-emerald-500 hover:bg-emerald-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="columns_3"><span class="text-lg text-emerald-400">☰</span>3 Kolumny</div>
-    <div class="sidebar-block border bg-white hover:border-orange-500 hover:bg-orange-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="banner"><span class="text-lg text-orange-400">🏔</span>Baner (Hero)</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="accordion"><span class="text-lg text-purple-500">⇕</span>Akordeon</div>
+    <div class="sidebar-block border bg-white hover:border-cyan-500 hover:bg-cyan-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="section"><span class="text-lg text-cyan-600"><i class=i-rectangle-horizontal></i></span>Sekcja / Tło</div>
+    <div class="sidebar-block border bg-white hover:border-violet-500 hover:bg-violet-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="grid"><span class="text-lg text-violet-600"><i class=i-layout-grid></i></span>Siatka (N kolumn)</div>
+    <div class="sidebar-block border bg-white hover:border-sky-500 hover:bg-sky-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="switcher"><span class="text-lg text-sky-600"><i class=i-arrow-left-right></i></span>Przełącznik grup</div>
+    <div class="sidebar-block border bg-white hover:border-indigo-500 hover:bg-indigo-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="columns_2"><span class="text-lg text-indigo-400"><i class=i-columns-2></i></span>2 Kolumny</div>
+    <div class="sidebar-block border bg-white hover:border-emerald-500 hover:bg-emerald-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="columns_3"><span class="text-lg text-emerald-400"><i class=i-columns-3></i></span>3 Kolumny</div>
+    <div class="sidebar-block border bg-white hover:border-orange-500 hover:bg-orange-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="banner"><span class="text-lg text-orange-400"><i class=i-panel-top></i></span>Baner (Hero)</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="accordion"><span class="text-lg text-purple-500"><i class=i-list-collapse></i></span>Akordeon</div>
 
     <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Złożone Treści</div>
-    <div class="sidebar-block border bg-white hover:border-pink-500 hover:bg-pink-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="gallery"><span class="text-lg text-pink-500">📷</span>Galeria</div>
-    <div class="sidebar-block border bg-white hover:border-purple-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="posts_grid"><span class="text-lg text-purple-500">📰</span>Posty / Blog</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="carousel"><span class="text-lg text-blue-400">🎠</span>Karuzela</div>
-    <div class="sidebar-block border bg-white hover:border-orange-500 hover:bg-orange-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="image_cards"><span class="text-lg text-orange-500">🗂</span>Siatka Kart</div>
-    <div class="sidebar-block border bg-white hover:border-teal-500 hover:bg-teal-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="form"><span class="text-lg text-teal-500">📝</span>Formularz</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="table"><span class="text-lg text-blue-500">🗄️</span>Tabela</div>
-    <div class="sidebar-block border bg-white hover:border-emerald-500 hover:bg-emerald-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="schedule"><span class="text-lg text-emerald-600">🕒</span>Harmonogram</div>
-    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="ticker"><span class="text-lg text-blue-600">📣</span>Pasek NEWS</div>
+    <div class="sidebar-block border bg-white hover:border-pink-500 hover:bg-pink-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="gallery"><span class="text-lg text-pink-500"><i class=i-images></i></span>Galeria</div>
+    <div class="sidebar-block border bg-white hover:border-purple-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="posts_grid"><span class="text-lg text-purple-500"><i class=i-newspaper></i></span>Posty / Blog</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="carousel"><span class="text-lg text-blue-400"><i class=i-gallery-horizontal-end></i></span>Karuzela</div>
+    <div class="sidebar-block border bg-white hover:border-orange-500 hover:bg-orange-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="image_cards"><span class="text-lg text-orange-500"><i class=i-layout-grid></i></span>Siatka Kart</div>
+    <div class="sidebar-block border bg-white hover:border-teal-500 hover:bg-teal-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="form"><span class="text-lg text-teal-500"><i class=i-file-pen></i></span>Formularz</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="table"><span class="text-lg text-blue-500"><i class=i-table></i></span>Tabela</div>
+    <div class="sidebar-block border bg-white hover:border-emerald-500 hover:bg-emerald-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="schedule"><span class="text-lg text-emerald-600"><i class=i-calendar-clock></i></span>Harmonogram</div>
+    <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="ticker"><span class="text-lg text-blue-600"><i class=i-megaphone></i></span>Pasek NEWS</div>
 
     <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Dodatki</div>
-    <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="map"><span class="text-lg text-red-500">📍</span>Mapa</div>
-    <div class="sidebar-block border bg-white hover:border-purple-500 hover:bg-purple-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="countdown"><span class="text-lg text-purple-500">⏳</span>Odliczanie</div>
-    <div class="sidebar-block border bg-white hover:border-sky-500 hover:bg-sky-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="flight"><span class="text-lg text-sky-500">✈️</span>Loty</div>
-    <div class="sidebar-block border bg-white hover:border-gray-800 hover:bg-gray-100 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="raw_html"><span class="text-lg text-gray-800">&lt;/&gt;</span>HTML</div>
-    <div class="sidebar-block border bg-white hover:border-gray-500 hover:bg-gray-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="translate"><span class="text-lg">🌐</span>Tłumacz</div>
+    <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="map"><span class="text-lg text-red-500"><i class=i-map-pin></i></span>Mapa</div>
+    <div class="sidebar-block border bg-white hover:border-purple-500 hover:bg-purple-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="countdown"><span class="text-lg text-purple-500"><i class=i-loader-circle></i></span>Odliczanie</div>
+    <div class="sidebar-block border bg-white hover:border-sky-500 hover:bg-sky-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="flight"><span class="text-lg text-sky-500"><i class=i-plane></i></span>Loty</div>
+    <div class="sidebar-block border bg-white hover:border-gray-800 hover:bg-gray-100 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="raw_html"><span class="text-lg text-gray-800"><i class=i-code-xml></i></span>HTML</div>
+    <div class="sidebar-block border bg-white hover:border-gray-500 hover:bg-gray-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="translate"><span class="text-lg"><i class=i-languages></i></span>Tłumacz</div>
 
     <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Systemowe</div>
-    <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="system_login"><span class="text-lg text-red-500">🔐</span>Logowanie</div>
-    <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="system_register"><span class="text-lg text-red-500">📝</span>Rejestracja</div>
+    <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="system_login"><span class="text-lg text-red-500"><i class=i-lock-keyhole></i></span>Logowanie</div>
+    <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="system_register"><span class="text-lg text-red-500"><i class=i-file-pen></i></span>Rejestracja</div>
 
-    <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="system_change_password"><span class="text-lg text-red-500">🔑</span>Zmień Hasło</div>
-<div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="system_lockdown"><span class="text-lg text-red-500">🚧</span>Lockdown</div>
+    <div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="system_change_password"><span class="text-lg text-red-500"><i class=i-key-round></i></span>Zmień Hasło</div>
+<div class="sidebar-block border bg-white hover:border-red-500 hover:bg-red-50 p-3 rounded shadow-sm cursor-grab text-center text-sm font-bold transition flex flex-col items-center gap-1" data-type="system_lockdown"><span class="text-lg text-red-500"><i class=i-construction></i></span>Lockdown</div>
 </div>
             <div class="p-4 bg-blue-50 border-t text-xs text-blue-800 font-bold text-center">
                 Wybierz blok, przytrzymaj lewy przycisk myszy i przeciągnij.
@@ -235,13 +236,13 @@
         <div class="flex items-center justify-between gap-3 p-3 bg-gray-900 text-white shrink-0">
             <div class="font-bold text-sm">Podgląd responsywny</div>
             <div class="flex gap-2" id="previewDevices">
-                <button type="button" data-w="390" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold">📱 Telefon</button>
-                <button type="button" data-w="820" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold">📟 Tablet</button>
-                <button type="button" data-w="1366" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold">🖥 Komputer</button>
+                <button type="button" data-w="390" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold"><i class=i-smartphone></i> Telefon</button>
+                <button type="button" data-w="820" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold"><i class=i-tablet></i> Tablet</button>
+                <button type="button" data-w="1366" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold"><i class=i-monitor></i> Komputer</button>
             </div>
             <div class="flex gap-2">
-                <button type="button" onclick="document.getElementById('previewFrame').contentWindow.location.reload()" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold">↻ Odśwież</button>
-                <button type="button" onclick="closeResponsivePreview()" class="px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-sm font-bold">✕ Zamknij</button>
+                <button type="button" onclick="document.getElementById('previewFrame').contentWindow.location.reload()" class="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-sm font-bold"><i class=i-rotate-cw></i> Odśwież</button>
+                <button type="button" onclick="closeResponsivePreview()" class="px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-sm font-bold"><i class=i-x></i> Zamknij</button>
             </div>
         </div>
         <div class="flex-1 overflow-auto flex justify-center p-4">

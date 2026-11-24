@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Menu Manager</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         .sub-menu-list {
@@ -59,7 +60,7 @@
                             echo '          <span class="font-bold block item-label text-gray-800">'.htmlspecialchars($item['label']).'</span>';
                             echo '          <span class="text-xs text-gray-400 item-url">'.htmlspecialchars($item['url']).'</span>';
                             echo '      </div>';
-                            echo '      <button onclick="this.closest(\'.menu-item\').remove()" class="text-red-400 hover:text-red-600 font-bold p-2 bg-red-50 hover:bg-red-100 rounded transition">✕</button>';
+                            echo '      <button onclick="this.closest(\'.menu-item\').remove()" class="text-red-400 hover:text-red-600 font-bold p-2 bg-red-50 hover:bg-red-100 rounded transition"><i class=i-x></i></button>';
                             echo '  </div>';
                             echo '  <div class="sub-menu-list space-y-2">';
                             if (!empty($item['children'])) {
@@ -74,7 +75,7 @@
                 ?>
             </div>
             
-            <button onclick="saveMenu()" class="fixed bottom-10 right-10 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl shadow-2xl font-bold text-lg transition z-50">💾 Zapisz Zmiany</button>
+            <button onclick="saveMenu()" class="fixed bottom-10 right-10 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl shadow-2xl font-bold text-lg transition z-50"><i class=i-save></i> Zapisz Zmiany</button>
         </div>
     </div>
 
@@ -117,7 +118,7 @@
                         <span class="font-bold block item-label text-gray-800">${label}</span>
                         <span class="text-xs text-gray-400 item-url">${url}</span>
                     </div>
-                    <button onclick="this.closest('.menu-item').remove()" class="text-red-400 hover:text-red-600 font-bold p-2 bg-red-50 hover:bg-red-100 rounded transition">✕</button>
+                    <button onclick="this.closest('.menu-item').remove()" class="text-red-400 hover:text-red-600 font-bold p-2 bg-red-50 hover:bg-red-100 rounded transition"><i class=i-x></i></button>
                 </div>
                 <div class="sub-menu-list space-y-2"></div>
             `;

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Edycja Galerii</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 <body class="bg-gray-100 flex h-screen overflow-hidden">
@@ -11,7 +12,7 @@
     <div class="w-80 bg-white border-r shadow-lg flex flex-col shrink-0 z-40 overflow-y-auto">
         <div class="p-4 bg-gray-50 border-b font-bold text-gray-700 uppercase tracking-wide text-sm flex justify-between items-center">
             <span>Konfiguracja</span>
-            <span class="text-xl">⚙️</span>
+            <span class="text-xl"><i class=i-settings></i></span>
         </div>
         
         <div class="p-5 space-y-5">
@@ -60,18 +61,18 @@
     <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
         <div class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
             <div>
-                <a href="/admin/galleries" class="text-gray-500 hover:text-black font-bold mr-4">← Wróć</a>
+                <a href="/admin/galleries" class="text-gray-500 hover:text-black font-bold mr-4"><i class=i-arrow-left></i> Wróć</a>
                 <span class="text-xl font-bold text-gray-800">Zdjęcia w galerii</span>
             </div>
             <div class="flex gap-2">
                 <button onclick="openMediaPicker()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-200 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
-                    📂 Wybierz z Media
+                    <i class=i-folder-open></i> Wybierz z Media
                 </button>
                 <button onclick="document.getElementById('fileInput').click()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2">
-                    ☁️ Wgraj Nowe
+                    <i class=i-cloud-upload></i> Wgraj Nowe
                 </button>
                 <button id="btn-save" onclick="saveGallery()" class="ml-4 bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-lg shadow font-bold transition">
-                    💾 Zapisz Galerie
+                    <i class=i-save></i> Zapisz Galerie
                 </button>
             </div>
             <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
@@ -176,7 +177,7 @@ window.addEventListener('message', function(e) {
         div.className = "relative group aspect-square bg-gray-200 rounded-xl overflow-hidden cursor-move shadow-sm border border-gray-200";
         div.innerHTML = `
             <img src="${url}" class="w-full h-full object-cover">
-            <button onclick="this.closest('div').remove()" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition shadow font-bold text-sm">✕</button>
+            <button onclick="this.closest('div').remove()" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition shadow font-bold text-sm"><i class=i-x></i></button>
             <input type="hidden" class="img-url" value="${url}">
         `;
         grid.appendChild(div);
@@ -187,7 +188,7 @@ window.addEventListener('message', function(e) {
         const originalText = btn.innerHTML;
         
         // Zabezpieczenie przed wielokrotnym kliknięciem
-        btn.innerHTML = '⏳ Zapisywanie...';
+        btn.innerHTML = '<i class=i-loader-circle></i> Zapisywanie...';
         btn.disabled = true;
         btn.classList.add('opacity-75');
 
@@ -212,7 +213,7 @@ window.addEventListener('message', function(e) {
             })
         }).then(() => {
             // Efekt sukcesu
-            btn.innerHTML = '✅ Zapisano!';
+            btn.innerHTML = '<i class=i-circle-check></i> Zapisano!';
             btn.classList.remove('bg-green-600', 'hover:bg-green-700', 'opacity-75');
             btn.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
             

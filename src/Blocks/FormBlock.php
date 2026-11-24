@@ -65,7 +65,7 @@ class FormBlock implements BlockInterface {
         $html .= '<h3 class="' . $ui['title'] . '">' . htmlspecialchars($form['title']) . '</h3>';
 
         if (!empty($formSettings['reqLogin']) && !$userId) {
-            $html .= '<div class="bg-yellow-50 p-6 rounded-xl text-yellow-800 border border-yellow-200 flex items-center gap-4"><span class="text-3xl">🔐</span><div>Zaloguj się, aby wypełnić formularz.<br><a href="/login" class="font-bold underline text-yellow-900 mt-1 inline-block">Zaloguj się</a></div></div></div>';
+            $html .= '<div class="bg-yellow-50 p-6 rounded-xl text-yellow-800 border border-yellow-200 flex items-center gap-4"><span class="text-3xl"><i class=i-lock-keyhole-thin></i></span><div>Zaloguj się, aby wypełnić formularz.<br><a href="/login" class="font-bold underline text-yellow-900 mt-1 inline-block">Zaloguj się</a></div></div></div>';
             return $html;
         }
 
@@ -88,7 +88,7 @@ class FormBlock implements BlockInterface {
 
         $flash = \CMS\Core\Session::getFlash();
         if ($flash && isset($_GET['err_form']) && $_GET['err_form'] == $fid) {
-            $html .= '<div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-5 py-4 rounded-r-lg mb-6 text-sm font-bold shadow-sm">⚠️ ' . htmlspecialchars($flash['msg']) . '</div>';
+            $html .= '<div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-5 py-4 rounded-r-lg mb-6 text-sm font-bold shadow-sm"><i class=i-triangle-alert></i> ' . htmlspecialchars($flash['msg']) . '</div>';
         }
 
         $vault = new \CMS\Core\Vault();
@@ -114,15 +114,15 @@ class FormBlock implements BlockInterface {
                     if ($empty) $missing++;
                 }
             }
-            $html .= '<div class="pa-form-thanks bg-green-50 border border-green-200 text-green-800 px-6 py-6 rounded-xl mb-4 text-center"><span class="text-4xl mb-3 block">🎉</span><strong class="text-xl block mb-1">Dziękujemy!</strong><p class="text-green-700">Twój formularz został zapisany.</p>';
+            $html .= '<div class="pa-form-thanks bg-green-50 border border-green-200 text-green-800 px-6 py-6 rounded-xl mb-4 text-center"><span class="text-4xl mb-3 block"><i class=i-party-popper-thin></i></span><strong class="text-xl block mb-1">Dziękujemy!</strong><p class="text-green-700">Twój formularz został zapisany.</p>';
             if ($missing > 0) $html .= '<p class="text-green-900 font-bold mt-2">Do uzupełnienia zostało pól: ' . $missing . '</p>';
             $html .= '</div><div class="flex flex-wrap justify-center gap-3 mt-4">';
             if ($canEdit && $existingSubmission) {
-                $label = $lockFilled ? ($missing > 0 ? '✏️ Uzupełnij brakujące dane' : '👁 Zobacz przesłane dane') : '✏️ Edytuj';
+                $label = $lockFilled ? ($missing > 0 ? '<i class=i-pencil></i> Uzupełnij brakujące dane' : '<i class=i-eye></i> Zobacz przesłane dane') : '<i class=i-pencil></i> Edytuj';
                 $html .= '<a href="?edit=' . $fid . '#form-container-' . $fid . '" class="bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-700 font-bold py-3 px-6 rounded-xl shadow-sm transition-all">' . $label . '</a>';
             }
             if (empty($formSettings['fillOnce']) && !$lockFilled) {
-                $html .= '<a href="?#form-container-' . $fid . '" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all">🔄 Wyślij ponownie</a>';
+                $html .= '<a href="?#form-container-' . $fid . '" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all"><i class=i-refresh-cw></i> Wyślij ponownie</a>';
             }
             $html .= '</div></div>';
             return $html;
@@ -151,7 +151,7 @@ class FormBlock implements BlockInterface {
         $inputClasses = $ui['input'];
 
         if ($lockActive) {
-            $html .= '<div class="pa-form-lockinfo">🔒 Pola, które już przesłałeś, są zablokowane. Możesz uzupełnić tylko brakujące dane. Aby zmienić przesłane informacje, skontaktuj się z organizatorem.</div>';
+            $html .= '<div class="pa-form-lockinfo"><i class=i-lock></i> Pola, które już przesłałeś, są zablokowane. Możesz uzupełnić tylko brakujące dane. Aby zmienić przesłane informacje, skontaktuj się z organizatorem.</div>';
         }
 
         $html .= '<form action="/submit-form" method="POST" enctype="multipart/form-data" class="' . $ui['grid'] . '">';
@@ -216,7 +216,7 @@ class FormBlock implements BlockInterface {
             if ($locked) { $lockedCount++; $req = false; } else { $editableCount++; }
             $dis = $locked ? ' disabled' : '';
             $lockCls = $locked ? ' pa-locked' : '';
-            $lockIcon = $locked ? " <span class='pa-lock' title='Dane przesłane – pole zablokowane'>🔒</span>" : '';
+            $lockIcon = $locked ? " <span class='pa-lock' title='Dane przesłane – pole zablokowane'><i class=i-lock></i></span>" : '';
 
             $reqAttr = $req ? 'required' : '';
             $reqStar = $req ? '<span class="text-red-500 ml-1">*</span>' : '';
@@ -231,7 +231,7 @@ class FormBlock implements BlockInterface {
                     foreach ($eFiles as $eFile) {
                         if (empty($eFile['original_name']) || empty($eFile['storage_name'])) continue;
                         $dlUrl = "/form-download?file=" . urlencode($eFile['storage_name']) . "&orig=" . urlencode($eFile['original_name']);
-                        $html .= "<a href='{$dlUrl}' target='_blank' class='pa-file-chip'>📎 " . htmlspecialchars($eFile['original_name']) . "</a>";
+                        $html .= "<a href='{$dlUrl}' target='_blank' class='pa-file-chip'><i class=i-paperclip></i> " . htmlspecialchars($eFile['original_name']) . "</a>";
                     }
                     $html .= "</div></div>";
                     continue;
@@ -361,14 +361,14 @@ class FormBlock implements BlockInterface {
         $submitLabel = trim((string)($formSettings['submitLabel'] ?? '')) ?: ($isEditing ? 'Zaktualizuj formularz' : 'Wyślij formularz');
         if ($lockActive && $editableCount === 0) {
             // Wszystko przesłane i zablokowane – nie ma czego wysyłać
-            $html .= '<div class="pa-fw pa-fw-full pa-form-actions"><div class="pa-form-lockinfo">✅ Wszystkie dane zostały przesłane.</div></div></form>';
+            $html .= '<div class="pa-fw pa-fw-full pa-form-actions"><div class="pa-form-lockinfo"><i class=i-circle-check></i> Wszystkie dane zostały przesłane.</div></div></form>';
         } else {
             $html .= '<div class="pa-fw pa-fw-full pa-form-actions">';
             if (!$isEditing) $html .= "<div id='autosave-status-{$fid}' class='text-sm font-bold text-gray-500 mb-3 hidden transition-all flex items-center gap-2'></div>";
             $html .= '<div class="pa-form-buttons">';
             if ($lockFilled && $userId) {
                 // Zapis częściowy – pomija walidację wymaganych pól, resztę można uzupełnić później
-                $html .= '<button type="submit" name="partial" value="1" formnovalidate class="pa-btn-partial">💾 Zapisz – uzupełnię resztę później</button>';
+                $html .= '<button type="submit" name="partial" value="1" formnovalidate class="pa-btn-partial"><i class=i-save></i> Zapisz – uzupełnię resztę później</button>';
             }
             $submitCls = $compact ? 'pa-btn-submit' : 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all';
             $html .= '<button class="' . $submitCls . '" type="submit">' . htmlspecialchars($submitLabel) . '</button>';
@@ -394,14 +394,14 @@ class FormBlock implements BlockInterface {
         
             function triggerAutosave() {
                 if (!statusEl) return;
-                statusEl.innerHTML = '⏳ Zapisywanie robocze...';
+                statusEl.innerHTML = '<i class=i-loader-circle></i> Zapisywanie robocze...';
                 statusEl.classList.remove('hidden');
                 clearTimeout(autosaveTimeout);
                 autosaveTimeout = setTimeout(() => {
                     const formData = new FormData(form);
                     fetch('/form-autosave', { method: 'POST', body: formData }).then(r => r.json()).then(data => {
                         if (data.status === 'success') {
-                            statusEl.innerHTML = '✅ Zapisano roboczo';
+                            statusEl.innerHTML = '<i class=i-circle-check></i> Zapisano roboczo';
                             if (data.submission_id && !form.querySelector('input[name=\"submission_id\"]')) {
                                 const subInput = document.createElement('input');
                                 subInput.type = 'hidden';
@@ -495,7 +495,7 @@ class FormBlock implements BlockInterface {
                         
                         if (submitBtn) {
                             submitBtn.disabled = true;
-                            submitBtn.innerHTML = '⏳ Przesyłanie plików...';
+                            submitBtn.innerHTML = '<i class=i-loader-circle></i> Przesyłanie plików...';
                             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
                         }
         

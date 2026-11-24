@@ -33,7 +33,7 @@ class InstallController {
         $error = !empty($errorMsg) ? $errorMsg : ($_GET['error'] ?? '');
         $errorHtml = '';
         if (!empty($error)) {
-            $errorHtml = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm font-bold shadow-sm">⚠️ ' . htmlspecialchars($error) . '</div>';
+            $errorHtml = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm font-bold shadow-sm"><i class=i-triangle-alert></i> ' . htmlspecialchars($error) . '</div>';
         }
 
         // 4. Zabezpieczenie danych z formularza przed atakami XSS
@@ -49,11 +49,12 @@ class InstallController {
     <meta charset="UTF-8">
     <title>Kreator Instalacji CMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/assets/css/icons.css">
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     <div class="bg-white p-8 md:p-10 rounded-2xl shadow-xl max-w-lg w-full border-t-4 border-blue-600">
         <div class="text-center mb-8">
-            <div class="text-5xl mb-3">🚀</div>
+            <div class="text-5xl mb-3"><i class=i-rocket-thin></i></div>
             <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">Kreator CMS</h1>
             <p class="text-sm text-gray-500 mt-2 leading-relaxed">Połączmy Twój nowy system z bazą danych. System automatycznie wygeneruje klucze bezpieczeństwa.</p>
         </div>

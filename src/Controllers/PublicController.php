@@ -260,7 +260,7 @@ class PublicController {
         $draftWarning = '';
         if ($post['status'] !== 'published') {$draftWarning = '
             <div class="bg-yellow-100 text-yellow-800 border-b-2 border-yellow-400 p-3 text-center font-bold text-sm shadow-sm">
-                ⚠️ UWAGA: Ten post jest obecnie SZKICEM. Widzą go tylko zalogowani administratorzy. Zwykli użytkownicy otrzymają błąd 404.
+                <i class=i-triangle-alert></i> UWAGA: Ten post jest obecnie SZKICEM. Widzą go tylko zalogowani administratorzy. Zwykli użytkownicy otrzymają błąd 404.
             </div>
             ';
         }

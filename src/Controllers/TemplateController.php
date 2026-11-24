@@ -62,20 +62,20 @@ class TemplateController {
         <div class="h-[calc(100vh-80px)] flex flex-col bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div class="bg-gray-50 border-b p-4 flex justify-between items-center z-10">
                 <div class="flex items-center gap-4 flex-1">
-                    <a href="/admin/templates" class="text-gray-500 hover:text-black font-bold">← Wróć</a>
+                    <a href="/admin/templates" class="text-gray-500 hover:text-black font-bold"><i class=i-arrow-left></i> Wróć</a>
                     <input type="hidden" name="id" id="template_id" value="<?= $template['id'] ?>">
                     <input type="text" name="title" id="template_title" value="<?= htmlspecialchars($template['title']) ?>" class="border border-transparent hover:border-gray-300 focus:border-blue-500 p-2 rounded font-bold text-xl outline-none transition w-1/3" placeholder="Nazwa Szablonu">
                 </div>
                 
                 <div class="flex gap-2 items-center shrink-0">
                     <button type="button" id="btn-toggle-preview" class="bg-blue-100 text-blue-800 font-bold py-2 px-4 rounded shadow-sm hover:bg-blue-200 transition flex items-center gap-2">
-                        <span>👁️</span> Podgląd <span class="text-xs font-normal opacity-75">(Ctrl+P)</span>
+                        <span><i class=i-eye></i></span> Podgląd <span class="text-xs font-normal opacity-75">(Ctrl+P)</span>
                     </button>
                     <button type="button" id="btn-save" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded shadow-sm transition">
-                        💾 Zapisz
+                        <i class=i-save></i> Zapisz
                     </button>
                     <button type="button" id="btn-toggle-sidebar" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded shadow-sm hover:bg-gray-300 transition" title="Pokaż/Ukryj legendę">
-                        Znaczniki ☰
+                        Znaczniki <i class=i-menu></i>
                     </button>
                 </div>
             </div>
@@ -90,11 +90,11 @@ class TemplateController {
 
                 <div id="sidebar-legend" class="w-80 bg-gray-50 border-l border-gray-200 flex flex-col transition-all duration-300 shrink-0 overflow-hidden" style="width: 20rem;">
                     <div class="p-5 flex-1 overflow-y-auto">
-                        <p class="text-xs text-gray-500 mb-4 font-medium uppercase tracking-wider text-center border-b pb-2">Kliknij, aby skopiować 📋</p>
+                        <p class="text-xs text-gray-500 mb-4 font-medium uppercase tracking-wider text-center border-b pb-2">Kliknij, aby skopiować <i class=i-clipboard-list></i></p>
                         
                         <div class="space-y-6">
                             <div>
-                                <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2">🧩 Struktura</h3>
+                                <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2"><i class=i-puzzle></i> Struktura</h3>
                                 <div class="flex flex-col gap-1.5">
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-blue-600 shadow-sm text-xs cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition" data-tag="{{zone:main}}">{{zone:main}}</code>
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-blue-600 shadow-sm text-xs cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition" data-tag="{{zone:post_header}}">{{zone:post_header}}</code>
@@ -103,7 +103,7 @@ class TemplateController {
                             </div>
 
                             <div>
-                                <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2">🗺️ Nawigacja</h3>
+                                <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2"><i class=i-list-tree></i> Nawigacja</h3>
                                 <div class="flex flex-col gap-1.5">
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-indigo-600 shadow-sm text-xs cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition" data-tag="{{navigator}}">{{navigator}}</code>
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-indigo-600 shadow-sm text-xs cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition" data-tag="{{admin_navigator}}">{{admin_navigator}}</code>
@@ -112,7 +112,7 @@ class TemplateController {
                             </div>
 
                             <div>
-                                <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2">📝 Dane Strony</h3>
+                                <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2"><i class=i-file-pen></i> Dane Strony</h3>
                                 <div class="flex flex-col gap-1.5">
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-purple-600 shadow-sm text-xs cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition" data-tag="{{site_title}}">{{site_title}}</code>
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-purple-600 shadow-sm text-xs cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition" data-tag="{{page_title}}">{{page_title}}</code>
@@ -123,7 +123,7 @@ class TemplateController {
                             </div>
 
                             <div>
-                                <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2">🎨 Kolory (Ustawienia)</h3>
+                                <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2"><i class=i-palette></i> Kolory (Ustawienia)</h3>
                                 <div class="flex flex-col gap-1.5">
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-green-600 shadow-sm text-xs cursor-pointer hover:border-green-400 hover:bg-green-50 transition" data-tag="{{color_primary}}">{{color_primary}}</code>
                                     <code class="tag-copy block bg-white px-2 py-1.5 rounded border border-gray-200 text-green-600 shadow-sm text-xs cursor-pointer hover:border-green-400 hover:bg-green-50 transition" data-tag="{{color_secondary}}">{{color_secondary}}</code>
@@ -133,10 +133,10 @@ class TemplateController {
                     </div>
                     
                     <div class="p-5 border-t bg-gradient-to-b from-gray-50 to-gray-100">
-                        <h3 class="font-bold text-gray-800 text-sm mb-2 flex items-center gap-2">🤖 Asystent AI</h3>
+                        <h3 class="font-bold text-gray-800 text-sm mb-2 flex items-center gap-2"><i class=i-bot></i> Asystent AI</h3>
                         <p class="text-[11px] text-gray-500 mb-3 leading-tight">Skopiuj gotowy prompt dla modelu AI (Gemini/ChatGPT), wklej go w czacie i łatwo generuj wspaniałe szablony.</p>
                         <button type="button" id="btn-copy-prompt" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-xs flex items-center justify-center gap-2">
-                            ✨ Kopiuj Prompt dla AI
+                            <i class=i-sparkles></i> Kopiuj Prompt dla AI
                         </button>
                     </div>
                 </div>
@@ -159,7 +159,7 @@ class TemplateController {
 
             // --- KOPIOWANIE / EKSTRAKCJA TAILWIND CSS DO KONSOLI ---
             function extractAndPrintTailwind(html) {
-                console.log("⏳ Kompilowanie Tailwind CSS lokalnie w przeglądarce...");
+                console.log("Kompilowanie Tailwind CSS lokalnie w przeglądarce...");
                 const iframe = document.createElement('iframe');
                 iframe.style.display = 'none';
                 document.body.appendChild(iframe);
@@ -184,12 +184,12 @@ class TemplateController {
                     const styleElement = doc.querySelector('style');
                     
                     if (styleElement && styleElement.textContent.length > 100) {
-                        console.log("✅ Zbuildowany Tailwind CSS dla klas w tym szablonie:");
+                        console.log("Zbuildowany Tailwind CSS dla klas w tym szablonie:");
                         console.log(styleElement.textContent);
                         clearInterval(interval);
                         iframe.remove();
                     } else if (attempts > 50) { 
-                        console.warn("❌ Timeout: Nie udało się pobrać wygenerowanego Tailwind CSS.");
+                        console.warn("Timeout: Nie udało się pobrać wygenerowanego Tailwind CSS.");
                         clearInterval(interval);
                         iframe.remove();
                     }
@@ -199,7 +199,7 @@ class TemplateController {
             // --- KOPIOWANIE / EKSTRAKCJA TAILWIND CSS DO BAZY ---
             function extractTailwindCss(html) {
                 return new Promise((resolve) => {
-                    console.log("⏳ Kompilowanie Tailwind CSS lokalnie w przeglądarce...");
+                    console.log("Kompilowanie Tailwind CSS lokalnie w przeglądarce...");
                     const iframe = document.createElement('iframe');
                     iframe.style.display = 'none';
                     document.body.appendChild(iframe);
@@ -237,12 +237,12 @@ class TemplateController {
                         
                         if (styleElement && styleElement.textContent.length > 100) {
                             const css = styleElement.textContent;
-                            console.log("✅ Zbuildowany Tailwind CSS wyciągnięty pomyślnie.");
+                            console.log("Zbuildowany Tailwind CSS wyciągnięty pomyślnie.");
                             clearInterval(interval);
                             iframe.remove();
                             resolve(css);
                         } else if (attempts > 50) { 
-                            console.warn("❌ Timeout: Nie udało się pobrać wygenerowanego Tailwind CSS.");
+                            console.warn("Timeout: Nie udało się pobrać wygenerowanego Tailwind CSS.");
                             clearInterval(interval);
                             iframe.remove();
                             resolve(''); // Przesyłamy puste w ramach błędu
@@ -254,10 +254,10 @@ class TemplateController {
             // --- ZAPISYWANIE AJAX ---
             async function saveTemplate() {
                 const btn = document.getElementById('btn-save');
-                const originalText = "💾 Zapisz";
+                const originalText = "<i class=i-save></i> Zapisz";
                 
                 // Zmiana stanu przycisku
-                btn.innerHTML = '⏳ Generowanie CSS...';
+                btn.innerHTML = '<i class=i-loader-circle></i> Generowanie CSS...';
                 btn.disabled = true;
                 btn.classList.add('opacity-75');
 
@@ -265,7 +265,7 @@ class TemplateController {
                 
                 // Oczekiwanie na kompilator CSS
                 const compiledCss = await extractTailwindCss(htmlContent);
-                btn.innerHTML = '⏳ Zapisywanie...';
+                btn.innerHTML = '<i class=i-loader-circle></i> Zapisywanie...';
 
                 const payload = {
                     id: document.getElementById('template_id').value,
@@ -286,7 +286,7 @@ class TemplateController {
                 .then(data => {
                     if(data.status === 'success') {
                         // Efekt sukcesu
-                        btn.innerHTML = '✅ Zapisano!';
+                        btn.innerHTML = '<i class=i-circle-check></i> Zapisano!';
                         btn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'opacity-75');
                         btn.classList.add('bg-green-600', 'hover:bg-green-700');
                         
@@ -301,7 +301,7 @@ class TemplateController {
                 })
                 .catch(error => {
                     console.error('Błąd zapisu:', error);
-                    btn.innerHTML = '❌ Błąd';
+                    btn.innerHTML = '<i class=i-circle-x></i> Błąd';
                     setTimeout(() => {
                         btn.innerHTML = originalText;
                         btn.disabled = false;
@@ -354,7 +354,7 @@ class TemplateController {
                         }
                         
                         // Wizualne potwierdzenie
-                        this.innerHTML = '✅ Skopiowano';
+                        this.innerHTML = '<i class=i-circle-check></i> Skopiowano';
                         this.classList.add('bg-green-100', 'border-green-400', 'text-green-800');
                         this.classList.remove('text-blue-600', 'text-gray-600', 'text-indigo-600', 'text-purple-600', 'text-green-600');
                         
@@ -365,7 +365,7 @@ class TemplateController {
                         
                     } catch (err) {
                         console.error('Błąd kopiowania:', err);
-                        this.innerHTML = '❌ Błąd';
+                        this.innerHTML = '<i class=i-circle-x></i> Błąd';
                         setTimeout(() => this.innerHTML = originalHTML, 1000);
                     }
                 });
@@ -426,7 +426,7 @@ OPIS SZABLONU DO WYGENEROWANIA:
                         textArea.remove();
                     }
                     
-                    btn.innerHTML = '✅ Skopiowano do czatu!';
+                    btn.innerHTML = '<i class=i-circle-check></i> Skopiowano do czatu!';
                     btn.classList.remove('from-purple-600', 'to-blue-600');
                     btn.classList.add('from-emerald-500', 'to-green-600');
                     
@@ -438,7 +438,7 @@ OPIS SZABLONU DO WYGENEROWANIA:
                     
                 } catch (err) {
                     console.error('Błąd kopiowania promptu:', err);
-                    btn.innerHTML = '❌ Błąd kopiowania';
+                    btn.innerHTML = '<i class=i-circle-x></i> Błąd kopiowania';
                     setTimeout(() => btn.innerHTML = originalText, 2000);
                 }
             });
@@ -451,7 +451,7 @@ OPIS SZABLONU DO WYGENEROWANIA:
 
             function getPreviewHtml() {
                 let html = editor.getValue();
-                html = html.replace(/\{\{zone:([a-zA-Z0-9_]+)\}\}/g, `<div style="min-height:100px; border:2px dashed #3b82f6; background-color:#eff6ff; padding:20px; display:flex; align-items:center; justify-content:center; font-family:sans-serif; color:#3b82f6; border-radius:8px; font-weight:bold; margin: 10px 0;">🧩 STREFA: $1</div>`);
+                html = html.replace(/\{\{zone:([a-zA-Z0-9_]+)\}\}/g, `<div style="min-height:100px; border:2px dashed #3b82f6; background-color:#eff6ff; padding:20px; display:flex; align-items:center; justify-content:center; font-family:sans-serif; color:#3b82f6; border-radius:8px; font-weight:bold; margin: 10px 0;"><i class=i-puzzle></i> STREFA: $1</div>`);
                 html = html.replace(/\{\{global_footer\}\}/g, `<div style="padding:20px; background:#f3f4f6; text-align:center; border-top:1px dashed #d1d5db; font-family:sans-serif; color:#6b7280; font-size:12px; margin-top: 20px;">[ GLOBALNA STOPKA ]</div>`);
                 html = html.replace(/\{\{admin_navigator\}\}/g, `<div style="padding:10px; background:#111827; color:#60a5fa; text-align:center; border-bottom:2px solid #3b82f6; font-family:sans-serif; font-size:13px; font-weight:bold;">[ PASEK ADMINISTRATORA CMS ]</div>`);
                 html = html.replace(/\{\{navigator\}\}/g, `<div style="padding:20px; background:#1f2937; color:#fff; text-align:center; font-family:sans-serif; font-weight:bold;">[ STANDARDOWY NAVIGATOR ]</div>`);
@@ -476,7 +476,7 @@ OPIS SZABLONU DO WYGENEROWANIA:
                 if (isPreview) {
                     editorEl.classList.add("hidden");
                     previewEl.classList.remove("hidden");
-                    btnToggle.innerHTML = "<span>✏️</span> Wróć do Kodu <span class='text-xs font-normal opacity-75'>(Ctrl+P)</span>";
+                    btnToggle.innerHTML = "<span><i class=i-pencil></i></span> Wróć do Kodu <span class='text-xs font-normal opacity-75'>(Ctrl+P)</span>";
                     btnToggle.className = "bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded shadow-sm hover:bg-gray-300 transition flex items-center gap-2";
                     
                     const doc = previewEl.contentWindow.document;
@@ -486,7 +486,7 @@ OPIS SZABLONU DO WYGENEROWANIA:
                 } else {
                     previewEl.classList.add("hidden");
                     editorEl.classList.remove("hidden");
-                    btnToggle.innerHTML = "<span>👁️</span> Podgląd <span class='text-xs font-normal opacity-75'>(Ctrl+P)</span>";
+                    btnToggle.innerHTML = "<span><i class=i-eye></i></span> Podgląd <span class='text-xs font-normal opacity-75'>(Ctrl+P)</span>";
                     btnToggle.className = "bg-blue-100 text-blue-800 font-bold py-2 px-4 rounded shadow-sm hover:bg-blue-200 transition flex items-center gap-2";
                     editor.focus();
                 }

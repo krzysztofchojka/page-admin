@@ -7,7 +7,7 @@ const availableCategories = window.CMS_CONFIG.availableCategories || [];
 // Definicja obrazka zastępczego
 const defaultPlaceholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect width='100%25' height='100%25' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239ca3af'%3EWybierz lub wgraj obraz%3C/text%3E%3C/svg%3E";
 
-const blockIcons = { text: 'T', image: '🖼', video: '▶️', button: '🔘', divider: '➖', quote: '❝', columns_2: '◫', columns_3: '☰', banner: '🏔', image_cards: '🗂', carousel: '🎠', accordion: '⇕', map: '📍', countdown: '⏳', table: '🗄️', flight: '✈️', form: '📝', gallery: '📷', raw_html: '</>', system_login: '🔐', system_register: '📝', system_change_password: '🔑', system_lockdown: '🚧', posts_grid: '📰', section: '▭', grid: '▦', heading: 'H', ticker: '📣', switcher: '⇆', schedule: '🕒', translate: '🌐' };
+const blockIcons = { text: '<i class=i-type></i>', image: '<i class=i-image></i>', video: '<i class=i-video></i>', button: '<i class=i-mouse-pointer-click></i>', divider: '<i class=i-separator-horizontal></i>', quote: '<i class=i-quote></i>', columns_2: '<i class=i-columns-2></i>', columns_3: '<i class=i-columns-3></i>', banner: '<i class=i-panel-top></i>', image_cards: '<i class=i-layout-grid></i>', carousel: '<i class=i-gallery-horizontal-end></i>', accordion: '<i class=i-list-collapse></i>', map: '<i class=i-map-pin></i>', countdown: '<i class=i-loader-circle></i>', table: '<i class=i-table></i>', flight: '<i class=i-plane></i>', form: '<i class=i-clipboard-list></i>', gallery: '<i class=i-images></i>', raw_html: '<i class=i-code-xml></i>', system_login: '<i class=i-lock-keyhole></i>', system_register: '<i class=i-clipboard-list></i>', system_change_password: '<i class=i-key-round></i>', system_lockdown: '<i class=i-construction></i>', posts_grid: '<i class=i-newspaper></i>', section: '<i class=i-rectangle-horizontal></i>', grid: '<i class=i-layout-grid></i>', heading: '<i class=i-heading></i>', ticker: '<i class=i-megaphone></i>', switcher: '<i class=i-arrow-left-right></i>', schedule: '<i class=i-calendar-clock></i>', translate: '<i class=i-languages></i>' };
 const blockNames = { text: 'Tekst', image: 'Obrazek', video: 'Wideo', button: 'Przycisk', divider: 'Odstęp', quote: 'Cytat', columns_2: '2 Kolumny', columns_3: '3 Kolumny', banner: 'Baner', image_cards: 'Siatka Kart', carousel: 'Karuzela', accordion: 'Akordeon', map: 'Mapa', countdown: 'Odliczanie', table: 'Tabela', flight: 'Loty', form: 'Formularz', gallery: 'Galeria', raw_html: 'HTML', system_login: 'Logowanie', system_register: 'Rejestracja', system_change_password: 'Zmień Hasło', system_lockdown: 'Lockdown', posts_grid: 'Posty', section: 'Sekcja', grid: 'Siatka', heading: 'Nagłówek', ticker: 'Pasek NEWS', switcher: 'Przełącznik', schedule: 'Harmonogram', translate: 'Tłumacz' };
 
 // ==========================================
@@ -46,7 +46,7 @@ const SPACE_OPTS = [['', '— domyślny —'], ['none', 'Brak'], ['sm', 'Mały']
 
 function formatPanelTpl(s) {
     return `
-        <div class="text-[10px] font-bold uppercase text-blue-700 mt-4 mb-2 border-t border-blue-200 pt-3 tracking-wider">🎨 Formatowanie i układ (działa na telefonach i komputerach)</div>
+        <div class="text-[10px] font-bold uppercase text-blue-700 mt-4 mb-2 border-t border-blue-200 pt-3 tracking-wider"><i class=i-palette></i> Formatowanie i układ (działa na telefonach i komputerach)</div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             ${fieldTpl('Wyrównanie tekstu', selectTpl('set-align', s.align, [['', '— domyślne —'], ['left', 'Do lewej'], ['center', 'Wyśrodkowane'], ['right', 'Do prawej'], ['justify', 'Wyjustowane']]))}
             ${fieldTpl('Maks. szerokość', selectTpl('set-maxw', s.maxw, [['', 'Pełna'], ['sm', 'Wąska (640px)'], ['md', 'Średnia (768px)'], ['lg', 'Szeroka (1024px)'], ['xl', 'Bardzo szeroka (1200px)'], ['2xl', '1400px']]))}
@@ -145,7 +145,7 @@ function buildNavTree(domContainer, navContainer) {
         
         const uid = el.dataset.uid;
         const type = el.dataset.type;
-        const icon = blockIcons[type] || '🧩';
+        const icon = blockIcons[type] || '<i class=i-puzzle></i>';
         const name = blockNames[type] || type;
 
         const li = document.createElement('li');
@@ -160,7 +160,7 @@ function buildNavTree(domContainer, navContainer) {
                 </div>
                 <div class="flex items-center gap-1">
                     <button type="button" onclick="window.toggleBlockSettings('${uid}', event)" class="text-gray-500 hover:text-blue-600 px-2 font-bold opacity-0 group-hover:opacity-100 transition" title="Ustawienia bloku">⋮</button>
-                    <span class="text-gray-300 text-[10px] drag-handle-nav opacity-0 group-hover:opacity-100 transition px-1">✥</span>
+                    <span class="text-gray-300 text-[10px] drag-handle-nav opacity-0 group-hover:opacity-100 transition px-1"><i class=i-grip-vertical></i></span>
                 </div>
             </div>
         `;
@@ -548,9 +548,9 @@ function renderBlock(type, content = '', blockSettings = null) {
 
     const controls = `
     <div class="absolute -top-3 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-50">
-        <span class="drag-handle text-gray-600 hover:text-blue-600 p-1.5 bg-gray-100 border border-gray-300 rounded shadow cursor-move" title="Przeciągnij (Drag & Drop)">✥ Przesuń</span>
-        <button type="button" onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')" class="text-gray-600 hover:text-gray-800 p-1.5 bg-gray-100 border border-gray-300 rounded shadow" title="Ustawienia (ID, Klasy CSS)">⚙️</button>
-        <button type="button" onclick="if(confirm('Na pewno usunąć ten blok?')) { this.closest('.block-item').remove(); window.updateNavigator(); }" class="text-red-500 hover:text-red-700 p-1.5 bg-gray-100 border border-gray-300 rounded shadow" title="Usuń blok">🗑</button>
+        <span class="drag-handle text-gray-600 hover:text-blue-600 p-1.5 bg-gray-100 border border-gray-300 rounded shadow cursor-move" title="Przeciągnij (Drag & Drop)"><i class=i-grip-vertical></i> Przesuń</span>
+        <button type="button" onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')" class="text-gray-600 hover:text-gray-800 p-1.5 bg-gray-100 border border-gray-300 rounded shadow" title="Ustawienia (ID, Klasy CSS)"><i class=i-settings></i></button>
+        <button type="button" onclick="if(confirm('Na pewno usunąć ten blok?')) { this.closest('.block-item').remove(); window.updateNavigator(); }" class="text-red-500 hover:text-red-700 p-1.5 bg-gray-100 border border-gray-300 rounded shadow" title="Usuń blok"><i class=i-trash-2></i></button>
     </div>
     <div class="block-settings-panel hidden bg-blue-50 p-4 mt-6 mb-4 border border-blue-200 rounded text-sm shadow-inner">
         <div class="grid grid-cols-3 gap-4">
@@ -565,14 +565,14 @@ function renderBlock(type, content = '', blockSettings = null) {
 
     if (type === 'text') {
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-blue-500 uppercase">T Tekst / Edytor Wizualny</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-blue-500 uppercase"><i class=i-type></i> Tekst / Edytor Wizualny</span></div>
         <div class="bg-gray-50 border rounded-lg no-drag"><div class="quill-editor"></div></div>`;
     } 
     else if (type === 'posts_grid') {
         div.className += " border-2 border-dashed border-purple-200 bg-purple-50/20";
         const data = typeof content === 'object' && content !== null ? content : { limit: 6, category: '' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-purple-600 uppercase">📰 Siatka Postów (Blog)</span></div>
+        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-purple-600 uppercase"><i class=i-newspaper></i> Siatka Postów (Blog)</span></div>
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-xs font-bold text-gray-500 mb-1">Kategoria</label>
@@ -592,7 +592,7 @@ function renderBlock(type, content = '', blockSettings = null) {
         innerHTML = `
         <div class="bg-gray-900 rounded p-3 no-drag border border-gray-700">
             <div class="flex justify-between items-center mb-2">
-                <label class="text-xs font-mono text-gray-400">&lt;/&gt; ZAAWANSOWANY KOD HTML</label>
+                <label class="text-xs font-mono text-gray-400"><i class=i-code-xml></i> ZAAWANSOWANY KOD HTML</label>
                 <button type="button" class="toggle-ace-btn text-[10px] bg-gray-700 text-gray-300 px-2 py-1 rounded hover:text-white border border-gray-600 transition shadow">Rozszerz / Zwiń okno</button>
             </div>
             <div class="ace-editor-container w-full rounded border border-gray-800" style="height: 150px; transition: height 0.3s;"></div>
@@ -629,7 +629,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'columns_2') {
         div.className += " border-2 border-dashed border-indigo-200 bg-indigo-50/20";
         innerHTML = `
-        <div class="flex gap-2 mb-3"><span class="text-xs font-bold text-indigo-500 uppercase tracking-wider">◫ Układ: 2 Kolumny</span></div>
+        <div class="flex gap-2 mb-3"><span class="text-xs font-bold text-indigo-500 uppercase tracking-wider"><i class=i-columns-2></i> Układ: 2 Kolumny</span></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="col-left drop-zone bg-white border border-indigo-100 rounded-lg p-4 min-h-[120px]"></div>
             <div class="col-right drop-zone bg-white border border-indigo-100 rounded-lg p-4 min-h-[120px]"></div>
@@ -642,7 +642,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'columns_3') {
         div.className += " border-2 border-dashed border-emerald-200 bg-emerald-50/20";
         innerHTML = `
-        <div class="flex gap-2 mb-3"><span class="text-xs font-bold text-emerald-500 uppercase tracking-wider">☰ Układ: 3 Kolumny</span></div>
+        <div class="flex gap-2 mb-3"><span class="text-xs font-bold text-emerald-500 uppercase tracking-wider"><i class=i-columns-3></i> Układ: 3 Kolumny</span></div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="col-left drop-zone bg-white border border-emerald-100 rounded-lg p-4 min-h-[120px]"></div>
             <div class="col-center drop-zone bg-white border border-emerald-100 rounded-lg p-4 min-h-[120px]"></div>
@@ -659,12 +659,12 @@ function renderBlock(type, content = '', blockSettings = null) {
         const imgValue = hasImg ? content : '';
         const uniqueId = 'img_in_' + Math.random().toString(36).substr(2, 9);
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-green-500 uppercase">🖼 Pojedynczy Obrazek</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-green-500 uppercase"><i class=i-image></i> Pojedynczy Obrazek</span></div>
         <div class="mb-3">
             <div class="flex w-full mb-2">
                 <input type="text" id="${uniqueId}" class="block-content w-full border border-r-0 p-2 text-sm rounded-l bg-gray-50 focus:bg-white focus:outline-none" placeholder="Adres URL obrazka..." value="${imgValue}" oninput="this.closest('.block-item').querySelector('.img-preview').src = this.value || defaultPlaceholder">
-                <button type="button" onclick="window.openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media">📂</button>
-                <button type="button" onclick="window.triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik">⬆️</button>
+                <button type="button" onclick="window.openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media"><i class=i-folder-open></i></button>
+                <button type="button" onclick="window.triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik"><i class=i-upload></i></button>
             </div>
         </div>
         <div class="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center min-h-[100px]">
@@ -674,7 +674,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'linked_image') {
         const data = typeof content === 'object' ? content : { url: '', link: '' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-indigo-600 uppercase">🔗 Podlinkowany Obrazek</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-indigo-600 uppercase"><i class=i-link></i> Podlinkowany Obrazek</span></div>
         <label class="block text-xs font-bold text-gray-500 mb-1">URL Obrazka (Wklej link)</label>
         ${imgInputTpl('block-img-url', 'URL Obrazka', data.url)}
         <label class="block text-xs font-bold text-gray-500 mt-3 mb-1">Link docelowy po kliknięciu</label>
@@ -683,7 +683,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'form') {
         innerHTML = `
         <div class="bg-teal-50 border border-teal-200 p-4 rounded-lg text-center">
-            <label class="block text-sm font-bold text-teal-800 mb-2">📝 Wybierz Formularz</label>
+            <label class="block text-sm font-bold text-teal-800 mb-2"><i class=i-clipboard-list></i> Wybierz Formularz</label>
             <select class="block-select border rounded p-2 w-full text-center font-bold bg-white shadow-sm focus:ring-2 focus:ring-teal-500">
                 ${buildOptions(availableForms, content)}
             </select>
@@ -692,7 +692,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'gallery') {
         innerHTML = `
         <div class="bg-pink-50 border border-pink-200 p-4 rounded-lg text-center">
-            <label class="block text-sm font-bold text-pink-800 mb-2">📷 Wybierz Galerię</label>
+            <label class="block text-sm font-bold text-pink-800 mb-2"><i class=i-images></i> Wybierz Galerię</label>
             <select class="block-select border rounded p-2 w-full text-center font-bold bg-white shadow-sm focus:ring-2 focus:ring-pink-500">
                 ${buildOptions(availableGalleries, content)}
             </select>
@@ -701,7 +701,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'banner') {
         const data = typeof content === 'object' ? content : { bg: '', title: '', subtitle: '' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-4"><span class="text-xs font-bold text-orange-600 uppercase">🏔 Baner (Hero Section)</span></div>
+        <div class="flex items-center gap-2 mb-4"><span class="text-xs font-bold text-orange-600 uppercase"><i class=i-panel-top></i> Baner (Hero Section)</span></div>
         <label class="block text-xs font-bold text-gray-500 mb-1">Zdjęcie w Tle</label>
         ${imgInputTpl('ban-bg', 'URL Zdjęcia tła', data.bg)}
         <label class="block text-xs font-bold text-gray-500 mt-3 mb-1">Główny Tytuł (Duży tekst)</label>
@@ -712,7 +712,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'map') {
         const data = typeof content === 'object' ? content : { lat: '52.2297', lng: '21.0122', zoom: '13', tooltip: 'Warszawa' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">📍 Mapa Leaflet</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase"><i class=i-map-pin></i> Mapa Leaflet</span></div>
         <div class="grid grid-cols-3 gap-4 mb-2">
             <div><label class="block text-xs text-gray-500 mb-1">Szerokość (Lat)</label><input type="text" class="map-lat w-full border p-2 rounded" value="${data.lat}"></div>
             <div><label class="block text-xs text-gray-500 mb-1">Długość (Lng)</label><input type="text" class="map-lng w-full border p-2 rounded" value="${data.lng}"></div>
@@ -724,7 +724,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'countdown') {
         const data = typeof content === 'object' ? content : { date: '', title: 'Do startu wydarzenia:' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-purple-500 uppercase">⏳ Odliczanie</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-purple-500 uppercase"><i class=i-loader-circle></i> Odliczanie</span></div>
         <label class="block text-xs text-gray-500 mb-1">Tytuł nad licznikiem</label>
         <input type="text" class="cd-title w-full border p-2 rounded mb-3" placeholder="Do startu wydarzenia:" value="${data.title}">
         <label class="block text-xs text-gray-500 mb-1">Data i godzina zakończenia</label>
@@ -733,7 +733,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'table') {
         innerHTML = `
         <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-blue-500 uppercase">🗄️ Tabela Danych</span>
+            <span class="text-xs font-bold text-blue-500 uppercase"><i class=i-table></i> Tabela Danych</span>
             <div class="flex gap-2">
                 <button type="button" onclick="window.toggleEditor(this, 'visual')" class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded font-bold">Wizualny</button>
                 <button type="button" onclick="window.toggleEditor(this, 'raw')" class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded font-bold">Surowy (Excel)</button>
@@ -760,7 +760,7 @@ function renderBlock(type, content = '', blockSettings = null) {
         const stateJson = encodeURIComponent(JSON.stringify(data.state || []));
         innerHTML = `
         <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-sky-500 uppercase">✈️ Przeloty</span>
+            <span class="text-xs font-bold text-sky-500 uppercase"><i class=i-plane></i> Przeloty</span>
             <div class="flex gap-2">
                 <button type="button" onclick="window.toggleEditor(this, 'visual')" class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded font-bold">Kreator</button>
                 <button type="button" onclick="window.toggleEditor(this, 'raw')" class="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded font-bold">KOD HTML</button>
@@ -777,8 +777,8 @@ function renderBlock(type, content = '', blockSettings = null) {
                 </div>
             </div>
             <div class="flex gap-2 mt-4">
-                <button type="button" onclick="window.addFlightSegment(this, 'flight')" class="text-xs bg-white border border-sky-300 text-sky-700 px-4 py-2 rounded shadow-sm font-bold hover:bg-sky-100">✈️ Dodaj Lot</button>
-                <button type="button" onclick="window.addFlightSegment(this, 'connection')" class="text-xs bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded shadow-sm font-bold hover:bg-indigo-100">⏱ Dodaj Przesiadkę</button>
+                <button type="button" onclick="window.addFlightSegment(this, 'flight')" class="text-xs bg-white border border-sky-300 text-sky-700 px-4 py-2 rounded shadow-sm font-bold hover:bg-sky-100"><i class=i-plane></i> Dodaj Lot</button>
+                <button type="button" onclick="window.addFlightSegment(this, 'connection')" class="text-xs bg-white border border-indigo-300 text-indigo-700 px-4 py-2 rounded shadow-sm font-bold hover:bg-indigo-100"><i class=i-timer></i> Dodaj Przesiadkę</button>
             </div>
         </div>
         <div class="editor-raw hidden">
@@ -795,7 +795,7 @@ function renderBlock(type, content = '', blockSettings = null) {
             data.cards.forEach((card) => {
                 cardsHTML += `
                 <div class="image-card border border-gray-300 bg-white p-3 mb-2 rounded shadow-sm relative group grid grid-cols-2 gap-2">
-                    <button type="button" onclick="this.closest('.image-card').querySelector('.item-settings-panel').classList.toggle('hidden')" class="absolute -top-2 right-6 bg-gray-500 hover:bg-gray-700 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10" title="Ustawienia kafelka">⚙️</button>
+                    <button type="button" onclick="this.closest('.image-card').querySelector('.item-settings-panel').classList.toggle('hidden')" class="absolute -top-2 right-6 bg-gray-500 hover:bg-gray-700 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10" title="Ustawienia kafelka"><i class=i-settings></i></button>
                     <button type="button" onclick="this.closest('.image-card').remove(); window.updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10">X</button>
                     <div class="col-span-2">${imgInputTpl('card-img', 'URL Zdjęcia', card.img)}</div>
                     <input type="text" class="card-title w-full border p-2 text-sm rounded font-bold text-orange-600" placeholder="Tytuł" value="${card.title || ''}">
@@ -806,7 +806,7 @@ function renderBlock(type, content = '', blockSettings = null) {
             });
         }
         innerHTML = `
-        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-orange-500 uppercase">🗂 Siatka Kart (Obrazek + Tekst)</span></div>
+        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-orange-500 uppercase"><i class=i-layout-grid></i> Siatka Kart (Obrazek + Tekst)</span></div>
         <div class="cards-container min-h-[5px] mb-3 grid grid-cols-1 md:grid-cols-2 gap-4">
             ${cardsHTML}
         </div>
@@ -819,11 +819,11 @@ function renderBlock(type, content = '', blockSettings = null) {
         const invert = data.invertIcons === undefined ? true : !!data.invertIcons;
         innerHTML = `
         <div class="flex justify-between items-center mb-3">
-            <span class="text-xs font-bold text-blue-800 uppercase tracking-wider">🎠 Karuzela / Zakładki</span>
+            <span class="text-xs font-bold text-blue-800 uppercase tracking-wider"><i class=i-gallery-horizontal-end></i> Karuzela / Zakładki</span>
             <label class="text-sm font-bold text-gray-700 flex items-center gap-2"><input type="checkbox" class="carousel-arrows" ${data.arrows ? 'checked' : ''}> Pokaż strzałki</label>
         </div>
         <details class="carousel-opts no-drag bg-white border border-blue-100 rounded-lg p-3 mb-3">
-            <summary class="text-xs font-bold text-blue-700 cursor-pointer">🎨 Wygląd kafelków i panelu</summary>
+            <summary class="text-xs font-bold text-blue-700 cursor-pointer"><i class=i-palette></i> Wygląd kafelków i panelu</summary>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                 ${fieldTpl('Styl kafelków', selectTpl('car-style', data.style || 'default', [['default', 'Standardowy'], ['tiles', 'Duże kafelki (gradient)']]))}
                 ${fieldTpl('Panel treści', selectTpl('car-panel', data.panel || 'card', [['card', 'Biała karta'], ['plain', 'Bez tła']]))}
@@ -836,7 +836,7 @@ function renderBlock(type, content = '', blockSettings = null) {
             <p class="text-[11px] text-gray-500 mt-2">Każda zakładka ma kotwicę – link <code>#agenda</code> (albo własna kotwica) otworzy ją z dowolnego miejsca strony.</p>
         </details>
         <div class="carousel-intro-wrap mb-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <div class="text-xs font-bold text-amber-800 mb-2">🏁 Ekran startowy <span class="font-normal">(widoczny, zanim użytkownik kliknie kafelek – zostaw pusty, by od razu otwierać 1. zakładkę)</span></div>
+            <div class="text-xs font-bold text-amber-800 mb-2"><i class=i-flag></i> Ekran startowy <span class="font-normal">(widoczny, zanim użytkownik kliknie kafelek – zostaw pusty, by od razu otwierać 1. zakładkę)</span></div>
             <div class="intro-content drop-zone bg-white border-2 border-dashed border-amber-200 rounded p-4 min-h-[70px]"></div>
         </div>
         <div class="carousel-tabs-container min-h-[5px] mb-3">${tabsHTML}</div>
@@ -850,9 +850,9 @@ function renderBlock(type, content = '', blockSettings = null) {
         div.className += " border-2 border-dashed border-cyan-300 bg-cyan-50/20";
         const d = (typeof content === 'object' && content) ? content : { inner: 'xl', padY: 'md', padX: 'md' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-cyan-700 uppercase tracking-wider">▭ Sekcja / Kontener</span></div>
+        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-cyan-700 uppercase tracking-wider"><i class=i-rectangle-horizontal></i> Sekcja / Kontener</span></div>
         <details class="section-opts no-drag bg-white border border-cyan-100 rounded-lg p-3 mb-3" ${content ? '' : 'open'}>
-            <summary class="text-xs font-bold text-cyan-700 cursor-pointer">🎨 Tło, szerokość i wysokość sekcji</summary>
+            <summary class="text-xs font-bold text-cyan-700 cursor-pointer"><i class=i-palette></i> Tło, szerokość i wysokość sekcji</summary>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                 ${fieldTpl('Kolor tła', colorInputTpl('sec-bgcolor', d.bgColor))}
                 ${fieldTpl('Zdjęcie w tle', imgInputTpl('sec-bgimage', 'URL zdjęcia', d.bgImage || ''), 'col-span-2 md:col-span-3')}
@@ -889,12 +889,12 @@ function renderBlock(type, content = '', blockSettings = null) {
         let cells = '';
         for (let i = 0; i < count; i++) cells += gridCellTpl();
         innerHTML = `
-        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-violet-700 uppercase tracking-wider">▦ Siatka (responsywne kolumny)</span></div>
+        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-violet-700 uppercase tracking-wider"><i class=i-layout-grid></i> Siatka (responsywne kolumny)</span></div>
         <div class="grid-opts no-drag grid grid-cols-3 md:grid-cols-6 gap-2 mb-3 bg-white border border-violet-100 rounded-lg p-3">
             ${fieldTpl('Liczba komórek', `<input type="number" min="1" max="12" class="grid-count w-full border p-2 rounded text-sm" value="${count}" onchange="window.gridSetCount(this.closest('.block-item'))">`)}
-            ${fieldTpl('🖥 Kolumny', selectTpl('grid-cols', d.cols || count, nums(6)))}
-            ${fieldTpl('📟 Tablet', selectTpl('grid-cols-t', d.colsTablet || 2, nums(4)))}
-            ${fieldTpl('📱 Telefon', selectTpl('grid-cols-m', d.colsMobile || 1, nums(3)))}
+            ${fieldTpl('<i class=i-monitor></i> Kolumny', selectTpl('grid-cols', d.cols || count, nums(6)))}
+            ${fieldTpl('<i class=i-tablet></i> Tablet', selectTpl('grid-cols-t', d.colsTablet || 2, nums(4)))}
+            ${fieldTpl('<i class=i-smartphone></i> Telefon', selectTpl('grid-cols-m', d.colsMobile || 1, nums(3)))}
             ${fieldTpl('Odstęp', selectTpl('grid-gap', d.gap || 'md', [['none', 'Brak'], ['sm', 'Mały'], ['md', 'Średni'], ['lg', 'Duży'], ['xl', 'Bardzo duży']]))}
             ${fieldTpl('Wyrównanie pion.', selectTpl('grid-valign', d.valign || 'stretch', [['stretch', 'Rozciągnij'], ['start', 'Góra'], ['center', 'Środek'], ['end', 'Dół']]))}
         </div>
@@ -908,7 +908,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'heading') {
         const d = (typeof content === 'object' && content) ? content : { text: typeof content === 'string' ? content : '', level: 'h2' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-slate-700 uppercase">H Nagłówek</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-slate-700 uppercase"><i class=i-heading></i> Nagłówek</span></div>
         <textarea class="hd-text w-full border p-2 rounded text-xl font-bold mb-3 no-drag" rows="2" placeholder="Treść nagłówka (Enter = nowa linia)">${esc(d.text)}</textarea>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
             ${fieldTpl('Poziom (SEO)', selectTpl('hd-level', d.level || 'h2', [['h1', 'H1 – tytuł strony'], ['h2', 'H2'], ['h3', 'H3'], ['h4', 'H4'], ['h5', 'H5'], ['h6', 'H6']]))}
@@ -924,7 +924,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'ticker') {
         const d = (typeof content === 'object' && content) ? content : { label: 'NEWS', items: '', speed: 60, shape: 'bar', bg: '#1e40af' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-blue-700 uppercase">📣 Pasek wiadomości (NEWS)</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-blue-700 uppercase"><i class=i-megaphone></i> Pasek wiadomości (NEWS)</span></div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             ${fieldTpl('Etykieta', `<input type="text" class="tk-label w-full border p-2 rounded text-sm font-bold" value="${esc(d.label ?? 'NEWS')}">`)}
             ${fieldTpl('Kształt', selectTpl('tk-shape', d.shape || 'bar', [['bar', 'Pasek'], ['tab', 'Zakładka (zaokrąglony dół)'], ['pill', 'Pigułka']]))}
@@ -941,7 +941,7 @@ function renderBlock(type, content = '', blockSettings = null) {
         const d = (typeof content === 'object' && content) ? content : { tabs: [{ label: 'Wariant A' }, { label: 'Wariant B' }], remember: true, key: '' };
         const tabsHTML = (d.tabs || []).map(t => switcherTabTpl(t)).join('');
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-sky-700 uppercase tracking-wider">⇆ Przełącznik wariantów (np. Wariant A / Wariant B)</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-sky-700 uppercase tracking-wider"><i class=i-arrow-left-right></i> Przełącznik wariantów (np. Wariant A / Wariant B)</span></div>
         <div class="switcher-opts no-drag grid grid-cols-2 md:grid-cols-6 gap-3 mb-3 bg-white border border-sky-100 rounded-lg p-3">
             ${fieldTpl('Klucz wspólny', `<input type="text" class="sw-key w-full border p-2 rounded text-sm" placeholder="np. grupa" value="${esc(d.key)}" title="Przełączniki z tym samym kluczem zmieniają się razem na całej stronie">`)}
             ${fieldTpl('Wyrównanie', selectTpl('sw-align', d.align || 'center', [['left', 'Lewo'], ['center', 'Środek'], ['right', 'Prawo']]))}
@@ -959,7 +959,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'schedule') {
         const d = (typeof content === 'object' && content) ? content : { title: '', rows: '' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-emerald-700 uppercase">🕒 Harmonogram / Agenda</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-emerald-700 uppercase"><i class=i-calendar-clock></i> Harmonogram / Agenda</span></div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             ${fieldTpl('Tytuł (np. Dzień 1)', `<input type="text" class="sch-title w-full border p-2 rounded text-sm font-bold" value="${esc(d.title)}">`, 'col-span-2')}
             ${fieldTpl('Kolor godzin', colorInputTpl('sch-accent', d.accent, '#1e40af'))}
@@ -970,16 +970,16 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'translate') {
         const d = (typeof content === 'object' && content) ? content : { pageLang: 'pl', langs: 'en,ru,it,es,pl' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-gray-700 uppercase">🌐 Google Tłumacz</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-gray-700 uppercase"><i class=i-languages></i> Google Tłumacz</span></div>
         <div class="grid grid-cols-2 gap-3">
             ${fieldTpl('Język strony', `<input type="text" class="tr-page w-full border p-2 rounded text-sm" value="${esc(d.pageLang || 'pl')}">`)}
             ${fieldTpl('Dostępne języki (po przecinku)', `<input type="text" class="tr-langs w-full border p-2 rounded text-sm" value="${esc(d.langs || 'en,pl')}">`)}
         </div>
-        <p class="text-[11px] text-gray-500 mt-2">Wskazówka: w ⚙️ → Pozycja ustaw „Stała: prawy dół”, aby widżet był zawsze w rogu ekranu.</p>`;
+        <p class="text-[11px] text-gray-500 mt-2">Wskazówka: w <i class=i-settings></i> <i class=i-arrow-right></i> Pozycja ustaw „Stała: prawy dół”, aby widżet był zawsze w rogu ekranu.</p>`;
     }
     else if (type === 'video') {
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">▶️ Wideo / Embed</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase"><i class=i-video></i> Wideo / Embed</span></div>
         <label class="block text-xs font-bold text-gray-500 mb-1">URL (YouTube / Vimeo / MP4)</label>
         <input type="text" class="block-video w-full border p-2 rounded bg-gray-50 focus:bg-white" placeholder="https://www.youtube.com/watch?v=..." value="${content || ''}">
         <p class="text-xs text-gray-400 mt-1">Wklej pełny link do filmu lub ścieżkę do wgranego pliku .mp4</p>
@@ -988,7 +988,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'button') {
         const data = (typeof content === 'object' && content) ? content : { label: 'Kliknij tutaj', url: '', style: 'primary' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-indigo-500 uppercase">🔘 Przycisk / Link</span></div>
+        <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-indigo-500 uppercase"><i class=i-mouse-pointer-click></i> Przycisk / Link</span></div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             ${fieldTpl('Tekst na przycisku', `<input type="text" class="btn-label w-full border p-2 rounded" placeholder="Dowiedz się więcej" value="${esc(data.label)}">`)}
             ${fieldTpl('Adres URL (lub #kotwica)', `<input type="text" class="btn-url w-full border p-2 rounded" placeholder="https://... / #agenda / /logout" value="${esc(data.url)}">`)}
@@ -1003,7 +1003,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'divider') {
         const data = typeof content === 'object' ? content : { height: '8' };
         innerHTML = `
-        <div class="flex justify-between items-center"><span class="text-xs font-bold text-gray-400 uppercase">➖ Separator / Odstęp Pionowy</span></div>
+        <div class="flex justify-between items-center"><span class="text-xs font-bold text-gray-400 uppercase"><i class=i-separator-horizontal></i> Separator / Odstęp Pionowy</span></div>
         <div class="mt-2 flex items-center gap-4 bg-gray-50 p-3 border rounded">
             <label class="text-sm font-bold text-gray-600">Wielkość Odstępu:</label>
             <select class="div-height border p-1 rounded">
@@ -1018,7 +1018,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     else if (type === 'quote') {
         const data = typeof content === 'object' ? content : { text: '', author: '' };
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-yellow-500 uppercase">❝ Cytat / Referencje</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-yellow-500 uppercase"><i class=i-quote></i> Cytat / Referencje</span></div>
         <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded-r-lg">
             <textarea class="quote-text w-full bg-transparent border-none font-serif italic text-lg resize-none focus:outline-none" placeholder="Tutaj wpisz treść cytatu lub referencji..." rows="3">${data.text}</textarea>
             <div class="flex items-center gap-2 mt-2 border-t border-yellow-200 pt-2">
@@ -1031,7 +1031,7 @@ function renderBlock(type, content = '', blockSettings = null) {
         div.className += " border-2 border-dashed border-purple-300 bg-purple-50/30";
         const data = typeof content === 'object' ? content : { title: '' };
         innerHTML = `
-        <div class="flex gap-2 mb-2"><span class="text-xs font-bold text-purple-600 uppercase">⇕ Rozwijany Akordeon (FAQ)</span></div>
+        <div class="flex gap-2 mb-2"><span class="text-xs font-bold text-purple-600 uppercase"><i class=i-list-collapse></i> Rozwijany Akordeon (FAQ)</span></div>
         <div class="bg-white border rounded shadow-sm">
             <div class="border-b p-3 bg-purple-100 flex items-center gap-3">
                 <span class="text-purple-600 font-bold text-xl">Q:</span>
@@ -1048,9 +1048,9 @@ function renderBlock(type, content = '', blockSettings = null) {
     }
     else if (type === 'system_login') {
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">🔐 System: Logowanie</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase"><i class=i-lock-keyhole></i> System: Logowanie</span></div>
         <div class="bg-gray-50 border-2 border-dashed border-gray-300 p-8 rounded-xl max-w-sm mx-auto my-4 text-center pointer-events-none">
-            <div class="text-4xl mb-3">🔐</div>
+            <div class="text-4xl mb-3 text-gray-400"><i class=i-lock-keyhole-thin></i></div>
             <h4 class="font-bold text-gray-700 text-lg">Moduł Logowania</h4>
             <p class="text-xs text-gray-500 mt-2 leading-relaxed">W tym miejscu na gotowej stronie wyrenderuje się kompletny formularz logowania do systemu.</p>
             <div class="mt-4 bg-white border border-gray-200 rounded p-4 opacity-50 shadow-sm">
@@ -1062,9 +1062,9 @@ function renderBlock(type, content = '', blockSettings = null) {
     }
     else if (type === 'system_register') {
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">📝 System: Rejestracja</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase"><i class=i-clipboard-list></i> System: Rejestracja</span></div>
         <div class="bg-gray-50 border-2 border-dashed border-gray-300 p-8 rounded-xl max-w-sm mx-auto my-4 text-center pointer-events-none">
-            <div class="text-4xl mb-3">📝</div>
+            <div class="text-4xl mb-3 text-gray-400"><i class=i-clipboard-list-thin></i></div>
             <h4 class="font-bold text-gray-700 text-lg">Moduł Rejestracji</h4>
             <p class="text-xs text-gray-500 mt-2 leading-relaxed">Tutaj wyświetli się formularz zakładania nowego konta dla odwiedzających.</p>
             <div class="mt-4 bg-white border border-gray-200 rounded p-4 opacity-50 shadow-sm">
@@ -1077,17 +1077,17 @@ function renderBlock(type, content = '', blockSettings = null) {
     }
     else if (type === 'system_change_password') {
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">🔑 System: Zmiana Hasła</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase"><i class=i-key-round></i> System: Zmiana Hasła</span></div>
         <div class="bg-gray-50 border-2 border-dashed border-gray-300 p-8 rounded-xl max-w-sm mx-auto my-4 text-center pointer-events-none">
-            <div class="text-4xl mb-3">🔑</div><h4 class="font-bold text-gray-700 text-lg">Moduł Zmiany Hasła</h4>
+            <div class="text-4xl mb-3 text-gray-400"><i class=i-key-round-thin></i></div><h4 class="font-bold text-gray-700 text-lg">Moduł Zmiany Hasła</h4>
             <div class="mt-4 bg-white border border-gray-200 rounded p-4 opacity-50 shadow-sm"><div class="h-8 bg-gray-100 rounded mb-2 w-full"></div><div class="h-8 bg-gray-100 rounded mb-4 w-full"></div><div class="h-10 bg-yellow-500 rounded w-full"></div></div>
         </div>`;
     }
     else if (type === 'system_lockdown') {
         innerHTML = `
-        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase">🚧 System: Lockdown</span></div>
+        <div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-red-500 uppercase"><i class=i-construction></i> System: Lockdown</span></div>
         <div class="bg-gray-50 border-2 border-dashed border-gray-300 p-8 rounded-xl max-w-sm mx-auto my-4 text-center pointer-events-none">
-            <div class="text-4xl mb-3">🚧</div><h4 class="font-bold text-gray-700 text-lg">Moduł Lockdown (Hasło Ogólne)</h4>
+            <div class="text-4xl mb-3 text-gray-400"><i class=i-construction-thin></i></div><h4 class="font-bold text-gray-700 text-lg">Moduł Lockdown (Hasło Ogólne)</h4>
             <div class="mt-4 bg-white border border-gray-200 rounded p-4 opacity-50 shadow-sm"><div class="h-8 bg-gray-100 rounded mb-4 w-full"></div><div class="h-10 bg-gray-800 rounded w-full"></div></div>
         </div>`;
     }
@@ -1218,7 +1218,7 @@ window.addImageCard = function(btn) {
     const div = document.createElement('div');
     div.className = "image-card border border-gray-300 bg-white p-3 mb-2 rounded shadow-sm relative group grid grid-cols-2 gap-2";
     div.innerHTML = `
-    <button type="button" onclick="this.closest('.image-card').querySelector('.item-settings-panel').classList.toggle('hidden')" class="absolute -top-2 right-6 bg-gray-500 hover:bg-gray-700 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10" title="Ustawienia kafelka">⚙️</button>
+    <button type="button" onclick="this.closest('.image-card').querySelector('.item-settings-panel').classList.toggle('hidden')" class="absolute -top-2 right-6 bg-gray-500 hover:bg-gray-700 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10" title="Ustawienia kafelka"><i class=i-settings></i></button>
     <button type="button" onclick="this.closest('.image-card').remove(); window.updateNavigator();" class="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition z-10">X</button>
     <div class="col-span-2">${imgInputTpl('card-img', 'URL Zdjęcia')}</div>
     <input type="text" class="card-title w-full border p-2 text-sm rounded font-bold text-orange-600" placeholder="Tytuł (np. Agenda)">
@@ -1737,8 +1737,8 @@ function imgInputTpl(className, placeholder, value = '') {
     return `
     <div class="flex w-full mb-1">
         <input type="text" id="${uniqueId}" class="${className} w-full border border-r-0 p-2 text-sm rounded-l bg-gray-50 focus:bg-white focus:outline-none" placeholder="${placeholder}" value="${esc(value)}" oninput="const p = this.closest('.block-item'); if(p){ const img = p.querySelector('.img-preview'); if(img && img.closest('.block-item') === p) img.src = this.value || defaultPlaceholder; }">
-        <button type="button" onclick="window.openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media">📂</button>
-        <button type="button" onclick="window.triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik">⬆️</button>
+        <button type="button" onclick="window.openMediaPicker('${uniqueId}')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 text-sm font-bold transition" title="Wybierz z Media"><i class=i-folder-open></i></button>
+        <button type="button" onclick="window.triggerInputUpload(this)" class="bg-blue-100 hover:bg-blue-200 border border-blue-200 text-blue-700 px-3 rounded-r text-sm font-bold transition" title="Wgraj Plik"><i class=i-upload></i></button>
     </div>`;
 }
 

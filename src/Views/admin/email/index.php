@@ -5,41 +5,41 @@
             <button onclick="openCompose('new')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow transition">
                 + Nowa Wiadomość
             </button>
-            <a href="/admin/email/templates" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded shadow transition">📋 Szablony</a>
-            <a href="/admin/settings" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded shadow transition"> ⚙️ Ustawienia IMAP/SMTP </a>
+            <a href="/admin/email/templates" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded shadow transition"><i class=i-clipboard-list></i> Szablony</a>
+            <a href="/admin/settings" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded shadow transition"> <i class=i-settings></i> Ustawienia IMAP/SMTP </a>
         </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-4 border-l-4 border-l-green-500">
-            <div class="bg-green-100 p-4 rounded-full text-green-600 text-2xl">📥</div>
+            <div class="bg-green-100 p-4 rounded-full text-green-600 text-2xl"><i class=i-database-backup></i></div>
             <div>
                 <p class="text-gray-500 text-sm font-bold uppercase">Odebrane (IMAP)</p>
                 <p class="text-3xl font-extrabold text-gray-800" id="imap-count">-</p>
             </div>
         </div>
         <a href="/admin/email/queue" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-4 border-l-4 border-l-orange-500 hover:bg-orange-50 transition cursor-pointer">
-            <div class="bg-orange-100 p-4 rounded-full text-orange-600 text-2xl">⏳</div>
+            <div class="bg-orange-100 p-4 rounded-full text-orange-600 text-2xl"><i class=i-loader-circle></i></div>
             <div>
                 <p class="text-gray-500 text-sm font-bold uppercase">Kolejka (Wysyłka)</p>
-                <p class="text-sm font-bold text-orange-600 mt-1">Sprawdź harmonogram ↗</p>
+                <p class="text-sm font-bold text-orange-600 mt-1">Sprawdź harmonogram <i class=i-arrow-up-right></i></p>
             </div>
         </a>
         <a href="/admin/email/lists" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-4 border-l-4 border-l-blue-500 hover:bg-blue-50 transition cursor-pointer">
-            <div class="bg-blue-100 p-4 rounded-full text-blue-600 text-2xl">👥</div>
+            <div class="bg-blue-100 p-4 rounded-full text-blue-600 text-2xl"><i class=i-users></i></div>
             <div>
                 <p class="text-gray-500 text-sm font-bold uppercase">Listy Odbiorców</p>
-                <p class="text-sm font-bold text-blue-600 mt-1">Zarządzaj subskrybentami ↗</p>
+                <p class="text-sm font-bold text-blue-600 mt-1">Zarządzaj subskrybentami <i class=i-arrow-up-right></i></p>
             </div>
         </a>
     </div>
 
     <div class="flex border-b border-gray-200 bg-gray-50 rounded-t-xl overflow-hidden shadow-sm">
         <button onclick="switchTab('inbox')" id="tab-btn-inbox" class="flex-1 py-4 font-bold text-blue-600 border-b-2 border-blue-600 bg-white transition">
-            📥 Odebrane (IMAP)
+            <i class=i-database-backup></i> Odebrane (IMAP)
         </button>
         <button onclick="switchTab('sent')" id="tab-btn-sent" class="flex-1 py-4 font-bold text-gray-500 hover:text-blue-600 transition border-b-2 border-transparent">
-            🚀 Wysłane z panelu
+            <i class=i-rocket></i> Wysłane z panelu
         </button>
     </div>
 
@@ -50,7 +50,7 @@
                 <span id="cache-badge" class="hidden bg-gray-200 text-gray-600 text-[10px] px-2 py-0.5 rounded font-bold uppercase">Wersja z Cache</span>
             </div>
             <button onclick="refreshCurrentTab()" id="btn-refresh" class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-bold py-1.5 px-3 rounded text-xs transition flex items-center gap-2 shadow-sm">
-                <span id="icon-refresh">🔄</span> Odśwież skrzynkę
+                <span id="icon-refresh"><i class=i-refresh-cw></i></span> Odśwież skrzynkę
             </button>
         </div>
         <table class="min-w-full text-left text-sm">
@@ -69,9 +69,9 @@
     <div class="mt-8 bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-800">
         <div class="bg-gray-800 px-5 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-700 transition" onclick="document.getElementById('imap-debug').classList.toggle('hidden')">
             <span class="text-gray-200 font-bold text-sm uppercase flex items-center gap-2">
-                <span>🛠️</span> Logi serwera IMAP (Kliknij by rozwinąć)
+                <span><i class=i-wrench></i></span> Logi serwera IMAP (Kliknij by rozwinąć)
             </span>
-            <span class="text-gray-400 font-bold">▼</span>
+            <span class="text-gray-400 font-bold"><i class=i-chevron-down></i></span>
         </div>
         <div id="imap-debug" class="hidden p-5">
             <pre id="imap-debug-content" class="text-green-400 text-[11px] font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">Oczekiwanie na logi...</pre>
@@ -99,8 +99,8 @@
         <div class="bg-gray-50 border-t p-4 flex flex-wrap justify-between items-center gap-3">
             <button onclick="document.getElementById('email-modal').classList.add('hidden')" class="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition">Zamknij</button>
             <div class="flex gap-2 w-full sm:w-auto" id="modal-actions">
-                <button onclick="openCompose('forward')" class="flex-1 sm:flex-none text-center px-6 py-2 border border-blue-200 text-blue-700 bg-blue-50 font-bold rounded-lg hover:bg-blue-100 transition shadow-sm">➡️ Przekaż</button>
-                <button onclick="openCompose('reply')" id="btn-reply" class="flex-1 sm:flex-none text-center px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md">↩️ Odpowiedz</button>
+                <button onclick="openCompose('forward')" class="flex-1 sm:flex-none text-center px-6 py-2 border border-blue-200 text-blue-700 bg-blue-50 font-bold rounded-lg hover:bg-blue-100 transition shadow-sm"><i class=i-forward></i> Przekaż</button>
+                <button onclick="openCompose('reply')" id="btn-reply" class="flex-1 sm:flex-none text-center px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md"><i class=i-reply></i> Odpowiedz</button>
             </div>
         </div>
     </div>
@@ -133,7 +133,7 @@
         <div class="bg-gray-50 border-t p-4 flex justify-between items-center gap-3 shrink-0">
             <button onclick="document.getElementById('compose-modal').classList.add('hidden')" class="px-6 py-2 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition">Anuluj</button>
             <button onclick="sendDirectEmail()" id="btn-send-direct" class="px-8 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-md flex items-center gap-2">
-                <span>🚀</span> Wyślij
+                <span><i class=i-rocket></i></span> Wyślij
             </button>
         </div>
     </div>
@@ -252,7 +252,7 @@ function sendDirectEmail() {
         return;
     }
 
-    btn.innerHTML = '⏳ Wysyłanie...';
+    btn.innerHTML = '<i class=i-loader-circle></i> Wysyłanie...';
     btn.disabled = true;
 
     fetch('/admin/email/send-direct', {
@@ -263,11 +263,11 @@ function sendDirectEmail() {
     .then(res => res.json())
     .then(data => {
         if(data.status === 'success') {
-            btn.innerHTML = '✅ Wysłano!';
+            btn.innerHTML = '<i class=i-circle-check></i> Wysłano!';
             btn.classList.replace('bg-blue-600', 'bg-green-600');
             setTimeout(() => {
                 document.getElementById('compose-modal').classList.add('hidden');
-                btn.innerHTML = '<span>🚀</span> Wyślij';
+                btn.innerHTML = '<span><i class=i-rocket></i></span> Wyślij';
                 btn.classList.replace('bg-green-600', 'bg-blue-600');
                 btn.disabled = false;
                 
@@ -276,13 +276,13 @@ function sendDirectEmail() {
             }, 1500);
         } else {
             alert("Błąd: " + data.message);
-            btn.innerHTML = '<span>🚀</span> Wyślij';
+            btn.innerHTML = '<span><i class=i-rocket></i></span> Wyślij';
             btn.disabled = false;
         }
     })
     .catch(err => {
         alert("Błąd połączenia. Spróbuj ponownie.");
-        btn.innerHTML = '<span>🚀</span> Wyślij';
+        btn.innerHTML = '<span><i class=i-rocket></i></span> Wyślij';
         btn.disabled = false;
     });
 }
@@ -302,7 +302,7 @@ function loadEmails(force = false) {
         .then(data => {
             icon.classList.remove('animate-spin');
             if (data.status === 'error') {
-                tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-8 text-center text-red-500 bg-red-50"><span class="font-bold">⚠️ ${escapeHTML(data.message)}</span></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-8 text-center text-red-500 bg-red-50"><span class="font-bold"><i class=i-triangle-alert></i> ${escapeHTML(data.message)}</span></td></tr>`;
                 updateLogs(data.log);
                 return;
             }
@@ -437,7 +437,7 @@ function openEmail(id, subject, from, date) {
                         details.className = "mt-6";
                         details.innerHTML = `
                             <summary class="text-xs font-bold text-gray-500 cursor-pointer bg-gray-100 hover:bg-gray-200 inline-block px-4 py-1.5 rounded-full transition outline-none select-none border border-gray-200">
-                                💬 Pokaż cytowaną historię (...)
+                                <i class=i-message-square-quote></i> Pokaż cytowaną historię (...)
                             </summary>
                             <div class="mt-4 opacity-80 border-l-4 border-gray-200 pl-4 overflow-x-auto text-sm quote-wrapper"></div>
                         `;

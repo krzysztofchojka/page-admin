@@ -1,7 +1,7 @@
 <div class="max-w-4xl mx-auto">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Kategorie Postów</h1>
-        <a href="/admin/posts" class="text-gray-500 font-bold hover:text-black">← Wróć do wpisów</a>
+        <a href="/admin/posts" class="text-gray-500 font-bold hover:text-black"><i class=i-arrow-left></i> Wróć do wpisów</a>
     </div>
 
     <div class="flex flex-col md:flex-row gap-6">

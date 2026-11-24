@@ -70,7 +70,7 @@
                         <?php else: ?>
                             <?php $url = !empty($page['slug']) ? '/' . ltrim($page['slug'], '/') : '/page?id=' . $page['id']; ?>
                             <a href="<?= htmlspecialchars($url) ?>" target="_blank" class="text-blue-500 hover:text-blue-700 hover:underline inline-flex items-center gap-1" title="Otwórz w nowej karcie">
-                                <?= htmlspecialchars($url) ?> <span class="text-xs">↗</span>
+                                <?= htmlspecialchars($url) ?> <span class="text-xs"><i class=i-arrow-up-right></i></span>
                             </a>
                         <?php endif; ?>
                     </td>

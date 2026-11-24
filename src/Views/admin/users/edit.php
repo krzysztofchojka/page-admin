@@ -1,7 +1,7 @@
 <div class="max-w-xl mx-auto mt-10">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Edycja Użytkownika #<?= $user['id'] ?></h1>
-        <a href="/admin/users" class="text-gray-500 hover:text-black font-bold">← Wróć</a>
+        <a href="/admin/users" class="text-gray-500 hover:text-black font-bold"><i class=i-arrow-left></i> Wróć</a>
     </div>
 
     <form action="/admin/users/update" method="POST" class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 border-t-4 border-t-blue-600">

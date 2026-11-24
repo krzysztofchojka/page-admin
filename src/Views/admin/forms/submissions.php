@@ -2,7 +2,7 @@
 $showDrafts = isset($_GET['drafts']) && $_GET['drafts'] == '1';
 $draftsUrl = $showDrafts ? "/admin/forms/submissions?id={$form['id']}" : "/admin/forms/submissions?id={$form['id']}&drafts=1";
 $draftsText = $showDrafts ? "Ukryj Wersje Robocze" : "Pokaż Wersje Robocze";
-$draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
+$draftsIcon = $showDrafts ? "<i class=i-eye></i>" : "<i class=i-file-pen></i>";
 ?>
 <div class="max-w-7xl mx-auto" style="max-width:100rem">
     <div class="flex justify-between items-center mb-6">
@@ -13,10 +13,10 @@ $draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
             </a>
             
             <button onclick="document.getElementById('export-files-modal').classList.remove('hidden')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition flex items-center gap-2" title="Pobierz wszystkie załączniki jako ZIP">
-                <span>📦</span> Pobierz Pliki (ZIP)
+                <span><i class=i-package></i></span> Pobierz Pliki (ZIP)
             </button>
             <button onclick="document.getElementById('export-modal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition flex items-center gap-2">
-                <span>⬇️</span> Eksportuj Dane
+                <span><i class=i-download></i></span> Eksportuj Dane
             </button>
             <a href="/admin/forms" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg shadow-sm transition">Wróć do formularzy</a>
         </div>
@@ -78,20 +78,20 @@ $draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
                                                     if (!empty($singleFile['storage_name'])) {
                                                         $origName = urlencode($singleFile['original_name'] ?? 'plik');
                                                         $dlUrl = "/form-download?file=".$singleFile['storage_name']."&orig=".$origName;
-                                                        echo '<a href="'.$dlUrl.'" class="text-blue-600 hover:text-blue-800 hover:underline font-bold flex items-center gap-1.5"><span class="text-base">📎</span> <span class="truncate max-w-[150px] inline-block">'.htmlspecialchars($singleFile['original_name'] ?? '').'</span></a>';
+                                                        echo '<a href="'.$dlUrl.'" class="text-blue-600 hover:text-blue-800 hover:underline font-bold flex items-center gap-1.5"><span class="text-base"><i class=i-paperclip></i></span> <span class="truncate max-w-[150px] inline-block">'.htmlspecialchars($singleFile['original_name'] ?? '').'</span></a>';
                                                     } else {
                                                         echo '<span class="text-gray-300">-</span>';
                                                     }
                                                 } else {
                                                     // Przypadek 2: Wiele plików - nested list 📦
                                                     echo '<div class="bg-gray-50 p-3 rounded-lg border border-gray-100 min-w-[200px]">';
-                                                    echo '<span class="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-wider">📦 Pliki (' . count($f) . '):</span>';
+                                                    echo '<span class="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-wider"><i class=i-package></i> Pliki (' . count($f) . '):</span>';
                                                     echo '<ul class="space-y-2">';
                                                     foreach ($f as $singleFile) {
                                                         if (empty($singleFile['storage_name'])) continue;
                                                         $origName = urlencode($singleFile['original_name'] ?? 'plik');
                                                         $dlUrl = "/form-download?file=".$singleFile['storage_name']."&orig=".$origName;
-                                                        echo '<li><a href="'.$dlUrl.'" class="text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-start gap-1.5 text-sm leading-tight"><span class="text-gray-400 mt-0.5">↳</span> <span class="truncate flex-1">'.htmlspecialchars($singleFile['original_name'] ?? '').'</span></a></li>';
+                                                        echo '<li><a href="'.$dlUrl.'" class="text-blue-600 hover:text-blue-800 hover:underline font-medium flex items-start gap-1.5 text-sm leading-tight"><span class="text-gray-400 mt-0.5"><i class=i-corner-down-right></i></span> <span class="truncate flex-1">'.htmlspecialchars($singleFile['original_name'] ?? '').'</span></a></li>';
                                                     }
                                                     echo '</ul>';
                                                     echo '</div>';
@@ -211,7 +211,7 @@ $draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
             <div class="mt-8 pt-4 border-t flex justify-end gap-3 sticky bottom-0 bg-white">
                 <button type="button" onclick="document.getElementById('export-modal').classList.add('hidden')" class="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition">Anuluj</button>
                 <button type="submit" onclick="setTimeout(()=>document.getElementById('export-modal').classList.add('hidden'), 500)" class="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-lg shadow-sm hover:bg-indigo-700 transition flex items-center gap-2">
-                    ⬇️ Pobierz Plik
+                    <i class=i-download></i> Pobierz Plik
                 </button>
             </div>
         </form>
@@ -222,7 +222,7 @@ $draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div class="bg-green-50 border-b border-green-100 p-5 flex justify-between items-center">
             <div>
-                <h3 class="font-bold text-green-900 text-lg flex items-center gap-2"><span>📦</span> Pobieranie Masowe Plików</h3>
+                <h3 class="font-bold text-green-900 text-lg flex items-center gap-2"><span><i class=i-package></i></span> Pobieranie Masowe Plików</h3>
                 <p class="text-xs text-green-700 mt-1">Zdefiniuj nazewnictwo dla wypakowywanych plików z archiwum ZIP.</p>
             </div>
             <button type="button" onclick="document.getElementById('export-files-modal').classList.add('hidden')" class="text-gray-400 hover:text-red-500 text-2xl font-bold leading-none">&times;</button>
@@ -272,7 +272,7 @@ $draftsIcon = $showDrafts ? "👁️‍🗨️" : "📝";
             <div class="mt-8 pt-4 flex justify-end gap-3 sticky bottom-0">
                 <button type="button" onclick="document.getElementById('export-files-modal').classList.add('hidden')" class="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-200 rounded-lg transition bg-white border border-gray-300 shadow-sm">Anuluj</button>
                 <button type="submit" onclick="setTimeout(()=>document.getElementById('export-files-modal').classList.add('hidden'), 500)" class="px-6 py-2.5 bg-green-600 text-white font-bold rounded-lg shadow-sm hover:bg-green-700 transition flex items-center gap-2">
-                    ⬇️ Pobierz ZIP
+                    <i class=i-download></i> Pobierz ZIP
                 </button>
             </div>
         </form>

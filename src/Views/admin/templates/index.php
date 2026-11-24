@@ -14,6 +14,7 @@ function getTemplatePreviewHtml($rawHtml) {
     <meta charset="UTF-8">
     <title>Zarządzaj Szablonami</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
     <style>
         .preview-iframe {
             width: 400%; height: 400%; transform: scale(0.25); transform-origin: top left; pointer-events: none;
@@ -46,7 +47,7 @@ function getTemplatePreviewHtml($rawHtml) {
             <div class="flex items-center gap-4">
                 <a href="/admin" class="text-gray-600 hover:text-gray-900 font-medium">Wróć do Dashboardu</a>
                 <div class="bg-white border border-gray-300 rounded-lg flex p-1 shadow-sm">
-                    <button onclick="setViewMode('list')" id="btn-view-list" class="px-3 py-1.5 rounded text-sm font-bold text-gray-500 hover:text-gray-800 transition focus:outline-none">☰ Lista</button>
+                    <button onclick="setViewMode('list')" id="btn-view-list" class="px-3 py-1.5 rounded text-sm font-bold text-gray-500 hover:text-gray-800 transition focus:outline-none"><i class=i-menu></i> Lista</button>
                     <button onclick="setViewMode('grid')" id="btn-view-grid" class="px-3 py-1.5 rounded text-sm font-bold text-gray-500 hover:text-gray-800 transition focus:outline-none">⊞ Siatka</button>
                 </div>
                 <a href="/admin/templates/create" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-sm transition">+ Utwórz Nowy</a>
@@ -82,11 +83,11 @@ function getTemplatePreviewHtml($rawHtml) {
                             </td>
                             <td class="px-5 py-4 text-sm font-bold text-gray-800 title-text <?= !($template['is_active'] ?? 1) ? 'text-gray-400 line-through' : '' ?>"><?= htmlspecialchars($template['title']) ?></td>
                             <td class="px-5 py-4 text-sm text-right space-x-2">
-                                <a href="/admin/templates/edit?id=<?= $template['id'] ?>" class="text-blue-600 hover:text-blue-900 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition">✏️ Edytuj HTML</a>
+                                <a href="/admin/templates/edit?id=<?= $template['id'] ?>" class="text-blue-600 hover:text-blue-900 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition"><i class=i-pencil></i> Edytuj HTML</a>
                                 <button onclick="toggleTemplateStatus(<?= $template['id'] ?>)" class="toggle-btn px-3 py-1.5 rounded transition font-bold <?= ($template['is_active'] ?? 1) ? 'text-gray-600 bg-gray-100 hover:bg-gray-200' : 'text-green-700 bg-green-100 hover:bg-green-200' ?>">
                                     <?= ($template['is_active'] ?? 1) ? 'Wyłącz' : 'Aktywuj' ?>
                                 </button>
-                                <button onclick="deleteTemplate(<?= $template['id'] ?>)" class="text-red-500 hover:text-red-700 font-bold bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded transition">🗑️ Usuń</button>
+                                <button onclick="deleteTemplate(<?= $template['id'] ?>)" class="text-red-500 hover:text-red-700 font-bold bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded transition"><i class=i-trash-2></i> Usuń</button>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -122,13 +123,13 @@ function getTemplatePreviewHtml($rawHtml) {
                         
                         <div class="flex flex-col gap-1.5 border-t border-gray-100 pt-3 mt-auto">
                             <a href="/admin/templates/edit?id=<?= $template['id'] ?>" class="w-full text-center text-blue-600 hover:text-blue-800 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition text-xs">
-                                ✏️ Edytuj kod HTML
+                                <i class=i-pencil></i> Edytuj kod HTML
                             </a>
                             <div class="flex justify-between items-stretch gap-1.5">
                                 <button onclick="toggleTemplateStatus(<?= $template['id'] ?>)" class="toggle-btn flex-1 text-center font-bold px-2 py-1.5 rounded transition text-[11px] <?= ($template['is_active'] ?? 1) ? 'text-gray-600 bg-gray-100 hover:bg-gray-200' : 'text-green-700 bg-green-100 hover:bg-green-200' ?>">
-                                    <?= ($template['is_active'] ?? 1) ? '✅ Aktywny (Wyłącz)' : '❌ Wyłączony (Aktywuj)' ?>
+                                    <?= ($template['is_active'] ?? 1) ? '<i class=i-circle-check></i> Aktywny (Wyłącz)' : '<i class=i-circle-x></i> Wyłączony (Aktywuj)' ?>
                                 </button>
-                                <button onclick="deleteTemplate(<?= $template['id'] ?>)" class="text-red-500 hover:text-red-700 font-bold bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded transition flex items-center justify-center text-xs" title="Usuń całkowicie">🗑️</button>
+                                <button onclick="deleteTemplate(<?= $template['id'] ?>)" class="text-red-500 hover:text-red-700 font-bold bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded transition flex items-center justify-center text-xs" title="Usuń całkowicie"><i class=i-trash-2></i></button>
                             </div>
                         </div>
                     </div>
@@ -152,7 +153,7 @@ function getTemplatePreviewHtml($rawHtml) {
 
         const toast = document.createElement('div');
         const bgColor = type === 'error' ? 'bg-red-600' : 'bg-green-600';
-        const icon = type === 'error' ? '⚠️' : '✅';
+        const icon = type === 'error' ? '<i class=i-triangle-alert></i>' : '<i class=i-circle-check></i>';
         
         toast.className = `${bgColor} text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform transition-all duration-300 translate-y-10 opacity-0 pointer-events-auto max-w-sm`;
         toast.innerHTML = `<span class="text-xl">${icon}</span><span class="font-bold text-sm leading-tight">${message}</span>`;
@@ -202,13 +203,13 @@ function getTemplatePreviewHtml($rawHtml) {
                         item.querySelector('.title-text').classList.remove('line-through');
                         item.querySelector('.badge-container').innerHTML = '';
                         btn.className = 'toggle-btn flex-1 text-center font-bold px-2 py-1.5 rounded transition text-[11px] text-gray-600 bg-gray-100 hover:bg-gray-200';
-                        btn.innerHTML = '✅ Aktywny (Wyłącz)';
+                        btn.innerHTML = '<i class=i-circle-check></i> Aktywny (Wyłącz)';
                     } else {
                         item.classList.add('opacity-70', 'grayscale-[30%]');
                         item.querySelector('.title-text').classList.add('line-through');
                         item.querySelector('.badge-container').innerHTML = '<span class="bg-gray-200 text-gray-600 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase mt-1 inline-block">Wyłączony</span>';
                         btn.className = 'toggle-btn flex-1 text-center font-bold px-2 py-1.5 rounded transition text-[11px] text-green-700 bg-green-100 hover:bg-green-200';
-                        btn.innerHTML = '❌ Wyłączony (Aktywuj)';
+                        btn.innerHTML = '<i class=i-circle-x></i> Wyłączony (Aktywuj)';
                     }
                 }
 

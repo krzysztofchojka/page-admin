@@ -44,7 +44,7 @@ class PostsGridBlock implements BlockInterface {
                 }
                 $html .= '</div>';
             }
-            $html .= '<a href="'.$postUrl.'" class="text-blue-600 font-bold text-sm uppercase tracking-wide hover:underline mt-auto flex items-center gap-1">Czytaj dalej <span class="text-lg leading-none">→</span></a>';
+            $html .= '<a href="'.$postUrl.'" class="text-blue-600 font-bold text-sm uppercase tracking-wide hover:underline mt-auto flex items-center gap-1">Czytaj dalej <span class="text-lg leading-none"><i class=i-arrow-right></i></span></a>';
             $html .= '</div></article>';
         }
         $html .= '</div>';

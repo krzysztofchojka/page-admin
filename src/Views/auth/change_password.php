@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Change Password</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
 </head>
 <body class="bg-yellow-50 flex items-center justify-center h-screen">
 
@@ -25,7 +26,7 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2">New Password</label>
                 <div class="relative">
                     <input class="shadow appearance-none border rounded w-full py-2 px-3 pr-10 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="change_pass1" name="pass1" type="password" required>
-                    <button type="button" onclick="toggleVisibility('change_pass1')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                    <button type="button" onclick="toggleVisibility('change_pass1')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
                 </div>
             </div>
             
@@ -33,7 +34,7 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
                 <div class="relative">
                     <input class="shadow appearance-none border rounded w-full py-2 px-3 pr-10 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="change_pass2" name="pass2" type="password" required>
-                    <button type="button" onclick="toggleVisibility('change_pass2')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                    <button type="button" onclick="toggleVisibility('change_pass2')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
                 </div>
             </div>
             

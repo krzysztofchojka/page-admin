@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Edycja Wpisu</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
@@ -49,7 +50,7 @@
 
 <div class="bg-white shadow-sm p-4 flex justify-between items-center z-50 shrink-0 border-b border-gray-200">
     <div class="flex items-center gap-4 flex-1">
-        <a href="/admin/posts" class="text-gray-500 hover:text-black font-bold">← Wróć</a>
+        <a href="/admin/posts" class="text-gray-500 hover:text-black font-bold"><i class=i-arrow-left></i> Wróć</a>
         <input type="text" id="pageTitle" value="<?= htmlspecialchars($post['title']) ?>" class="text-2xl font-bold border-b border-transparent hover:border-gray-300 focus:outline-none px-2 text-gray-800 w-1/2" placeholder="Wpisz tytuł posta..." />
         <span class="text-sm font-bold <?= $post['status'] == 'published' ? 'text-green-600 bg-green-50' : 'text-gray-500 bg-gray-100' ?> px-3 py-1 rounded-full uppercase tracking-wider">
             Obecnie: <?= $post['status'] == 'published' ? 'Opublikowany' : 'Szkic' ?>
@@ -62,10 +63,10 @@
             </span>
         <?php endif; ?>
         <button onclick="savePost('draft')" id="btn-draft" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-800 px-6 py-2.5 rounded-lg font-bold transition shadow-sm">
-            💾 Zapisz jako Szkic
+            <i class=i-save></i> Zapisz jako Szkic
         </button>
         <button onclick="savePost('published')" id="btn-publish" class="bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 rounded-lg shadow-md font-bold transition">
-            🚀 Opublikuj
+            <i class=i-rocket></i> Opublikuj
         </button>
     </div>
 </div>
@@ -74,21 +75,21 @@
     <div class="w-72 bg-white border-r shadow-lg flex flex-col shrink-0 z-40 overflow-y-auto">
         <div class="p-4 bg-gray-50 border-b font-bold text-gray-700 text-sm uppercase tracking-wider">Bloki Treści</div>
         <div class="p-4 grid grid-cols-2 gap-3" id="block-sidebar">
-            <div class="sidebar-block border bg-white hover:border-blue-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="text"><span class="text-lg text-blue-500">T</span>Tekst</div>
-            <div class="sidebar-block border bg-white hover:border-green-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="image"><span class="text-lg text-green-500">🖼</span>Obrazek</div>
-            <div class="sidebar-block border bg-white hover:border-pink-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="gallery"><span class="text-lg text-pink-500">📷</span>Galeria</div>
-            <div class="sidebar-block border bg-white hover:border-red-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="video"><span class="text-lg text-red-500">▶️</span>Wideo</div>
-            <div class="sidebar-block border bg-white hover:border-indigo-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="button"><span class="text-lg text-indigo-500">🔘</span>Przycisk</div>
-            <div class="sidebar-block border bg-white hover:border-yellow-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="quote"><span class="text-lg text-yellow-500">❝</span>Cytat</div>
-            <div class="sidebar-block border bg-white hover:border-gray-800 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="divider"><span class="text-lg text-gray-400">➖</span>Odstęp</div>
-            <div class="sidebar-block border bg-white hover:border-teal-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="form"><span class="text-lg text-teal-500">📝</span>Formularz</div>
-            <div class="sidebar-block border bg-white hover:border-gray-800 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="raw_html"><span class="text-lg text-gray-800">&lt;/&gt;</span>HTML</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="text"><span class="text-lg text-blue-500"><i class=i-type></i></span>Tekst</div>
+            <div class="sidebar-block border bg-white hover:border-green-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="image"><span class="text-lg text-green-500"><i class=i-image></i></span>Obrazek</div>
+            <div class="sidebar-block border bg-white hover:border-pink-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="gallery"><span class="text-lg text-pink-500"><i class=i-images></i></span>Galeria</div>
+            <div class="sidebar-block border bg-white hover:border-red-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="video"><span class="text-lg text-red-500"><i class=i-video></i></span>Wideo</div>
+            <div class="sidebar-block border bg-white hover:border-indigo-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="button"><span class="text-lg text-indigo-500"><i class=i-mouse-pointer-click></i></span>Przycisk</div>
+            <div class="sidebar-block border bg-white hover:border-yellow-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="quote"><span class="text-lg text-yellow-500"><i class=i-quote></i></span>Cytat</div>
+            <div class="sidebar-block border bg-white hover:border-gray-800 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="divider"><span class="text-lg text-gray-400"><i class=i-separator-horizontal></i></span>Odstęp</div>
+            <div class="sidebar-block border bg-white hover:border-teal-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="form"><span class="text-lg text-teal-500"><i class=i-file-pen></i></span>Formularz</div>
+            <div class="sidebar-block border bg-white hover:border-gray-800 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="raw_html"><span class="text-lg text-gray-800"><i class=i-code-xml></i></span>HTML</div>
             <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-2 mb-1 border-b pb-1">Układ i formatowanie</div>
-            <div class="sidebar-block border bg-white hover:border-slate-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="heading"><span class="text-lg text-slate-600">H</span>Nagłówek</div>
-            <div class="sidebar-block border bg-white hover:border-cyan-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="section"><span class="text-lg text-cyan-600">▭</span>Sekcja</div>
-            <div class="sidebar-block border bg-white hover:border-violet-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="grid"><span class="text-lg text-violet-600">▦</span>Siatka</div>
-            <div class="sidebar-block border bg-white hover:border-sky-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="switcher"><span class="text-lg text-sky-600">⇆</span>Przełącznik</div>
-            <div class="sidebar-block border bg-white hover:border-emerald-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="schedule"><span class="text-lg text-emerald-600">🕒</span>Harmonogram</div>
+            <div class="sidebar-block border bg-white hover:border-slate-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="heading"><span class="text-lg text-slate-600"><i class=i-heading></i></span>Nagłówek</div>
+            <div class="sidebar-block border bg-white hover:border-cyan-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="section"><span class="text-lg text-cyan-600"><i class=i-rectangle-horizontal></i></span>Sekcja</div>
+            <div class="sidebar-block border bg-white hover:border-violet-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="grid"><span class="text-lg text-violet-600"><i class=i-layout-grid></i></span>Siatka</div>
+            <div class="sidebar-block border bg-white hover:border-sky-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="switcher"><span class="text-lg text-sky-600"><i class=i-arrow-left-right></i></span>Przełącznik</div>
+            <div class="sidebar-block border bg-white hover:border-emerald-500 p-3 rounded cursor-grab text-center text-sm font-bold flex flex-col items-center gap-1" data-type="schedule"><span class="text-lg text-emerald-600"><i class=i-calendar-clock></i></span>Harmonogram</div>
         </div>
     </div>
 
@@ -112,7 +113,7 @@
                         if ($zoneId === 'post_header') {
                             return '<div class="min-h-[120px] border-2 border-dashed border-gray-300 bg-gray-50 p-4 rounded-lg relative flex flex-col items-center justify-center select-none" data-zone-uid="'.$zoneId.'">
                                 <span class="absolute top-0 right-0 bg-gray-400 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">STREFA SYSTEMOWA: '.$zoneId.'</span>
-                                <span class="text-2xl mb-1 opacity-50">📰</span>
+                                <span class="text-2xl mb-1 opacity-50"><i class=i-newspaper></i></span>
                                 <p class="text-gray-500 font-bold text-xs text-center uppercase tracking-wide">
                                     Tu pojawi się automatyczny nagłówek wpisu<br>
                                     <span class="font-normal text-[10px] normal-case">(Tytuł, kategoria, data. Upuszczanie bloków jest zablokowane)</span>
@@ -170,7 +171,7 @@
                 <p class="text-[11px] text-gray-500 mb-2 leading-tight">Wyświetli się na liście postów. Zostaw puste, by nie pokazywać grafiki.</p>
                 <div class="flex">
                     <input type="text" id="postThumbnail" value="<?= htmlspecialchars($post['thumbnail'] ?? '') ?>" class="w-full border border-gray-300 rounded-l p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="/uploads/media/obrazek.jpg" oninput="document.getElementById('thumb-preview').src = this.value || 'https://via.placeholder.com/400x250?text=Brak+Miniaturki'">
-                    <button type="button" onclick="window.openMediaPicker('postThumbnail')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 font-bold hover:bg-purple-200 transition">📂</button>
+                    <button type="button" onclick="window.openMediaPicker('postThumbnail')" class="bg-purple-100 border border-purple-200 text-purple-800 px-3 font-bold hover:bg-purple-200 transition"><i class=i-folder-open></i></button>
                 </div>
                 <div class="mt-2 h-32 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center">
                     <img id="thumb-preview" src="<?= !empty($post['thumbnail']) ? htmlspecialchars($post['thumbnail']) : 'https://via.placeholder.com/400x250?text=Brak+Miniaturki' ?>" class="w-full h-full object-cover">
@@ -307,8 +308,8 @@ document.getElementById('postTemplate').addEventListener('change', function() {
         const originalDraftText = btnDraft.innerHTML;
         const originalPublishText = btnPublish.innerHTML;
 
-        if (statusToSave === 'draft') btnDraft.innerHTML = '⏳ Zapisywanie...';
-        if (statusToSave === 'published') btnPublish.innerHTML = '⏳ Publikowanie...';
+        if (statusToSave === 'draft') btnDraft.innerHTML = '<i class=i-loader-circle></i> Zapisywanie...';
+        if (statusToSave === 'published') btnPublish.innerHTML = '<i class=i-loader-circle></i> Publikowanie...';
 
         btnDraft.disabled = true;
         btnPublish.disabled = true;
@@ -352,10 +353,10 @@ document.getElementById('postTemplate').addEventListener('change', function() {
             if (data.status === 'success') {
                 // Pokaż, że się udało
                 if (statusToSave === 'draft') {
-                    btnDraft.innerHTML = '✅ Zapisano Szkic!';
+                    btnDraft.innerHTML = '<i class=i-circle-check></i> Zapisano Szkic!';
                     btnDraft.classList.add('bg-green-100', 'text-green-800', 'border-green-300');
                 } else {
-                    btnPublish.innerHTML = '✅ Opublikowano!';
+                    btnPublish.innerHTML = '<i class=i-circle-check></i> Opublikowano!';
                     btnPublish.classList.replace('bg-green-600', 'bg-emerald-500');
                 }
                 

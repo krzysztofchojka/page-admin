@@ -65,7 +65,7 @@
                         <td class="px-6 py-4">
                             <?php if($q['list_name']): ?>
                                 <span class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md inline-block mb-1 shadow-sm">
-                                    📂 <?= htmlspecialchars($q['list_name']) ?>
+                                    <i class=i-folder-open></i> <?= htmlspecialchars($q['list_name']) ?>
                                 </span><br>
                             <?php endif; ?>
                             <?php if($q['custom_emails']): ?>
@@ -96,11 +96,11 @@
                             <div class="flex items-center gap-2 justify-end">
                                 <?php if($q['status'] == 'pending'): ?>
                                     <a href="/admin/email/trigger?id=<?= $q['id'] ?>" class="text-white bg-green-500 hover:bg-green-600 font-bold px-4 py-2 rounded shadow transition text-xs flex items-center gap-1">
-                                        <span>🚀</span> Wyślij
+                                        <span><i class=i-rocket></i></span> Wyślij
                                     </a>
                                 <?php else: ?>
                                     <a href="/admin/email/trigger?id=<?= $q['id'] ?>&resend=1" onclick="return confirm('Kopia zostanie dodana do kolejki. Kontynuować?')" class="text-gray-700 bg-gray-100 border border-gray-300 hover:bg-gray-200 font-bold px-3 py-1.5 rounded shadow-sm transition text-xs flex items-center gap-1">
-                                        <span>🔄</span> Ponów
+                                        <span><i class=i-refresh-cw></i></span> Ponów
                                     </a>
                                 <?php endif; ?>
                             </div>

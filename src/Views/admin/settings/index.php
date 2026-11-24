@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <title>Site Settings</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
 </head>
 <body class="bg-gray-100 p-10">
 
 <div class="max-w-2xl mx-auto bg-white p-8 rounded shadow">
-    <a href="/admin" class="text-gray-500 hover:text-black mb-4 inline-block font-bold">← Wróć do Dashboardu</a>
+    <a href="/admin" class="text-gray-500 hover:text-black mb-4 inline-block font-bold"><i class=i-arrow-left></i> Wróć do Dashboardu</a>
     <h1 class="text-2xl font-bold mb-6">Ustawienia Systemu i Bezpieczeństwo</h1>
 
     <?php $flash = \CMS\Core\Session::getFlash(); if ($flash): ?>
@@ -46,7 +47,7 @@
             <label class="block font-bold mt-4">Global Access Password</label>
             <div class="relative">
                 <input type="password" id="input_lockdown" name="lockdown_password" value="<?= $settings['lockdown_password'] ?? '' ?>" class="w-full border p-2 rounded pr-10">
-                <button type="button" onclick="toggleVisibility('input_lockdown')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                <button type="button" onclick="toggleVisibility('input_lockdown')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
             </div>
         </div>
 
@@ -81,7 +82,7 @@
                         <label class="block font-bold text-sm text-gray-700">Tajne Hasło</label>
                         <div class="relative">
                             <input type="password" id="input_secret" name="reg_secret_pass" value="<?= htmlspecialchars($settings['reg_secret_pass'] ?? '') ?>" class="w-full border p-2 rounded text-sm pr-10" placeholder="np. haslo123!">
-                            <button type="button" onclick="toggleVisibility('input_secret')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                            <button type="button" onclick="toggleVisibility('input_secret')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
                         </div>
                     </div>
                 </div>
@@ -185,7 +186,7 @@
                 <label class="block font-bold text-sm">Hasło</label>
                 <div class="relative">
                     <input type="password" id="input_imap" name="imap_pass" value="<?= htmlspecialchars($settings['imap_pass'] ?? '') ?>" class="w-full border p-2 rounded text-sm pr-10">
-                    <button type="button" onclick="toggleVisibility('input_imap')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                    <button type="button" onclick="toggleVisibility('input_imap')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
                 </div>
             </div>
         </div>
@@ -208,7 +209,7 @@
                 <label class="block font-bold text-sm">Hasło</label>
                 <div class="relative">
                     <input type="password" id="input_smtp" name="smtp_pass" value="<?= htmlspecialchars($settings['smtp_pass'] ?? '') ?>" class="w-full border p-2 rounded text-sm pr-10">
-                    <button type="button" onclick="toggleVisibility('input_smtp')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                    <button type="button" onclick="toggleVisibility('input_smtp')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
                 </div>
             </div>
         </div>
@@ -241,7 +242,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         
         <div class="bg-green-50 p-5 border border-green-200 rounded-xl">
-            <h4 class="font-bold text-green-800 text-lg mb-2">📥 Pobierz Kopię (Backup)</h4>
+            <h4 class="font-bold text-green-800 text-lg mb-2"><i class=i-database-backup></i> Pobierz Kopię (Backup)</h4>
             <p class="text-xs text-green-700 mb-4">
                 Pobiera pełny zrzut bazy danych (wszystkie tabele, ustawienia, strony). Skrypt automatycznie wykrywa nowe tabele.
             </p>
@@ -251,7 +252,7 @@
         </div>
 
         <div class="bg-red-50 p-5 border border-red-200 rounded-xl">
-            <h4 class="font-bold text-red-800 text-lg mb-2">♻️ Przywróć Bazę</h4>
+            <h4 class="font-bold text-red-800 text-lg mb-2"><i class=i-history></i> Przywróć Bazę</h4>
             <p class="text-xs text-red-700 mb-4">
                 <strong class="uppercase">Uwaga:</strong> Ta operacja nadpisze obecną bazę danych! Używaj ostrożnie.
             </p>

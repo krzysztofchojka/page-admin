@@ -164,6 +164,9 @@ $router->post('/admin/media/delete', [MediaController::class, 'delete'], [AdminM
 $router->post('/admin/media/createFolder', [MediaController::class, 'createFolder'], [AdminMiddleware::class]);
 $router->post('/admin/media/rename', [MediaController::class, 'rename'], [AdminMiddleware::class]);
 $router->post('/admin/media/move', [MediaController::class, 'move'], [AdminMiddleware::class]);
+$router->post('/admin/media/unzip', [MediaController::class, 'unzip'], [AdminMiddleware::class]);
+$router->get('/admin/media/readText', [MediaController::class, 'readText'], [AdminMiddleware::class]);
+$router->post('/admin/media/saveText', [MediaController::class, 'saveText'], [AdminMiddleware::class]);
 
 // Użytkownicy
 $router->get('/admin/users', [UserController::class, 'index'], [AdminMiddleware::class]);

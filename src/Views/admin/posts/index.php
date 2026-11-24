@@ -26,7 +26,7 @@
                             <?php if($p['thumbnail']): ?>
                                 <img src="<?= htmlspecialchars($p['thumbnail']) ?>" class="w-12 h-12 object-cover rounded border">
                             <?php else: ?>
-                                <div class="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-xl">📄</div>
+                                <div class="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-xl"><i class=i-file-text></i></div>
                             <?php endif; ?>
                             <span class="font-bold text-gray-800"><?= htmlspecialchars($p['title']) ?></span>
                         </div>

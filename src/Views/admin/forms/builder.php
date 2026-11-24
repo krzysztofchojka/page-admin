@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Form Builder</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         .ghost { opacity: 0.5; background: #e0e7ff; border: 2px dashed #4f46e5; }
@@ -17,7 +18,7 @@
     <div class="w-80 bg-white border-r shadow-lg flex flex-col shrink-0 z-40">
         <div class="p-4 bg-gray-50 border-b font-bold text-gray-700 uppercase tracking-wide text-sm flex justify-between items-center">
             <span>Pola Formularza</span>
-            <span class="text-xl">📝</span>
+            <span class="text-xl"><i class=i-clipboard-list></i></span>
         </div>
         
         <div class="px-4 pt-4">
@@ -33,27 +34,27 @@
 
         <div id="form-sidebar" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3 content-start">
             <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-2 mb-1 border-b pb-1">Podstawowe</div>
-            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="text"><span class="text-lg">T</span>Tekst</div>
-            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="email"><span class="text-lg">📧</span>Email</div>
-            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="phone"><span class="text-lg">📞</span>Telefon</div>
-            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="textarea"><span class="text-lg">📄</span>Długi tekst</div>
-            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="date"><span class="text-lg">📅</span>Data</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="text"><span class="text-lg"><i class=i-type></i></span>Tekst</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="email"><span class="text-lg"><i class=i-at-sign></i></span>Email</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="phone"><span class="text-lg"><i class=i-phone></i></span>Telefon</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="textarea"><span class="text-lg"><i class=i-file-text></i></span>Długi tekst</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="date"><span class="text-lg"><i class=i-calendar></i></span>Data</div>
             
             <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Wybór</div>
-            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="select"><span class="text-lg">🔽</span>Lista (Select)</div>
-            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="radio"><span class="text-lg">🔘</span>Pojedynczy (Radio)</div>
-            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="checkbox"><span class="text-lg">☑️</span>Wielokrotny</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="select"><span class="text-lg"><i class=i-chevrons-up-down></i></span>Lista (Select)</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="radio"><span class="text-lg"><i class=i-circle-dot></i></span>Pojedynczy (Radio)</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="checkbox"><span class="text-lg"><i class=i-square-check></i></span>Wielokrotny</div>
 
             <div class="col-span-2 text-xs font-bold text-gray-400 uppercase mt-4 mb-1 border-b pb-1">Zaawansowane</div>
-            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="file"><span class="text-lg">📎</span>Plik</div>
-            <div class="sidebar-block border bg-white hover:border-gray-800 hover:bg-gray-100 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="html"><span class="text-lg">&lt;/&gt;</span>Custom HTML</div>
-            <div class="sidebar-block border bg-white hover:border-indigo-500 hover:bg-indigo-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1 col-span-2" data-type="section"><span class="text-lg">▬</span>Nagłówek sekcji</div>
-            <div class="sidebar-block border bg-white hover:border-indigo-500 hover:bg-indigo-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1 col-span-2" data-type="account" title="Pokazuje e-mail zalogowanego użytkownika (tylko do odczytu). Gościom się nie wyświetla."><span class="text-lg">👤</span>Konto (e-mail)</div>
+            <div class="sidebar-block border bg-white hover:border-blue-500 hover:bg-blue-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="file"><span class="text-lg"><i class=i-paperclip></i></span>Plik</div>
+            <div class="sidebar-block border bg-white hover:border-gray-800 hover:bg-gray-100 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="html"><span class="text-lg"><i class=i-code-xml></i></span>Custom HTML</div>
+            <div class="sidebar-block border bg-white hover:border-indigo-500 hover:bg-indigo-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1 col-span-2" data-type="section"><span class="text-lg"><i class=i-heading></i></span>Nagłówek sekcji</div>
+            <div class="sidebar-block border bg-white hover:border-indigo-500 hover:bg-indigo-50 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1 col-span-2" data-type="account" title="Pokazuje e-mail zalogowanego użytkownika (tylko do odczytu). Gościom się nie wyświetla."><span class="text-lg"><i class=i-user></i></span>Konto (e-mail)</div>
 
             <div class="col-span-2 text-xs font-bold text-red-400 uppercase mt-4 mb-1 border-b border-red-100 pb-1">Anty-Spam (Boty)</div>
-            <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="honeypot"><span class="text-lg">🍯</span>Honeypot</div>
-            <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-[11px] font-bold transition flex flex-col items-center gap-1" data-type="captcha_image"><span class="text-lg">🖼️</span>Obrazek</div>
-            <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-[11px] font-bold transition flex flex-col items-center gap-1" data-type="captcha_turnstile"><span class="text-lg">🛡️</span>Turnstile</div>
+            <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-xs font-bold transition flex flex-col items-center gap-1" data-type="honeypot"><span class="text-lg"><i class=i-bug-off></i></span>Honeypot</div>
+            <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-[11px] font-bold transition flex flex-col items-center gap-1" data-type="captcha_image"><span class="text-lg"><i class=i-image></i></span>Obrazek</div>
+            <div class="sidebar-block border border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 text-red-700 p-3 rounded shadow-sm cursor-grab text-center text-[11px] font-bold transition flex flex-col items-center gap-1" data-type="captcha_turnstile"><span class="text-lg"><i class=i-shield-check></i></span>Turnstile</div>
         </div>
 
         <div class="p-4 border-t bg-gray-50 max-h-[48vh] overflow-y-auto shrink-0">
@@ -85,7 +86,7 @@
                 <input type="checkbox" id="allowMultipleFiles" class="rounded text-blue-600"> Wiele plików w inputach (Multi-upload)
             </label>
             <button type="button" onclick="openEmailModal()" class="w-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold py-2.5 rounded shadow-sm transition text-sm flex items-center justify-center gap-2">
-                <span>✉️</span> Powiadomienia Email
+                <span><i class=i-mail></i></span> Powiadomienia Email
             </button>
         </div>
     </div>
@@ -95,11 +96,11 @@
     <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
         <div class="bg-white shadow-sm p-4 flex justify-between items-center z-10">
             <div class="flex items-center gap-4">
-                <a href="/admin/forms" class="text-gray-500 hover:text-black font-bold">← Wróć</a>
+                <a href="/admin/forms" class="text-gray-500 hover:text-black font-bold"><i class=i-arrow-left></i> Wróć</a>
                 <input type="text" id="formTitle" value="<?= htmlspecialchars($form['title']) ?>" class="text-2xl font-bold border-b border-transparent hover:border-gray-300 focus:outline-none px-2 text-gray-800 w-96" placeholder="Tytuł Formularza">
             </div>
             <div>
-                <span class="text-sm text-gray-400 mr-4 hidden md:inline">Przeciągnij bloki z paska po lewej →</span>
+                <span class="text-sm text-gray-400 mr-4 hidden md:inline">Przeciągnij bloki z paska po lewej <i class=i-arrow-right></i></span>
                 <button onclick="saveForm()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 rounded-lg shadow font-bold transition">Zapisz Formularz</button>
             </div>
         </div>
@@ -145,7 +146,7 @@
             <div class="p-5 overflow-y-auto max-h-[75vh] flex flex-col gap-6">
                 
                 <div class="bg-blue-50 text-blue-800 p-3 rounded text-sm border border-blue-200 shadow-sm flex items-start gap-2">
-                    <span class="text-xl leading-none">💡</span>
+                    <span class="text-xl leading-none"><i class=i-lightbulb></i></span>
                     <span><strong>Wskazówka:</strong> Pamiętaj, by przed konfiguracją przypisań tagów kliknąć <b>"Zapisz formularz"</b> na stronie głównej – tylko wtedy nowo dodane pola pojawią się w selektach. System automatycznie odczyta tagi z wybranych szablonów (np. <code>{{twoj_tag}}</code>) i zapyta Cię, które pole chcesz pod nie podpiąć.</span>
                 </div>
 
@@ -168,7 +169,7 @@
                                         <option value="<?= $tpl['id'] ?>"><?= htmlspecialchars($tpl['title']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="button" onclick="previewTemplate('email_user_template')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded shadow-sm text-sm font-bold transition">👁️</button>
+                                <button type="button" onclick="previewTemplate('email_user_template')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded shadow-sm text-sm font-bold transition"><i class=i-eye></i></button>
                             </div>
                         </div>
                     </div>
@@ -199,7 +200,7 @@
                                         <option value="<?= $tpl['id'] ?>"><?= htmlspecialchars($tpl['title']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="button" onclick="previewTemplate('email_admin_template')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded shadow-sm text-sm font-bold transition">👁️</button>
+                                <button type="button" onclick="previewTemplate('email_admin_template')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded shadow-sm text-sm font-bold transition"><i class=i-eye></i></button>
                             </div>
                         </div>
                     </div>
@@ -216,7 +217,7 @@
             </div>
             <div class="bg-gray-50 border-t p-4 flex justify-end gap-3">
                 <button type="button" onclick="closeEmailModal()" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded transition">Anuluj</button>
-                <button type="button" onclick="saveEmailModal()" class="px-6 py-2 bg-indigo-600 text-white font-bold rounded shadow-sm hover:bg-indigo-700 transition">💾 Zapisz konfigurację emaili</button>
+                <button type="button" onclick="saveEmailModal()" class="px-6 py-2 bg-indigo-600 text-white font-bold rounded shadow-sm hover:bg-indigo-700 transition"><i class=i-save></i> Zapisz konfigurację emaili</button>
             </div>
         </div>
     </div>
@@ -263,9 +264,9 @@
             
             let options = '<option value="">-- Wybierz powiązane pole --</option>';
             if (isLoginReq) {
-                options += '<option value="system_user_email" class="font-bold text-blue-600">🌍 Pobierz z konta systemowego zalogowanego usera</option>';
+                options += '<option value="system_user_email" class="font-bold text-blue-600">Pobierz z konta systemowego zalogowanego usera</option>';
             } else {
-                options += '<option value="system_user_email" disabled class="text-gray-400">🌍 Konto systemowe (Wymaga zaznaczenia "Wymaga logowania")</option>';
+                options += '<option value="system_user_email" disabled class="text-gray-400">Konto systemowe (Wymaga zaznaczenia "Wymaga logowania")</option>';
             }
 
             fields.forEach(f => {
@@ -345,7 +346,7 @@
                         <input type="text" class="w-full p-1.5 outline-none bg-transparent font-bold text-gray-700 pointer-events-none" value="${t.tag}" readonly>
                         <span class="text-gray-400 font-bold text-lg leading-none">}}</span>
                     </div>
-                    <span class="text-gray-300 text-xl font-bold">🡒</span>
+                    <span class="text-gray-300 text-xl font-bold"><i class=i-arrow-right></i></span>
                     <select class="flex-[1.2] border border-gray-300 bg-white p-2.5 rounded shadow-sm text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none" onchange="updateTagData(${index}, 'field', this.value)">
                         ${fieldOptionsHtml}
                     </select>

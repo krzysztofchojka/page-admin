@@ -1,7 +1,7 @@
 <div class="max-w-6xl mx-auto">
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-800">Zarządzanie Użytkownikami</h1>
-        <a href="/admin" class="text-gray-600 hover:text-black">← Wróć do Dashboardu</a>
+        <a href="/admin" class="text-gray-600 hover:text-black"><i class=i-arrow-left></i> Wróć do Dashboardu</a>
     </div>
 
     <?php $flash = \CMS\Core\Session::getFlash(); if ($flash): ?>

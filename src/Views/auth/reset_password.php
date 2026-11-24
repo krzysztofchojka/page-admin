@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ustaw nowe hasło</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= \CMS\Helpers\Asset::url('/assets/css/icons.css') ?>">
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
@@ -24,7 +25,7 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2">Nowe hasło</label>
                 <div class="relative">
                     <input class="shadow appearance-none border rounded w-full py-2 px-3 pr-10 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" id="pass1" name="pass1" type="password" required>
-                    <button type="button" onclick="toggleVisibility('pass1')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                    <button type="button" onclick="toggleVisibility('pass1')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
                 </div>
             </div>
             
@@ -32,7 +33,7 @@
                 <label class="block text-gray-700 text-sm font-bold mb-2">Powtórz nowe hasło</label>
                 <div class="relative">
                     <input class="shadow appearance-none border rounded w-full py-2 px-3 pr-10 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" id="pass2" name="pass2" type="password" required>
-                    <button type="button" onclick="toggleVisibility('pass2')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600">👁️</button>
+                    <button type="button" onclick="toggleVisibility('pass2')" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-blue-600"><i class=i-eye></i></button>
                 </div>
             </div>
             
