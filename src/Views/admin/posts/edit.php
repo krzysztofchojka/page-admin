@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
     
     <!-- Tailwind CSS (Podgląd live na szablonach postów) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/js/vendor/tailwindcss-play-3.4.17.js"></script>
     <script>
         <?php $dbLocal = \CMS\Core\Database::getInstance(); ?>
         tailwind.config = {

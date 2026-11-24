@@ -5,7 +5,7 @@ function getTemplatePreviewHtml($rawHtml) {
     $html = str_replace('{{global_footer}}', '<div style="background:#f1f5f9; padding:20px; text-align:center; color:#64748b; font-size:12px; margin:0; display:block; font-family:sans-serif;">[ Globalna Stopka ]</div>', $html);
     
     // ZWRACAMY CDN TAILWINDA SPECJALNIE DLA IFRAME
-    return '<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"></script><style>body { margin: 0; padding: 0; }</style></head><body class="bg-white antialiased text-gray-800">' . $html . '</body></html>';
+    return '<!DOCTYPE html><html><head><script src="/assets/js/vendor/tailwindcss-play-3.4.17.js"></script><style>body { margin: 0; padding: 0; }</style></head><body class="bg-white antialiased text-gray-800">' . $html . '</body></html>';
 }
 ?>
 <!DOCTYPE html>

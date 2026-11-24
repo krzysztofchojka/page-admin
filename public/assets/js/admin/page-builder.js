@@ -555,7 +555,7 @@ function renderBlock(type, content = '', blockSettings = null) {
     <div class="block-settings-panel hidden bg-blue-50 p-4 mt-6 mb-4 border border-blue-200 rounded text-sm shadow-inner">
         <div class="grid grid-cols-3 gap-4">
             <div><label class="block font-bold text-gray-600 mb-1">ID HTML</label><input type="text" class="set-id w-full border p-2 rounded" placeholder="np. sekcja-1" value="${esc(settings.id)}"></div>
-            <div><label class="block font-bold text-gray-600 mb-1">Klasy CSS (Tailwind)</label><input type="text" class="set-css w-full border p-2 rounded" placeholder="np. mt-10 text-center" value="${esc(settings.css)}"></div>
+            <div><label class="block font-bold text-gray-600 mb-1" title="Klasy zdefiniowane w CSS szablonu (np. w bloku <style> szablonu). Do wyglądu bloku użyj opcji formatowania poniżej.">Klasy CSS <span class="font-normal text-gray-400">(z szablonu)</span></label><input type="text" class="set-css w-full border p-2 rounded" placeholder="np. moja-sekcja" value="${esc(settings.css)}"></div>
             <div><label class="block font-bold text-gray-600 mb-1">Style wew. (Inline)</label><input type="text" class="set-style w-full border p-2 rounded" placeholder="np. background: #000;" value="${esc(settings.style)}"></div>
         </div>
         ${formatPanelTpl(settings)}

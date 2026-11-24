@@ -48,7 +48,7 @@ class InstallController {
 <head>
     <meta charset="UTF-8">
     <title>Kreator Instalacji CMS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/js/vendor/tailwindcss-play-3.4.17.js"></script>
     <link rel="stylesheet" href="/assets/css/icons.css">
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">

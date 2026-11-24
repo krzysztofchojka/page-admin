@@ -10,7 +10,7 @@
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Montserrat:wght@400;700&display=swap">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.2/ace.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/assets/js/vendor/tailwindcss-play-3.4.17.js"></script>
     <script>
         // Konfiguracja kolorów dynamicznych, aby podgląd w edytorze 
         // odpowiadał kolorom ustawionym w panelu Settings

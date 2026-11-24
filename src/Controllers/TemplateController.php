@@ -64,6 +64,7 @@ class TemplateController {
                 <div class="flex items-center gap-4 flex-1">
                     <a href="/admin/templates" class="text-gray-500 hover:text-black font-bold"><i class=i-arrow-left></i> Wróć</a>
                     <input type="hidden" name="id" id="template_id" value="<?= $template['id'] ?>">
+                    <input type="hidden" id="template_base_hash" value="<?= md5($template['html_content'] ?? '') ?>">
                     <input type="text" name="title" id="template_title" value="<?= htmlspecialchars($template['title']) ?>" class="border border-transparent hover:border-gray-300 focus:border-blue-500 p-2 rounded font-bold text-xl outline-none transition w-1/3" placeholder="Nazwa Szablonu">
                 </div>
                 
@@ -170,7 +171,7 @@ class TemplateController {
                     <!DOCTYPE html>
                     <html>
                     <head>
-                        <script src="https://cdn.tailwindcss.com"><\/script>
+                        <script src="/assets/js/vendor/tailwindcss-play-3.4.17.js"><\/script>
                     </head>
                     <body>${html}</body>
                     </html>
@@ -181,7 +182,7 @@ class TemplateController {
                 let attempts = 0;
                 const interval = setInterval(() => {
                     attempts++;
-                    const styleElement = doc.querySelector('style');
+                    const styleElement = doc.head.querySelector('style'); // tylko CSS wygenerowany przez Tailwind (nie <style> z treści szablonu)
                     
                     if (styleElement && styleElement.textContent.length > 100) {
                         console.log("Zbuildowany Tailwind CSS dla klas w tym szablonie:");
@@ -211,7 +212,7 @@ class TemplateController {
                         <!DOCTYPE html>
                         <html>
                         <head>
-                            <script src="https://cdn.tailwindcss.com"><\/script>
+                            <script src="/assets/js/vendor/tailwindcss-play-3.4.17.js"><\/script>
                             <script>
                                 tailwind.config = {
                                     theme: {
@@ -233,7 +234,7 @@ class TemplateController {
                     let attempts = 0;
                     const interval = setInterval(() => {
                         attempts++;
-                        const styleElement = doc.querySelector('style');
+                        const styleElement = doc.head.querySelector('style'); // tylko CSS wygenerowany przez Tailwind (nie <style> z treści szablonu)
                         
                         if (styleElement && styleElement.textContent.length > 100) {
                             const css = styleElement.textContent;
@@ -241,18 +242,19 @@ class TemplateController {
                             clearInterval(interval);
                             iframe.remove();
                             resolve(css);
-                        } else if (attempts > 50) { 
+                        } else if (attempts > 150) {
+                            // 15 s bez wyniku – NIE wysyłamy pustego CSS (serwer zachowa poprzednio zbudowany)
                             console.warn("Timeout: Nie udało się pobrać wygenerowanego Tailwind CSS.");
                             clearInterval(interval);
                             iframe.remove();
-                            resolve(''); // Przesyłamy puste w ramach błędu
+                            resolve(null);
                         }
                     }, 100);
                 });
             }
 
             // --- ZAPISYWANIE AJAX ---
-            async function saveTemplate() {
+            async function saveTemplate(force = false) {
                 const btn = document.getElementById('btn-save');
                 const originalText = "<i class=i-save></i> Zapisz";
                 
@@ -271,7 +273,10 @@ class TemplateController {
                     id: document.getElementById('template_id').value,
                     title: document.getElementById('template_title').value,
                     html_content: htmlContent,
-                    compiled_css: compiledCss
+                    compiled_css: compiledCss || '', // pusty = serwer zostawia poprzedni CSS
+                    // Ochrona przed zapisem nieaktualnej treści (np. stara karta edytora)
+                    base_hash: document.getElementById('template_base_hash').value,
+                    force: force
                 };
 
                 fetch('/admin/templates/save', {
@@ -284,7 +289,22 @@ class TemplateController {
                 })
                 .then(response => response.json())
                 .then(data => {
+                    if (data.status === 'conflict') {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-75');
+                        if (confirm(data.msg + '\n\nOK – nadpisz wersję w bazie treścią z tego edytora.\nAnuluj – wczytaj aktualną wersję (Twoje zmiany w tej karcie przepadną).')) {
+                            saveTemplate(true);
+                        } else {
+                            location.reload();
+                        }
+                        return;
+                    }
                     if(data.status === 'success') {
+                        if (data.hash) document.getElementById('template_base_hash').value = data.hash;
+                        if (data.css_kept) {
+                            alert('Szablon zapisano, ale nie udało się skompilować CSS Tailwinda – na stronie nadal działa poprzednio zbudowany CSS. Spróbuj zapisać ponownie.');
+                        }
                         // Efekt sukcesu
                         btn.innerHTML = '<i class=i-circle-check></i> Zapisano!';
                         btn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'opacity-75');
@@ -466,7 +486,7 @@ OPIS SZABLONU DO WYGENEROWANIA:
                 
                 // ZWRACAMY CDN TAILWINDA SPECJALNIE DLA PODGLĄDU NA ŻYWO
                 if (!html.includes("<head") && !html.includes("tailwindcss")) {
-                    html = `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"><\/script></head><body class="antialiased text-gray-800">` + html + `</body></html>`;
+                    html = `<!DOCTYPE html><html><head><script src="/assets/js/vendor/tailwindcss-play-3.4.17.js"><\/script></head><body class="antialiased text-gray-800">` + html + `</body></html>`;
                 }
                 return html;
             }
@@ -594,26 +614,39 @@ OPIS SZABLONU DO WYGENEROWANIA:
         };
 
         if ($data) {
-            $db->query("UPDATE pa_templates SET title = :title, html_content = :html, compiled_css = :css WHERE id = :id", [
+            // Szablon zmieniony w bazie od otwarcia edytora (inna karta / inna osoba)? Nie nadpisujemy po cichu.
+            if (!empty($data['base_hash']) && empty($data['force'])) {
+                $current = $db->query("SELECT html_content FROM pa_templates WHERE id = ?", [$data['id']])->fetchColumn();
+                if ($current !== false && md5((string)$current) !== $data['base_hash']) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'conflict', 'msg' => 'Ten szablon został zmieniony od czasu otwarcia edytora (w innej karcie lub przez inną osobę).']);
+                    exit;
+                }
+            }
+            // Prawidłowy wynik Tailwinda nigdy nie jest pusty (zawiera style bazowe) – pusty = błąd kompilacji,
+            // więc zostawiamy poprzednio zbudowany CSS zamiast "rozsypywać" stronę.
+            $cssKept = trim((string)($data['compiled_css'] ?? '')) === '';
+            $db->query("UPDATE pa_templates SET title = :title, html_content = :html"
+                . ($cssKept ? '' : ', compiled_css = :css') . " WHERE id = :id", array_merge([
                 'title' => $data['title'],
                 'html' => $data['html_content'],
-                'css' => $data['compiled_css'] ?? '',
                 'id' => $data['id']
-            ]);
+            ], $cssKept ? [] : ['css' => $data['compiled_css']]));
             
             $clearCache();
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'success']);
+            echo json_encode(['status' => 'success', 'hash' => md5((string)$data['html_content']), 'css_kept' => $cssKept]);
             exit;
         }
 
         // Fallback dla standardowego formularza (gdyby skrypty zawiodły)
-        $db->query("UPDATE pa_templates SET title = :title, html_content = :html, compiled_css = :css WHERE id = :id", [
+        $cssKept = trim((string)($_POST['compiled_css'] ?? '')) === '';
+        $db->query("UPDATE pa_templates SET title = :title, html_content = :html"
+            . ($cssKept ? '' : ', compiled_css = :css') . " WHERE id = :id", array_merge([
             'title' => $_POST['title'],
             'html' => $_POST['html_content'],
-            'css' => $_POST['compiled_css'] ?? '',
             'id' => $_POST['id']
-        ]);
+        ], $cssKept ? [] : ['css' => $_POST['compiled_css']]));
         
         $clearCache();
         header("Location: /admin/templates");
